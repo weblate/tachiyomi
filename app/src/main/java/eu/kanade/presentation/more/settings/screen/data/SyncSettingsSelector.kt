@@ -84,7 +84,7 @@ class SyncSettingsSelector : Screen() {
     }
 }
 
-private class SyncSettingsSelectorModel(
+class SyncSettingsSelectorModel(
     val syncPreferences: SyncPreferences = Injekt.get(),
 ) : StateViewModel<SyncSettingsSelectorModel.State>(
     State(syncOptionsToBackupOptions(syncPreferences.getSyncSettings())),
