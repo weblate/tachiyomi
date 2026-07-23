@@ -371,6 +371,16 @@ private fun groupTypeDrawableRes(type: Int): Int {
     }
 }
 
+fun groupTypeStringRes(type: Int, hasCategories: Boolean = true): StringResource {
+    return when (type) {
+        LibraryGroup.BY_STATUS -> MR.strings.status
+        LibraryGroup.BY_SOURCE -> MR.strings.label_sources
+        LibraryGroup.BY_TRACK_STATUS -> SYMR.strings.tracking_status
+        LibraryGroup.UNGROUPED -> SYMR.strings.ungrouped
+        else -> if (hasCategories) MR.strings.categories else SYMR.strings.ungrouped
+    }
+}
+
 @Composable
 private fun ColumnScope.GroupPage(
     viewModel: LibrarySettingsViewModel,
@@ -391,7 +401,7 @@ private fun ColumnScope.GroupPage(
         }.map {
             GroupMode(
                 it,
-                LibraryGroup.groupTypeStringRes(it, hasCategories),
+                groupTypeStringRes(it, hasCategories),
                 groupTypeDrawableRes(it),
             )
         }
@@ -408,4 +418,5 @@ private fun ColumnScope.GroupPage(
         )
     }
 }
+
 // SY <--
