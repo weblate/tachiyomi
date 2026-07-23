@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Context
 import android.content.SharedPreferences
 import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
 
 interface ConfigurableSource : Source {
 

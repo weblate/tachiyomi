@@ -2,11 +2,8 @@ package eu.kanade.tachiyomi.di
 
 import android.app.Application
 import androidx.core.content.ContextCompat
-import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
-import app.cash.sqldelight.async.coroutines.synchronous
 import app.cash.sqldelight.db.SqlDriver
-import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteConcurrencyModel
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteConfiguration
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteDatabaseType
@@ -32,13 +29,10 @@ import eu.kanade.tachiyomi.util.storage.CbzCrypto
 import exh.eh.EHentaiUpdateHelper
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
-import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import net.zetetic.database.sqlcipher.driver.SQLCipherDriver
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
-import nl.adaptivity.xmlutil.serialization.DefaultXmlSerializationPolicy
 import nl.adaptivity.xmlutil.serialization.XML
-import nl.adaptivity.xmlutil.serialization.XmlConfig
 import tachiyomi.core.common.storage.AndroidStorageFolderProvider
 import tachiyomi.core.common.storage.UniFileTempFileManager
 import tachiyomi.data.Chapters
