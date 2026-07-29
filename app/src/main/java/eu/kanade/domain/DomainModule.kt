@@ -147,7 +147,7 @@ class DomainModule : InjektModule {
         }
 
         addSingletonFactory<ReleaseService> { ReleaseServiceImpl(get(), get()) }
-        addFactory { GetApplicationRelease(get(), get()) }
+        addFactory { GetApplicationRelease(get()) }
 
         addSingletonFactory<TrackRepository> { TrackRepositoryImpl(get()) }
         addFactory { TrackChapter(get(), get(), get(), get()) }
