@@ -405,15 +405,14 @@ class MangaRestorer(
     private suspend fun restoreHistory(manga: Manga, backupHistory: List<BackupHistory>) {
         val toUpdate = backupHistory.mapNotNull { history ->
             val dbHistory = database.historyQueries
-                .getHistoryByChapterUrl(manga.id, history.url)
+                .getHistoryByChapterUrlAndMangaId(history.url, manga.id)
                 .awaitAsOneOrNull()
             val item = history.getHistoryImpl()
 
             if (dbHistory == null) {
                 val chapter = database.chaptersQueries
-                    .getChapterByUrl(history.url)
-                    .awaitAsList()
-                    .find { it.manga_id == manga.id }
+                    .getChapterByUrlAndMangaId(history.url, manga.id)
+                    .awaitAsOneOrNull()
                 return@mapNotNull if (chapter == null) {
                     // Chapter doesn't exist; skip
                     null
