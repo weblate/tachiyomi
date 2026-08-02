@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.retry
 import tachiyomi.domain.updates.model.UpdatesWithRelations
 import tachiyomi.domain.updates.repository.UpdatesRepository
-import java.time.Instant
+import kotlin.time.Instant
 import kotlin.time.Duration.Companion.seconds
 
 class GetUpdates(
@@ -32,7 +32,7 @@ class GetUpdates(
         hideExcludedScanlators: Boolean,
     ): Flow<List<UpdatesWithRelations>> {
         return repository.subscribeAll(
-            instant.toEpochMilli(),
+            instant.toEpochMilliseconds(),
             limit = 500,
             unread = unread,
             started = started,

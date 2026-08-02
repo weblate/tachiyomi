@@ -209,6 +209,8 @@ dependencies {
 
     implementation(libs.sqldelight.async)
 
+    implementation(libs.kotlinx.datetime)
+
     // AndroidX libraries
     implementation(libs.androidx.annotation)
     implementation(libs.androidx.appCompat)

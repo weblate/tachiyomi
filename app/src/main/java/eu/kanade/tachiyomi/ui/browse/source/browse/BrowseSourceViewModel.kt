@@ -76,7 +76,7 @@ import tachiyomi.i18n.sy.SYMR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import xyz.nulldev.ts.api.http.serializer.FilterSerializer
-import java.time.Instant
+import kotlin.time.Clock
 import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 open class BrowseSourceViewModel(
@@ -331,7 +331,7 @@ open class BrowseSourceViewModel(
                 favorite = !manga.favorite,
                 dateAdded = when (manga.favorite) {
                     true -> 0
-                    false -> Instant.now().toEpochMilli()
+                    false -> Clock.System.now().toEpochMilliseconds()
                 },
             )
 

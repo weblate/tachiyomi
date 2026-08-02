@@ -137,6 +137,9 @@
 -keep class com.google.firebase.installations.** { *; }
 -keep interface com.google.firebase.installations.** { *; }
 
+# KotlinX Datetime
+-keep,allowoptimization class kotlinx.datetime.** { public protected *; }
+
 # Google Drive
 -keep class com.google.api.services.** { *; }
 

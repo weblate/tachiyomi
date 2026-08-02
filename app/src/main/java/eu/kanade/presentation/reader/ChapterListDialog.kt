@@ -23,15 +23,18 @@ import exh.metadata.MetadataUtil
 import exh.source.isEhBasedManga
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.source.local.isLocal
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import java.time.Instant
-import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import kotlin.time.Clock
+import kotlin.time.Instant
+import kotlin.time.toJavaInstant
 
 @Composable
 fun ChapterListDialog(
@@ -91,12 +94,12 @@ fun ChapterListDialog(
                             // SY -->
                             if (manga?.isEhBasedManga() == true) {
                                 MetadataUtil.EX_DATE_FORMAT
-                                    .format(ZonedDateTime.ofInstant(Instant.ofEpochMilli(it), ZoneId.systemDefault()))
+                                    .format(ZonedDateTime.ofInstant(Instant.fromEpochMilliseconds(it).toJavaInstant(), ZoneId.systemDefault()))
                             } else {
-                                LocalDate.ofInstant(
-                                    Instant.ofEpochMilli(it),
-                                    ZoneId.systemDefault(),
-                                ).toRelativeString(context, dateRelativeTime, chapterItem.dateFormat)
+                                Clock.System.now()
+                                    .toLocalDateTime(TimeZone.currentSystemDefault())
+                                    .date
+                                    .toRelativeString(context, dateRelativeTime, chapterItem.dateFormat)
                             }
                             // SY <--
                         },
