@@ -65,11 +65,6 @@ class MangaRestorer(
     private val syncingFlag = if (isSync) 1L else 0L
     // SY <--
 
-    init {
-        now = ZonedDateTime.now()
-        currentFetchWindow = fetchInterval.getWindow(now)
-    }
-
     suspend fun sortByNew(backupMangas: List<BackupManga>): List<BackupManga> {
         val urlsBySource = database.mangasQueries
             .getAllMangaSourceAndUrl()
