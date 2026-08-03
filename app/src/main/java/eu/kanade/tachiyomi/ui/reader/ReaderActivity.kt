@@ -117,7 +117,6 @@ import tachiyomi.core.common.i18n.pluralStringResource
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchNonCancellable
-import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.i18n.MR
@@ -210,28 +209,16 @@ class ReaderActivity : BaseActivity() {
         setContentView(binding.root)
         binding.setComposeOverlay()
 
-        if (viewModel.needsInit()) {
-            val manga = intent.extras?.getLong("manga", -1) ?: -1L
-            val chapter = intent.extras?.getLong("chapter", -1) ?: -1L
-            // SY -->
-            val page = intent.extras?.getInt("page", -1).takeUnless { it == -1 }
-            // SY <--
-            if (manga == -1L || chapter == -1L) {
-                finish()
-                return
-            }
-            NotificationReceiver.dismissNotification(this, manga.hashCode(), Notifications.ID_NEW_CHAPTERS)
-
-            lifecycleScope.launch {
-                val initResult = viewModel.init(manga, chapter/* SY --> */, page/* SY <-- */)
-                if (!initResult.getOrDefault(false)) {
-                    val exception = initResult.exceptionOrNull() ?: IllegalStateException("Unknown err")
-                    withUIContext {
-                        setInitialChapterError(exception)
-                    }
-                }
-            }
+        if (!viewModel.hasValidArgs) {
+            finish()
+            return
         }
+
+        NotificationReceiver.dismissNotification(
+            this,
+            viewModel.mangaId.hashCode(),
+            Notifications.ID_NEW_CHAPTERS,
+        )
 
         config = ReaderConfig()
         setMenuVisibility(viewModel.state.value.menuVisible)
@@ -241,6 +228,13 @@ class ReaderActivity : BaseActivity() {
         preferences.incognitoMode.changes()
             .drop(1)
             .onEach { if (!it) finish() }
+            .launchIn(lifecycleScope)
+
+        viewModel.state
+            .map { it.initError }
+            .distinctUntilChanged()
+            .filterNotNull()
+            .onEach(::setInitialChapterError)
             .launchIn(lifecycleScope)
 
         viewModel.state
