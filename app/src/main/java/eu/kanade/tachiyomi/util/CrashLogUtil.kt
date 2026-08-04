@@ -10,6 +10,8 @@ import eu.kanade.tachiyomi.util.system.WebViewUtil
 import eu.kanade.tachiyomi.util.system.createFileInCacheDir
 import eu.kanade.tachiyomi.util.system.toShareIntent
 import eu.kanade.tachiyomi.util.system.toast
+import exh.log.EHLogLevel
+import exh.source.ExhPreferences
 import exh.syDebugVersion
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.offsetAt
@@ -24,6 +26,9 @@ class CrashLogUtil(
     private val context: Context,
     private val extensionManager: ExtensionManager = Injekt.get(),
     private val preferences: BasePreferences = Injekt.get(),
+    // SY -->
+    private val networkPreferences: ExhPreferences = Injekt.get(),
+    // SY <--
 ) {
 
     suspend fun dumpLogs(exception: Throwable? = null) = withNonCancellableContext {
@@ -34,7 +39,10 @@ class CrashLogUtil(
             getExtensionsInfo()?.let { file.appendText("$it\n\n") }
             exception?.let { file.appendText("$it\n\n") }
 
-            Runtime.getRuntime().exec("logcat *:E -d -v year -v zone -f ${file.absolutePath}").waitFor()
+            // SY -->
+            val logPriority = if (networkPreferences.logLevel.get() != EHLogLevel.MINIMAL.ordinal) "V" else "E"
+            // SY <--
+            Runtime.getRuntime().exec("logcat *:$logPriority -d -v year -v zone -f ${file.absolutePath}").waitFor()
 
             val uri = file.getUriCompat(context)
             context.startActivity(uri.toShareIntent(context, "text/plain"))
