@@ -42,14 +42,13 @@ class CategoriesRestorer(
                     }
 
                     if (dbCategory != null) {
-                        database.categoriesQueries.update(
+                        database.categoriesQueries.updateSync(
                             name = backupCategory.name,
                             order = backupCategory.order,
                             flags = backupCategory.flags,
                             version = backupCategory.version,
                             uid = if (backupCategory.uid != 0L) backupCategory.uid else dbCategory.uid,
-                            last_modified_at = backupCategory.lastModifiedAt,
-                            isSyncing = 1,
+                            lastModifiedAt = backupCategory.lastModifiedAt,
                             categoryId = dbCategory.id,
                         )
                         return@map dbCategory
