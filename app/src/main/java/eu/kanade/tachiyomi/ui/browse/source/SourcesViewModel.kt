@@ -1,7 +1,7 @@
 package eu.kanade.tachiyomi.ui.browse.source
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.getValue
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
@@ -20,22 +20,25 @@ import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.browse.SourceUiModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.WhileSubscribed
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import logcat.LogPriority
-import mihon.core.viewmodel.StateViewModel
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.source.model.Pin
 import tachiyomi.domain.source.model.Source
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import java.util.TreeMap
+import kotlin.time.Duration.Companion.seconds
 
 class SourcesViewModel(
     private val getEnabledSources: GetEnabledSources = Injekt.get(),
@@ -50,90 +53,97 @@ class SourcesViewModel(
     private val sourcePreferences: SourcePreferences = Injekt.get(),
     val smartSearchConfig: SourcesScreen.SmartSearchConfig?,
     // SY <--
-) : StateViewModel<SourcesViewModel.State>(State()) {
+) : ViewModel() {
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
 
-    val useNewSourceNavigation by uiPreferences.useNewSourceNavigation.asState(viewModelScope)
+    private val dialog = MutableStateFlow<Dialog?>(null)
 
-    init {
+    private val enabledSources = getEnabledSources.subscribe()
+        .catch {
+            logcat(LogPriority.ERROR, it)
+            _events.send(Event.FailedFetchingSources)
+        }
+        .map(::toSourceUiModels)
+
+    // SY -->
+    private val sourceCategories = getSourceCategories.subscribe()
+        .catch {
+            logcat(LogPriority.ERROR, it)
+            _events.send(Event.FailedFetchingSources)
+        }
+    // SY <--
+
+    val state: StateFlow<State> = combine(
+        enabledSources,
+        dialog,
         // SY -->
+        getShowLatest.subscribe(smartSearchConfig != null),
         combine(
-            getEnabledSources.subscribe(),
-            getSourceCategories.subscribe(),
-            getShowLatest.subscribe(smartSearchConfig != null),
-            flowOf(smartSearchConfig == null),
-            ::collectLatestSources,
-        )
-            .catch {
-                logcat(LogPriority.ERROR, it)
-                _events.send(Event.FailedFetchingSources)
-            }
-            .flowOn(Dispatchers.IO)
-            .launchIn(viewModelScope)
-
-        sourcePreferences.dataSaver.changes()
-            .onEach {
-                mutableState.update {
-                    it.copy(
-                        dataSaverEnabled = sourcePreferences.dataSaver.get() != DataSaver.NONE,
-                    )
-                }
-            }
-            .launchIn(viewModelScope)
+            sourceCategories,
+            sourcePreferences.dataSaver.changes(),
+            uiPreferences.useNewSourceNavigation.changes(),
+        ) { categories, dataSaver, useNewSourceNavigation ->
+            Triple(categories, dataSaver != DataSaver.NONE, useNewSourceNavigation)
+        },
         // SY <--
+    ) { items, dialog, showLatest, (categories, dataSaverEnabled, useNewSourceNavigation) ->
+        State(
+            dialog = dialog,
+            isLoading = false,
+            items = items,
+            // SY -->
+            showLatest = showLatest,
+            categories = categories,
+            dataSaverEnabled = dataSaverEnabled,
+            showPin = smartSearchConfig == null,
+            useNewSourceNavigation = useNewSourceNavigation,
+            // SY <--
+        )
     }
+        .flowOn(Dispatchers.IO)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), State())
 
-    private fun collectLatestSources(sources: List<Source>, categories: List<String>, showLatest: Boolean, showPin: Boolean) {
-        mutableState.update { state ->
-            val map = TreeMap<String, MutableList<Source>> { d1, d2 ->
-                // Sources without a lang defined will be placed at the end
-                when {
-                    d1 == LAST_USED_KEY && d2 != LAST_USED_KEY -> -1
-                    d2 == LAST_USED_KEY && d1 != LAST_USED_KEY -> 1
-                    d1 == PINNED_KEY && d2 != PINNED_KEY -> -1
-                    d2 == PINNED_KEY && d1 != PINNED_KEY -> 1
-                    // SY -->
-                    d1.startsWith(CATEGORY_KEY_PREFIX) && !d2.startsWith(CATEGORY_KEY_PREFIX) -> -1
-                    d2.startsWith(CATEGORY_KEY_PREFIX) && !d1.startsWith(CATEGORY_KEY_PREFIX) -> 1
-                    // SY <--
-                    d1 == "" && d2 != "" -> 1
-                    d2 == "" && d1 != "" -> -1
-                    else -> d1.compareTo(d2)
-                }
-            }
-            val byLang = sources.groupByTo(map) {
-                when {
-                    // SY -->
-                    it.category != null -> "$CATEGORY_KEY_PREFIX${it.category}"
-                    // SY <--
-                    it.isUsedLast -> LAST_USED_KEY
-                    Pin.Actual in it.pin -> PINNED_KEY
-                    else -> it.lang
-                }
-            }
-
-            state.copy(
-                isLoading = false,
-                items = byLang
-                    .flatMap {
-                        listOf(
-                            SourceUiModel.Header(
-                                it.key.removePrefix(CATEGORY_KEY_PREFIX),
-                                it.value.firstOrNull()?.category != null,
-                            ),
-                            *it.value.map { source ->
-                                SourceUiModel.Item(source)
-                            }.toTypedArray(),
-                        )
-                    },
+    private fun toSourceUiModels(sources: List<Source>): List<SourceUiModel> {
+        val map = TreeMap<String, MutableList<Source>> { d1, d2 ->
+            // Sources without a lang defined will be placed at the end
+            when {
+                d1 == LAST_USED_KEY && d2 != LAST_USED_KEY -> -1
+                d2 == LAST_USED_KEY && d1 != LAST_USED_KEY -> 1
+                d1 == PINNED_KEY && d2 != PINNED_KEY -> -1
+                d2 == PINNED_KEY && d1 != PINNED_KEY -> 1
                 // SY -->
-                categories = categories
-                    .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it }),
-                showPin = showPin,
-                showLatest = showLatest,
+                d1.startsWith(CATEGORY_KEY_PREFIX) && !d2.startsWith(CATEGORY_KEY_PREFIX) -> -1
+                d2.startsWith(CATEGORY_KEY_PREFIX) && !d1.startsWith(CATEGORY_KEY_PREFIX) -> 1
                 // SY <--
+                d1 == "" && d2 != "" -> 1
+                d2 == "" && d1 != "" -> -1
+                else -> d1.compareTo(d2)
+            }
+        }
+        val byLang = sources.groupByTo(map) {
+            when {
+                // SY -->
+                it.category != null -> "$CATEGORY_KEY_PREFIX${it.category}"
+                // SY <--
+                it.isUsedLast -> LAST_USED_KEY
+                Pin.Actual in it.pin -> PINNED_KEY
+                else -> it.lang
+            }
+        }
+
+        return byLang.flatMap {
+            listOf(
+                SourceUiModel.Header(
+                    // SY -->
+                    it.key.removePrefix(CATEGORY_KEY_PREFIX),
+                    it.value.firstOrNull()?.category != null,
+                    // SY <--
+                ),
+                *it.value.map { source ->
+                    SourceUiModel.Item(source)
+                }.toTypedArray(),
             )
         }
     }
@@ -156,16 +166,16 @@ class SourcesViewModel(
     }
 
     fun showSourceCategoriesDialog(source: Source) {
-        mutableState.update { it.copy(dialog = Dialog.SourceCategories(source)) }
+        dialog.update { Dialog.SourceCategories(source) }
     }
     // SY <--
 
     fun showSourceDialog(source: Source) {
-        mutableState.update { it.copy(dialog = Dialog.SourceLongClick(source)) }
+        dialog.update { Dialog.SourceLongClick(source) }
     }
 
     fun closeDialog() {
-        mutableState.update { it.copy(dialog = null) }
+        dialog.update { null }
     }
 
     sealed interface Event {
@@ -187,6 +197,7 @@ class SourcesViewModel(
         val showPin: Boolean = true,
         val showLatest: Boolean = false,
         val dataSaverEnabled: Boolean = false,
+        val useNewSourceNavigation: Boolean = false,
         // SY <--
     ) {
         val isEmpty = items.isEmpty()
