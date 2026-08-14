@@ -11,7 +11,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -22,6 +21,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastAny
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.Navigator
@@ -102,7 +102,7 @@ data object LibraryTab : Tab {
 
         val viewModel = viewModel<LibraryViewModel>()
         val settingsViewModel = viewModel<LibrarySettingsViewModel>()
-        val state by viewModel.state.collectAsState()
+        val state by viewModel.state.collectAsStateWithLifecycle()
 
         val snackbarHostState = remember { SnackbarHostState() }
 
@@ -347,13 +347,13 @@ data object LibraryTab : Tab {
 
         // SY -->
         SyncFavoritesProgressDialog(
-            status = viewModel.favoritesSync.status.collectAsState().value,
+            status = viewModel.favoritesSync.status.collectAsStateWithLifecycle().value,
             setStatusIdle = { viewModel.favoritesSync.status.value = FavoritesSyncStatus.Idle },
             openManga = { navigator.push(MangaScreen(it)) },
         )
 
         RecommendationSearchProgressDialog(
-            status = viewModel.recommendationSearch.status.collectAsState().value,
+            status = viewModel.recommendationSearch.status.collectAsStateWithLifecycle().value,
             setStatusIdle = { viewModel.recommendationSearch.status.value = SearchStatus.Idle },
             setStatusCancelling = { viewModel.recommendationSearch.status.value = SearchStatus.Cancelling },
         )
@@ -377,7 +377,7 @@ data object LibraryTab : Tab {
         }
 
         // SY -->
-        val recSearchState by viewModel.recommendationSearch.status.collectAsState()
+        val recSearchState by viewModel.recommendationSearch.status.collectAsStateWithLifecycle()
         LaunchedEffect(recSearchState) {
             when (val current = recSearchState) {
                 is SearchStatus.Finished.WithResults -> {
