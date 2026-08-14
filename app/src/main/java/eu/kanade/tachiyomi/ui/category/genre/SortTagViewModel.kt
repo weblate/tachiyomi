@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.category.genre
 
 import androidx.compose.runtime.Immutable
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.domain.manga.interactor.CreateSortTag
@@ -8,10 +9,11 @@ import eu.kanade.domain.manga.interactor.DeleteSortTag
 import eu.kanade.domain.manga.interactor.GetSortTag
 import eu.kanade.domain.manga.interactor.ReorderSortTag
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import mihon.core.viewmodel.StateViewModel
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
@@ -23,7 +25,10 @@ class SortTagViewModel(
     private val createSortTag: CreateSortTag = Injekt.get(),
     private val deleteSortTag: DeleteSortTag = Injekt.get(),
     private val reorderSortTag: ReorderSortTag = Injekt.get(),
-) : StateViewModel<SortTagScreenState>(SortTagScreenState.Loading) {
+) : ViewModel() {
+
+    val state: StateFlow<SortTagScreenState>
+        field = MutableStateFlow<SortTagScreenState>(SortTagScreenState.Loading)
 
     private val _events: Channel<SortTagEvent> = Channel(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
@@ -32,7 +37,7 @@ class SortTagViewModel(
         viewModelScope.launchIO {
             getSortTag.subscribe()
                 .collectLatest { tags ->
-                    mutableState.update {
+                    state.update {
                         SortTagScreenState.Success(
                             tags = tags,
                         )
@@ -75,7 +80,7 @@ class SortTagViewModel(
     }
 
     fun showDialog(dialog: SortTagDialog) {
-        mutableState.update {
+        state.update {
             when (it) {
                 SortTagScreenState.Loading -> it
                 is SortTagScreenState.Success -> it.copy(dialog = dialog)
@@ -84,7 +89,7 @@ class SortTagViewModel(
     }
 
     fun dismissDialog() {
-        mutableState.update {
+        state.update {
             when (it) {
                 SortTagScreenState.Loading -> it
                 is SortTagScreenState.Success -> it.copy(dialog = null)

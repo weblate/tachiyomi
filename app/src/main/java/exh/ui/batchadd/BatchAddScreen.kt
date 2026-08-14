@@ -57,8 +57,8 @@ class BatchAddScreen : Screen() {
                 )
             },
         ) { paddingValues ->
-            when (state.state) {
-                BatchAddViewModel.State.INPUT -> {
+            when (state.addingState) {
+                BatchAddViewModel.AddingState.INPUT -> {
                     Column(
                         Modifier
                             .padding(paddingValues)
@@ -89,7 +89,7 @@ class BatchAddScreen : Screen() {
                         }
                     }
                 }
-                BatchAddViewModel.State.PROGRESS -> {
+                BatchAddViewModel.AddingState.PROGRESS -> {
                     LazyColumn(
                         contentPadding = paddingValues + PaddingValues(MaterialTheme.padding.medium),
                     ) {

@@ -2,14 +2,16 @@ package eu.kanade.tachiyomi.ui.category.biometric
 
 import android.app.Application
 import androidx.compose.runtime.Immutable
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import mihon.core.viewmodel.StateViewModel
 import tachiyomi.core.common.preference.plusAssign
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.i18n.MR
@@ -19,7 +21,10 @@ import uy.kohesive.injekt.api.get
 
 class BiometricTimesViewModel(
     private val preferences: SecurityPreferences = Injekt.get(),
-) : StateViewModel<BiometricTimesScreenState>(BiometricTimesScreenState.Loading) {
+) : ViewModel() {
+
+    val state: StateFlow<BiometricTimesScreenState>
+        field = MutableStateFlow<BiometricTimesScreenState>(BiometricTimesScreenState.Loading)
 
     private val _events: Channel<BiometricTimesEvent> = Channel(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
@@ -30,7 +35,7 @@ class BiometricTimesViewModel(
             preferences.authenticatorTimeRanges.changes()
                 .collectLatest { times ->
                     val context = Injekt.get<Application>()
-                    mutableState.update {
+                    state.update {
                         BiometricTimesScreenState.Success(
                             timeRanges = times.toList()
                                 .mapNotNull(TimeRange::fromPreferenceString)
@@ -83,7 +88,7 @@ class BiometricTimesViewModel(
     }
 
     fun showDialog(dialog: BiometricTimesDialog) {
-        mutableState.update {
+        state.update {
             when (it) {
                 BiometricTimesScreenState.Loading -> it
                 is BiometricTimesScreenState.Success -> it.copy(dialog = dialog)
@@ -92,7 +97,7 @@ class BiometricTimesViewModel(
     }
 
     fun dismissDialog() {
-        mutableState.update {
+        state.update {
             when (it) {
                 BiometricTimesScreenState.Loading -> it
                 is BiometricTimesScreenState.Success -> it.copy(dialog = null)

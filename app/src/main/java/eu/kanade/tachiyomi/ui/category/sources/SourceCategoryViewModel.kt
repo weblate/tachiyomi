@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.ui.category.sources
 
 import androidx.compose.runtime.Immutable
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.domain.source.interactor.CreateSourceCategory
@@ -8,10 +9,11 @@ import eu.kanade.domain.source.interactor.DeleteSourceCategory
 import eu.kanade.domain.source.interactor.GetSourceCategories
 import eu.kanade.domain.source.interactor.RenameSourceCategory
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import mihon.core.viewmodel.StateViewModel
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
@@ -23,7 +25,10 @@ class SourceCategoryViewModel(
     private val createSourceCategory: CreateSourceCategory = Injekt.get(),
     private val renameSourceCategory: RenameSourceCategory = Injekt.get(),
     private val deleteSourceCategory: DeleteSourceCategory = Injekt.get(),
-) : StateViewModel<SourceCategoryScreenState>(SourceCategoryScreenState.Loading) {
+) : ViewModel() {
+
+    val state: StateFlow<SourceCategoryScreenState>
+        field = MutableStateFlow<SourceCategoryScreenState>(SourceCategoryScreenState.Loading)
 
     private val _events: Channel<SourceCategoryEvent> = Channel(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
@@ -32,7 +37,7 @@ class SourceCategoryViewModel(
         viewModelScope.launchIO {
             getSourceCategories.subscribe()
                 .collectLatest { categories ->
-                    mutableState.update {
+                    state.update {
                         SourceCategoryScreenState.Success(
                             categories = categories,
                         )
@@ -82,7 +87,7 @@ class SourceCategoryViewModel(
     }
 
     fun showDialog(dialog: SourceCategoryDialog) {
-        mutableState.update {
+        state.update {
             when (it) {
                 SourceCategoryScreenState.Loading -> it
                 is SourceCategoryScreenState.Success -> it.copy(dialog = dialog)
@@ -91,7 +96,7 @@ class SourceCategoryViewModel(
     }
 
     fun dismissDialog() {
-        mutableState.update {
+        state.update {
             when (it) {
                 SourceCategoryScreenState.Loading -> it
                 is SourceCategoryScreenState.Success -> it.copy(dialog = null)

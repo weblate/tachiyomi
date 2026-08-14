@@ -3,6 +3,7 @@ package exh.recs
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.produceState
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
@@ -12,12 +13,13 @@ import exh.recs.sources.StaticResultPagingSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
-import mihon.core.viewmodel.StateViewModel
 import mihon.domain.manga.model.toDomainManga
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.domain.manga.interactor.GetManga
@@ -32,7 +34,11 @@ open class RecommendsViewModel(
     sourceManager: SourceManager = Injekt.get(),
     private val getManga: GetManga = Injekt.get(),
     private val networkToLocalManga: NetworkToLocalManga = Injekt.get(),
-) : StateViewModel<RecommendsViewModel.State>(State()) {
+) : ViewModel() {
+
+    val state: StateFlow<State>
+        field = MutableStateFlow(State())
+
     companion object {
         val ARGS_KEY = CreationExtras.Key<RecommendsScreen.Args>()
 
@@ -60,7 +66,7 @@ open class RecommendsViewModel(
             val recommendationSources = when (args) {
                 is RecommendsScreen.Args.SingleSourceManga -> {
                     val manga = getManga.await(args.mangaId)!!
-                    mutableState.update { it.copy(title = manga.title) }
+                    state.update { it.copy(title = manga.title) }
 
                     RecommendationPagingSource.createSources(
                         manga,
@@ -124,7 +130,7 @@ open class RecommendsViewModel(
     }
 
     private fun updateItems(items: Map<RecommendationPagingSource, RecommendationItemResult>) {
-        mutableState.update {
+        state.update {
             it.copy(
                 items = items
                     .toSortedMap(sortComparator(items)),

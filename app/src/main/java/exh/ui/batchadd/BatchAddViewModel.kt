@@ -1,6 +1,7 @@
 package exh.ui.batchadd
 
 import android.content.Context
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import exh.GalleryAddEvent
 import exh.GalleryAdder
@@ -10,9 +11,10 @@ import exh.util.trimOrNull
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import mihon.core.viewmodel.StateViewModel
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.i18n.sy.SYMR
@@ -21,14 +23,18 @@ import uy.kohesive.injekt.api.get
 
 class BatchAddViewModel(
     private val exhPreferences: ExhPreferences = Injekt.get(),
-) : StateViewModel<BatchAddState>(BatchAddState()) {
+) : ViewModel() {
+
+    val state: StateFlow<State>
+        field = MutableStateFlow(State())
+
     private val galleryAdder by lazy { GalleryAdder() }
 
     fun addGalleries(context: Context) {
         val galleries = state.value.galleries
         // Check text box has content
         if (galleries.isBlank()) {
-            mutableState.update { it.copy(dialog = Dialog.NoGalleriesSpecified) }
+            state.update { it.copy(dialog = Dialog.NoGalleriesSpecified) }
             return
         }
 
@@ -51,11 +57,11 @@ class BatchAddViewModel(
                 .mapNotNull(String::trimOrNull)
         }
 
-        mutableState.update { state ->
+        state.update { state ->
             state.copy(
                 progress = 0,
                 progressTotal = splitGalleries.size,
-                state = State.PROGRESS,
+                addingState = AddingState.PROGRESS,
             )
         }
 
@@ -82,7 +88,7 @@ class BatchAddViewModel(
                 } else {
                     failed.add(s)
                 }
-                mutableState.update { state ->
+                state.update { state ->
                     state.copy(
                         progress = i + 1,
                         events = state.events.plus(
@@ -97,7 +103,7 @@ class BatchAddViewModel(
 
             // Show report
             val summary = context.stringResource(SYMR.strings.batch_add_summary, succeeded.size, failed.size)
-            mutableState.update { state ->
+            state.update { state ->
                 state.copy(
                     events = state.events + summary,
                 )
@@ -106,26 +112,26 @@ class BatchAddViewModel(
     }
 
     fun finish() {
-        mutableState.update { state ->
+        state.update { state ->
             state.copy(
                 progressTotal = 0,
                 progress = 0,
                 galleries = "",
-                state = State.INPUT,
+                addingState = AddingState.INPUT,
                 events = emptyList(),
             )
         }
     }
 
     fun updateGalleries(galleries: String) {
-        mutableState.update { it.copy(galleries = galleries) }
+        state.update { it.copy(galleries = galleries) }
     }
 
     fun dismissDialog() {
-        mutableState.update { it.copy(dialog = null) }
+        state.update { it.copy(dialog = null) }
     }
 
-    enum class State {
+    enum class AddingState {
         INPUT,
         PROGRESS,
     }
@@ -134,16 +140,16 @@ class BatchAddViewModel(
         object NoGalleriesSpecified : Dialog()
     }
 
+    data class State(
+        val progressTotal: Int = 0,
+        val progress: Int = 0,
+        val galleries: String = "",
+        val addingState: AddingState = AddingState.INPUT,
+        val events: List<String> = emptyList(),
+        val dialog: Dialog? = null,
+    )
+
     companion object {
         val ehVisitedRegex = """[0-9]*?\.[a-z0-9]*?:""".toRegex()
     }
 }
-
-data class BatchAddState(
-    val progressTotal: Int = 0,
-    val progress: Int = 0,
-    val galleries: String = "",
-    val state: BatchAddViewModel.State = BatchAddViewModel.State.INPUT,
-    val events: List<String> = emptyList(),
-    val dialog: BatchAddViewModel.Dialog? = null,
-)

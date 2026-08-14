@@ -1,12 +1,14 @@
 package exh.ui.smartsearch
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import eu.kanade.tachiyomi.ui.browse.source.SourcesScreen
 import kotlinx.coroutines.CancellationException
-import mihon.core.viewmodel.StateViewModel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import mihon.feature.migration.list.search.SmartSourceSearchEngine
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.domain.manga.interactor.NetworkToLocalManga
@@ -20,7 +22,11 @@ class SmartSearchViewModel(
     private val config: SourcesScreen.SmartSearchConfig,
     private val networkToLocalManga: NetworkToLocalManga = Injekt.get(),
     sourceManager: SourceManager = Injekt.get(),
-) : StateViewModel<SmartSearchViewModel.SearchResults?>(null) {
+) : ViewModel() {
+
+    val state: StateFlow<SearchResults?>
+        field = MutableStateFlow(null)
+
     companion object {
         val SOURCE_ID_KEY = CreationExtras.Key<Long>()
         val SMART_SEARCH_CONFIG_KEY = CreationExtras.Key<SourcesScreen.SmartSearchConfig>()
@@ -56,7 +62,7 @@ class SmartSearchViewModel(
                 }
             }
 
-            mutableState.value = result
+            state.value = result
         }
     }
 

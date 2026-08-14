@@ -6,6 +6,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
@@ -33,7 +34,9 @@ import exh.source.ExhPreferences
 import exh.source.getMainSource
 import exh.source.mangaDexSourceIds
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -48,7 +51,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
-import mihon.core.viewmodel.StateViewModel
 import tachiyomi.core.common.preference.CheckboxState
 import tachiyomi.core.common.preference.mapAsCheckboxState
 import tachiyomi.core.common.util.lang.launchIO
@@ -108,7 +110,10 @@ open class BrowseSourceViewModel(
     private val insertSavedSearch: InsertSavedSearch = Injekt.get(),
     private val getExhSavedSearch: GetExhSavedSearch = Injekt.get(),
     // SY <--
-) : StateViewModel<BrowseSourceViewModel.State>(State(Listing.valueOf(listingQuery))) {
+) : ViewModel() {
+
+    val state: StateFlow<BrowseSourceViewModel.State>
+        field = MutableStateFlow<BrowseSourceViewModel.State>(State(Listing.valueOf(listingQuery)))
 
     companion object {
         val SOURCE_ID_KEY = CreationExtras.Key<Long>()
@@ -143,7 +148,7 @@ open class BrowseSourceViewModel(
     // SY <--
 
     init {
-        mutableState.update {
+        state.update {
             var query: String? = null
             var listing = it.listing
 
@@ -183,7 +188,7 @@ open class BrowseSourceViewModel(
         getExhSavedSearch.subscribe(source.id, source::getFilterList)
             .map { it.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER, EXHSavedSearch::name)) }
             .onEach { savedSearches ->
-                mutableState.update { it.copy(savedSearches = savedSearches) }
+                state.update { it.copy(savedSearches = savedSearches) }
             }
             .launchIn(viewModelScope)
         // SY <--
@@ -242,15 +247,15 @@ open class BrowseSourceViewModel(
     // SY <--
 
     fun resetFilters() {
-        mutableState.update { it.copy(filters = source.getFilterList()) }
+        state.update { it.copy(filters = source.getFilterList()) }
     }
 
     fun setListing(listing: Listing) {
-        mutableState.update { it.copy(listing = listing, toolbarQuery = null) }
+        state.update { it.copy(listing = listing, toolbarQuery = null) }
     }
 
     fun setFilters(filters: FilterList) {
-        mutableState.update {
+        state.update {
             it.copy(
                 filters = filters,
             )
@@ -260,13 +265,13 @@ open class BrowseSourceViewModel(
     fun search(query: String? = null, filters: FilterList? = null) {
         // SY -->
         if (filters != null && filters !== state.value.filters) {
-            mutableState.update { state -> state.copy(filters = filters) }
+            state.update { state -> state.copy(filters = filters) }
         }
         // SY <--
         val input = state.value.listing as? Listing.Search
             ?: Listing.Search(query = null, filters = source.getFilterList())
 
-        mutableState.update {
+        state.update {
             it.copy(
                 listing = input.copy(
                     query = query ?: input.query,
@@ -306,7 +311,7 @@ open class BrowseSourceViewModel(
             }
         }
 
-        mutableState.update {
+        state.update {
             val listing = if (genreExists) {
                 Listing.Search(query = null, filters = defaultFilters)
             } else {
@@ -421,11 +426,11 @@ open class BrowseSourceViewModel(
     }
 
     fun setDialog(dialog: Dialog?) {
-        mutableState.update { it.copy(dialog = dialog) }
+        state.update { it.copy(dialog = dialog) }
     }
 
     fun setToolbarQuery(query: String?) {
-        mutableState.update { it.copy(toolbarQuery = query) }
+        state.update { it.copy(toolbarQuery = query) }
     }
 
     sealed class Listing(open val query: String?, open val filters: FilterList) {
@@ -481,7 +486,7 @@ open class BrowseSourceViewModel(
     fun onSaveSearch() {
         viewModelScope.launchIO {
             val names = state.value.savedSearches.map { it.name }
-            mutableState.update { it.copy(dialog = Dialog.CreateSavedSearch(names)) }
+            state.update { it.copy(dialog = Dialog.CreateSavedSearch(names)) }
         }
     }
 
@@ -504,7 +509,7 @@ open class BrowseSourceViewModel(
                 ?.takeUnless { allDefault }
                 ?: source.getFilterList()
 
-            mutableState.update {
+            state.update {
                 it.copy(
                     listing = Listing.Search(
                         query = search.query,
@@ -518,7 +523,7 @@ open class BrowseSourceViewModel(
     }
 
     fun onSavedSearchPress(search: EXHSavedSearch) {
-        mutableState.update { it.copy(dialog = Dialog.DeleteSavedSearch(search.id, search.name)) }
+        state.update { it.copy(dialog = Dialog.DeleteSavedSearch(search.id, search.name)) }
     }
 
     fun saveSearch(
@@ -555,6 +560,10 @@ open class BrowseSourceViewModel(
                 ?: return@launchIO
             onRandomFound(random)
         }
+    }
+
+    protected fun update(block: (State) -> State) {
+        state.update(block)
     }
     // EXH <--
 }

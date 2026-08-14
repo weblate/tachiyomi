@@ -173,7 +173,6 @@ dependencies {
     implementation(projects.i18nSy)
     // SY <--
     implementation(projects.core.common)
-    implementation(projects.core.viewmodel)
     implementation(projects.coreMetadata)
     implementation(projects.sourceApi)
     implementation(projects.sourceLocal)

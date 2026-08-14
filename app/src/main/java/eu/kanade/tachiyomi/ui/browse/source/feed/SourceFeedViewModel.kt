@@ -2,9 +2,9 @@ package eu.kanade.tachiyomi.ui.browse.source.feed
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import androidx.lifecycle.viewmodel.initializer
@@ -24,6 +24,8 @@ import exh.util.nullIfBlank
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -31,7 +33,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import mihon.core.viewmodel.StateViewModel
 import mihon.domain.manga.model.toDomainManga
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchNonCancellable
@@ -53,6 +54,7 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import xyz.nulldev.ts.api.http.serializer.FilterSerializer
 import java.util.concurrent.Executors
+import androidx.compose.runtime.State as ComposeState
 import tachiyomi.domain.manga.model.Manga as DomainManga
 
 open class SourceFeedViewModel(
@@ -68,7 +70,10 @@ open class SourceFeedViewModel(
     private val insertFeedSavedSearch: InsertFeedSavedSearch = Injekt.get(),
     private val deleteFeedSavedSearchById: DeleteFeedSavedSearchById = Injekt.get(),
     private val getExhSavedSearch: GetExhSavedSearch = Injekt.get(),
-) : StateViewModel<SourceFeedState>(SourceFeedState()) {
+) : ViewModel() {
+
+    val state: StateFlow<State>
+        field = MutableStateFlow(State())
 
     companion object {
         val SOURCE_ID_KEY = CreationExtras.Key<Long>()
@@ -97,13 +102,13 @@ open class SourceFeedViewModel(
 
         viewModelScope.launchIO {
             val searches = loadSearches()
-            mutableState.update { it.copy(savedSearches = searches) }
+            state.update { it.copy(savedSearches = searches) }
         }
 
         getFeedSavedSearchBySourceId.subscribe(source.id)
             .onEach {
                 val items = getSourcesToGetFeed(it)
-                mutableState.update { state ->
+                state.update { state ->
                     state.copy(
                         items = items,
                     )
@@ -114,7 +119,7 @@ open class SourceFeedViewModel(
     }
 
     fun setFilters(filters: FilterList) {
-        mutableState.update { it.copy(filters = filters) }
+        state.update { it.copy(filters = filters) }
     }
 
     private suspend fun hasTooManyFeeds(): Boolean {
@@ -184,7 +189,7 @@ open class SourceFeedViewModel(
                         networkToLocalManga(page.map { it.toDomainManga(source.id) })
                     }
 
-                    mutableState.update { state ->
+                    state.update { state ->
                         state.copy(
                             items = state.items.map { item ->
                                 if (item.id == sourceFeed.id) sourceFeed.withResults(titles) else item
@@ -211,7 +216,7 @@ open class SourceFeedViewModel(
     }
 
     @Composable
-    fun getManga(initialManga: DomainManga): State<DomainManga> {
+    fun getManga(initialManga: DomainManga): ComposeState<DomainManga> {
         return produceState(initialValue = initialManga) {
             getManga.subscribe(initialManga.url, initialManga.source)
                 .collectLatest { manga ->
@@ -291,23 +296,23 @@ open class SourceFeedViewModel(
     }
 
     fun search(query: String?) {
-        mutableState.update { it.copy(searchQuery = query) }
+        state.update { it.copy(searchQuery = query) }
     }
 
     fun openFilterSheet() {
-        mutableState.update { it.copy(dialog = Dialog.Filter) }
+        state.update { it.copy(dialog = Dialog.Filter) }
     }
 
     fun openDeleteFeed(feed: FeedSavedSearch) {
-        mutableState.update { it.copy(dialog = Dialog.DeleteFeed(feed)) }
+        state.update { it.copy(dialog = Dialog.DeleteFeed(feed)) }
     }
 
     fun openAddFeed(feedId: Long, name: String) {
-        mutableState.update { it.copy(dialog = Dialog.AddFeed(feedId, name)) }
+        state.update { it.copy(dialog = Dialog.AddFeed(feedId, name)) }
     }
 
     fun dismissDialog() {
-        mutableState.update { it.copy(dialog = null) }
+        state.update { it.copy(dialog = null) }
     }
 
     sealed class Dialog {
@@ -315,16 +320,16 @@ open class SourceFeedViewModel(
         data class DeleteFeed(val feed: FeedSavedSearch) : Dialog()
         data class AddFeed(val feedId: Long, val name: String) : Dialog()
     }
-}
 
-@Immutable
-data class SourceFeedState(
-    val searchQuery: String? = null,
-    val items: List<SourceFeedUI> = emptyList(),
-    val filters: FilterList = FilterList(),
-    val savedSearches: List<EXHSavedSearch> = emptyList(),
-    val dialog: SourceFeedViewModel.Dialog? = null,
-) {
-    val isLoading
-        get() = items.isEmpty()
+    @Immutable
+    data class State(
+        val searchQuery: String? = null,
+        val items: List<SourceFeedUI> = emptyList(),
+        val filters: FilterList = FilterList(),
+        val savedSearches: List<EXHSavedSearch> = emptyList(),
+        val dialog: Dialog? = null,
+    ) {
+        val isLoading
+            get() = items.isEmpty()
+    }
 }

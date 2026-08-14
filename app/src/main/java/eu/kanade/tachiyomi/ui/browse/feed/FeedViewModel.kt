@@ -1,9 +1,9 @@
 package eu.kanade.tachiyomi.ui.browse.feed
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.util.fastAny
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.source.service.SourcePreferences
@@ -15,6 +15,8 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -26,7 +28,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import mihon.core.viewmodel.StateViewModel
 import mihon.domain.manga.model.toDomainManga
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchNonCancellable
@@ -46,6 +47,7 @@ import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import xyz.nulldev.ts.api.http.serializer.FilterSerializer
 import java.util.concurrent.Executors
+import androidx.compose.runtime.State as ComposeState
 import tachiyomi.domain.manga.model.Manga as DomainManga
 
 /**
@@ -63,7 +65,10 @@ open class FeedViewModel(
     private val getSavedSearchBySourceId: GetSavedSearchBySourceId = Injekt.get(),
     private val insertFeedSavedSearch: InsertFeedSavedSearch = Injekt.get(),
     private val deleteFeedSavedSearchById: DeleteFeedSavedSearchById = Injekt.get(),
-) : StateViewModel<FeedScreenState>(FeedScreenState()) {
+) : ViewModel() {
+
+    val state: StateFlow<State>
+        field = MutableStateFlow(State())
 
     private val _events = Channel<Event>(Int.MAX_VALUE)
     val events = _events.receiveAsFlow()
@@ -85,7 +90,7 @@ open class FeedViewModel(
                         results = null,
                     )
                 }
-                mutableState.update { state ->
+                state.update { state ->
                     state.copy(
                         items = items,
                     )
@@ -100,7 +105,7 @@ open class FeedViewModel(
         pushed = false
         viewModelScope.launchIO {
             val newItems = state.value.items?.map { it.copy(results = null) } ?: return@launchIO
-            mutableState.update { state ->
+            state.update { state ->
                 state.copy(
                     items = newItems,
                 )
@@ -115,7 +120,7 @@ open class FeedViewModel(
                 _events.send(Event.TooManyFeeds)
                 return@launchIO
             }
-            mutableState.update { state ->
+            state.update { state ->
                 state.copy(
                     dialog = Dialog.AddFeed(getEnabledSources()),
                 )
@@ -125,7 +130,7 @@ open class FeedViewModel(
 
     fun openAddSearchDialog(source: Source) {
         viewModelScope.launchIO {
-            mutableState.update { state ->
+            state.update { state ->
                 state.copy(
                     dialog = Dialog.AddFeedSearch(
                         source,
@@ -141,7 +146,7 @@ open class FeedViewModel(
 
     fun openDeleteDialog(feed: FeedSavedSearch) {
         viewModelScope.launchIO {
-            mutableState.update { state ->
+            state.update { state ->
                 state.copy(
                     dialog = Dialog.DeleteFeed(feed),
                 )
@@ -253,7 +258,7 @@ open class FeedViewModel(
                         )
                     }
 
-                    mutableState.update { state ->
+                    state.update { state ->
                         state.copy(
                             items = state.items?.map { if (it.feed.id == result.feed.id) result else it },
                         )
@@ -278,7 +283,7 @@ open class FeedViewModel(
     }
 
     @Composable
-    fun getManga(initialManga: DomainManga): State<DomainManga> {
+    fun getManga(initialManga: DomainManga): ComposeState<DomainManga> {
         return produceState(initialValue = initialManga) {
             getManga.subscribe(initialManga.url, initialManga.source)
                 .collectLatest { manga ->
@@ -289,7 +294,7 @@ open class FeedViewModel(
     }
 
     fun dismissDialog() {
-        mutableState.update { it.copy(dialog = null) }
+        state.update { it.copy(dialog = null) }
     }
 
     sealed class Dialog {
@@ -302,18 +307,18 @@ open class FeedViewModel(
         data object FailedFetchingSources : Event()
         data object TooManyFeeds : Event()
     }
-}
 
-data class FeedScreenState(
-    val dialog: FeedViewModel.Dialog? = null,
-    val items: List<FeedItemUI>? = null,
-) {
-    val isLoading
-        get() = items == null
+    data class State(
+        val dialog: Dialog? = null,
+        val items: List<FeedItemUI>? = null,
+    ) {
+        val isLoading
+            get() = items == null
 
-    val isEmpty
-        get() = items.isNullOrEmpty()
+        val isEmpty
+            get() = items.isNullOrEmpty()
 
-    val isLoadingItems
-        get() = items?.fastAny { it.results == null } != false
+        val isLoadingItems
+            get() = items?.fastAny { it.results == null } != false
+    }
 }
