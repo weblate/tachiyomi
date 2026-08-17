@@ -137,8 +137,8 @@ class MangaUpdates(context: Context, id: Long) : BaseTracker(context, id, "Manga
                 it.title?.htmlDecode(),
                 it.image?.url?.original,
                 it.description?.htmlDecode(),
-                it.authors?.filter { it.type == "Author" }?.joinToString(separator = ", ") { it.name ?: "" },
-                it.authors?.filter { it.type == "Artist" }?.joinToString(separator = ", ") { it.name ?: "" },
+                authors = it.authors.filter { it.type == "Author" }.ifEmpty { null }?.joinToString { it.name },
+                artists = it.authors.filter { it.type == "Artist" }.ifEmpty { null }?.joinToString { it.name },
             )
         }
     }
