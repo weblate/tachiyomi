@@ -1,5 +1,6 @@
 package exh.recs
 
+import androidx.lifecycle.viewModelScope
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
@@ -24,11 +25,15 @@ import exh.recs.sources.RecommendationPagingSource
 import exh.recs.sources.StaticResultPagingSource
 import exh.source.ExhPreferences
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
+import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.chapter.interactor.SetMangaDefaultChapterFlags
@@ -105,24 +110,13 @@ class BrowseRecommendsViewModel(
         fun create(args: BrowseRecommendsScreen.Args): BrowseRecommendsViewModel
     }
 
-    val recommendationSource: RecommendationPagingSource
-        get() = when (args) {
-            is BrowseRecommendsScreen.Args.MergedSourceMangas -> StaticResultPagingSource(args.results, networkToLocalManga)
-            is BrowseRecommendsScreen.Args.SingleSourceManga -> RecommendationPagingSource.createSources(
-                runBlocking { getManga.await(args.mangaId)!! },
-                source,
-                networkToLocalManga,
-                getTracks,
-                trackerManager,
-                networkHelper.client,
-                json,
-                delegateSourcePreferences,
-            ).first {
-                it::class.qualifiedName == args.recommendationSourceName
-            }
-        }
+    val recommendationState: StateFlow<RecommendationPagingSource?>
+        field = MutableStateFlow(null)
 
-    override fun createSourcePagingSource(query: String, filters: FilterList) = recommendationSource
+    override fun createSourcePagingSource(query: String, filters: FilterList): RecommendationPagingSource {
+        val value = runBlocking { recommendationState.first { it != null }!! }
+        return value
+    }
 
     override fun Flow<Manga>.combineMetadata(metadata: RaisedSearchMetadata?): Flow<Pair<Manga, RaisedSearchMetadata?>> {
         // Overridden to prevent our custom metadata from being replaced from a cache
@@ -131,5 +125,23 @@ class BrowseRecommendsViewModel(
 
     init {
         update { it.copy(filterable = false) }
+
+        viewModelScope.launchIO {
+            recommendationState.value = when (args) {
+                is BrowseRecommendsScreen.Args.MergedSourceMangas -> StaticResultPagingSource(args.results, networkToLocalManga)
+                is BrowseRecommendsScreen.Args.SingleSourceManga -> RecommendationPagingSource.createSources(
+                    getManga.await(args.mangaId)!!,
+                    sourceManager.getOrStub(args.sourceId),
+                    networkToLocalManga,
+                    getTracks,
+                    trackerManager,
+                    networkHelper.client,
+                    json,
+                    delegateSourcePreferences,
+                ).first {
+                    it::class.qualifiedName == args.recommendationSourceName
+                }
+            }
+        }
     }
 }

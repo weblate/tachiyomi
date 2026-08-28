@@ -85,10 +85,6 @@ open class SourceFeedViewModel(
         fun create(sourceId: Long): SourceFeedViewModel
     }
 
-    val source = sourceManager.getOrStub(sourceId)
-
-    val sourceIsMangaDex = sourceId in mangaDexSourceIds
-
     private val coroutineDispatcher = Executors.newFixedThreadPool(5).asCoroutineDispatcher()
 
     val startExpanded by uiPreferences.expandFilters.asState(viewModelScope)
@@ -96,24 +92,38 @@ open class SourceFeedViewModel(
     init {
         addCloseable(coroutineDispatcher)
 
-        setFilters(source.getFilterList())
-
         viewModelScope.launchIO {
-            val searches = loadSearches()
-            state.update { it.copy(savedSearches = searches) }
+            val source = sourceManager.getOrStub(sourceId)
+
+            setFilters(source.getFilterList())
+
+            val searches = loadSearches(source)
+            state.update {
+                it.copy(
+                    source = source,
+                    savedSearches = searches
+                )
+            }
+
+            getFeedSavedSearchBySourceId.subscribe(sourceId)
+                .onEach {
+                    val items = getSourcesToGetFeed(source, it)
+                    state.update { state ->
+                        state.copy(
+                            items = items,
+                        )
+                    }
+                    getFeed(source, items)
+                }
+                .launchIn(viewModelScope)
         }
 
-        getFeedSavedSearchBySourceId.subscribe(source.id)
-            .onEach {
-                val items = getSourcesToGetFeed(it)
-                state.update { state ->
-                    state.copy(
-                        items = items,
-                    )
-                }
-                getFeed(items)
-            }
-            .launchIn(viewModelScope)
+
+        viewModelScope.launchIO {
+
+        }
+
+
     }
 
     fun setFilters(filters: FilterList) {
@@ -121,7 +131,7 @@ open class SourceFeedViewModel(
     }
 
     private suspend fun hasTooManyFeeds(): Boolean {
-        return countFeedSavedSearchBySourceId.await(source.id) > 10
+        return countFeedSavedSearchBySourceId.await(sourceId) > 10
     }
 
     fun createFeed(savedSearchId: Long) {
@@ -129,7 +139,7 @@ open class SourceFeedViewModel(
             insertFeedSavedSearch.await(
                 FeedSavedSearch(
                     id = -1,
-                    source = source.id,
+                    source = sourceId,
                     savedSearch = savedSearchId,
                     global = false,
                 ),
@@ -143,7 +153,7 @@ open class SourceFeedViewModel(
         }
     }
 
-    private suspend fun getSourcesToGetFeed(feedSavedSearch: List<FeedSavedSearch>): List<SourceFeedUI> {
+    private suspend fun getSourcesToGetFeed(source: Source, feedSavedSearch: List<FeedSavedSearch>): List<SourceFeedUI> {
         val savedSearches = getSavedSearchBySourceIdFeed.await(source.id)
             .associateBy { it.id }
 
@@ -163,7 +173,7 @@ open class SourceFeedViewModel(
     /**
      * Initiates get manga per feed.
      */
-    private fun getFeed(feedSavedSearch: List<SourceFeedUI>) {
+    private fun getFeed(source: Source, feedSavedSearch: List<SourceFeedUI>) {
         viewModelScope.launch {
             feedSavedSearch.map { sourceFeed ->
                 async {
@@ -223,11 +233,12 @@ open class SourceFeedViewModel(
                 }
         }
     }
-    private suspend fun loadSearches() =
-        getExhSavedSearch.await(source.id, source::getFilterList)
+    private suspend fun loadSearches(source: Source) =
+        getExhSavedSearch.await(sourceId, source::getFilterList)
             .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER, EXHSavedSearch::name))
 
     fun onFilter(onBrowseClick: (query: String?, filters: String?) -> Unit) {
+        val source = state.value.source ?: return
         viewModelScope.launchIO {
             val allDefault = state.value.filters == source.getFilterList()
             dismissDialog()
@@ -251,6 +262,7 @@ open class SourceFeedViewModel(
         onToast: (StringResource) -> Unit,
     ) {
         viewModelScope.launchIO {
+            val source = state.value.source ?: return@launchIO
             if (search.filterList == null && state.value.filters.isNotEmpty()) {
                 withUIContext {
                     onToast(SYMR.strings.save_search_invalid)
@@ -287,6 +299,7 @@ open class SourceFeedViewModel(
 
     fun onMangaDexRandom(onRandomFound: (String) -> Unit) {
         viewModelScope.launchIO {
+            val source = state.value.source ?: return@launchIO
             val random = source.getMainSource<MangaDex>()?.fetchRandomMangaUrl()
                 ?: return@launchIO
             onRandomFound(random)
@@ -321,6 +334,7 @@ open class SourceFeedViewModel(
 
     @Immutable
     data class State(
+        val source: Source? = null,
         val searchQuery: String? = null,
         val items: List<SourceFeedUI> = emptyList(),
         val filters: FilterList = FilterList(),
@@ -329,5 +343,8 @@ open class SourceFeedViewModel(
     ) {
         val isLoading
             get() = items.isEmpty()
+
+        val sourceIsMangaDex
+            get() = source != null && source.id in mangaDexSourceIds
     }
 }

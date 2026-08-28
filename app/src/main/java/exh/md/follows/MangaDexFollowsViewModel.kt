@@ -91,7 +91,7 @@ class MangaDexFollowsViewModel(
     }
 
     override fun createSourcePagingSource(query: String, filters: FilterList): BaseSourcePagingSource {
-        return MangaDexFollowsPagingSource(source.getMainSource() as MangaDex, networkToLocalManga)
+        return MangaDexFollowsPagingSource({ state.value.source?.getMainSource() as MangaDex }, networkToLocalManga)
     }
 
     override fun Flow<Manga>.combineMetadata(metadata: RaisedSearchMetadata?): Flow<Pair<Manga, RaisedSearchMetadata?>> {

@@ -19,7 +19,6 @@ import eu.kanade.tachiyomi.ui.browse.source.browse.SourceFilterDialog
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
 import eu.kanade.tachiyomi.util.system.toast
 import exh.md.follows.MangaDexFollowsScreen
-import exh.ui.ifSourcesLoaded
 import exh.util.nullIfBlank
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.interactor.GetRemoteManga
@@ -30,11 +29,6 @@ class SourceFeedScreen(val sourceId: Long) : Screen() {
 
     @Composable
     override fun Content() {
-        if (!ifSourcesLoaded()) {
-            LoadingScreen()
-            return
-        }
-
         val viewModel = assistedMetroViewModel<SourceFeedViewModel, SourceFeedViewModel.Factory> {
             create(sourceId = sourceId)
         }
@@ -42,18 +36,23 @@ class SourceFeedScreen(val sourceId: Long) : Screen() {
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
 
+        if (state.source == null) {
+            LoadingScreen()
+            return
+        }
+
         SourceFeedScreen(
-            name = viewModel.source.name,
+            name = state.source?.name ?: return,
             isLoading = state.isLoading,
             items = state.items,
             hasFilters = state.filters.isNotEmpty(),
             onFabClick = viewModel::openFilterSheet,
-            onClickBrowse = { onBrowseClick(navigator, viewModel.source) },
-            onClickLatest = { onLatestClick(navigator, viewModel.source) },
-            onClickSavedSearch = { onSavedSearchClick(navigator, viewModel.source, it) },
+            onClickBrowse = { onBrowseClick(navigator, state.source ?: return@SourceFeedScreen) },
+            onClickLatest = { onLatestClick(navigator, state.source ?: return@SourceFeedScreen) },
+            onClickSavedSearch = { onSavedSearchClick(navigator, state.source ?: return@SourceFeedScreen, it) },
             onClickDelete = viewModel::openDeleteFeed,
             onClickManga = { onMangaClick(navigator, it) },
-            onClickSearch = { onSearchClick(navigator, viewModel.source, it) },
+            onClickSearch = { onSearchClick(navigator, state.source ?: return@SourceFeedScreen, it) },
             searchQuery = state.searchQuery,
             onSearchQueryChange = viewModel::search,
             getMangaState = { viewModel.getManga(initialManga = it) },
@@ -120,7 +119,7 @@ class SourceFeedScreen(val sourceId: Long) : Screen() {
                             context.toast(it)
                         }
                     },
-                    openMangaDexRandom = if (viewModel.sourceIsMangaDex) {
+                    openMangaDexRandom = if (state.sourceIsMangaDex) {
                         {
                             viewModel.onMangaDexRandom {
                                 navigator.replace(
@@ -134,7 +133,7 @@ class SourceFeedScreen(val sourceId: Long) : Screen() {
                     } else {
                         null
                     },
-                    openMangaDexFollows = if (viewModel.sourceIsMangaDex) {
+                    openMangaDexFollows = if (state.sourceIsMangaDex) {
                         {
                             navigator.replace(MangaDexFollowsScreen(sourceId))
                         }

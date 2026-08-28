@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -38,11 +39,13 @@ import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.system.workManager
 import exh.md.utils.MdConstants
 import exh.md.utils.MdUtil
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import mihon.app.di.appGraph
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Group
 import tachiyomi.core.common.util.lang.launchIO
+import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.i18n.MR
@@ -53,6 +56,7 @@ import tachiyomi.presentation.core.util.collectAsState
 import tachiyomi.presentation.core.util.secondaryItemAlpha
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import kotlin.toString
 
 object SettingsMangadexScreen : SearchableSettings {
 
@@ -60,14 +64,18 @@ object SettingsMangadexScreen : SearchableSettings {
     @Composable
     override fun getTitleRes() = SYMR.strings.pref_category_mangadex
 
-    override fun isEnabled(): Boolean = MdUtil.getEnabledMangaDexs(Injekt.get()).isNotEmpty()
+    override fun isEnabled(): Boolean = runBlocking {
+        MdUtil.getEnabledMangaDexs(Injekt.get()).isNotEmpty()
+    }
 
     @Composable
     override fun getPreferences(): List<Preference> {
         val context = LocalContext.current
         val sourcePreferences: SourcePreferences = remember { context.appGraph.sourcePreferences }
         val trackPreferences: TrackPreferences = remember { context.appGraph.trackPreferences }
-        val mdex = remember { MdUtil.getEnabledMangaDex(sourcePreferences) } ?: return emptyList()
+        val mdex = produceState<MangaDex?>(null) {
+            value = withIOContext { MdUtil.getEnabledMangaDex(sourcePreferences) }
+        }.value ?: return emptyList()
 
         return listOf(
             loginPreference(mdex, trackPreferences),
@@ -180,8 +188,12 @@ object SettingsMangadexScreen : SearchableSettings {
             preference = sourcePreferences.preferredMangaDexId,
             title = stringResource(SYMR.strings.mangadex_preffered_source),
             subtitle = stringResource(SYMR.strings.mangadex_preffered_source_summary),
-            entries = MdUtil.getEnabledMangaDexs(sourcePreferences)
-                .associate { it.id.toString() to it.toString() },
+            entries = produceState(emptyMap<String, String>())  {
+                this.value = withIOContext {
+                    MdUtil.getEnabledMangaDexs(sourcePreferences)
+                        .associate { it.id.toString() to it.toString() }
+                }
+            }.value,
         )
     }
 

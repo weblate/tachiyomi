@@ -62,10 +62,6 @@ class FavoritesSyncHelper(
     private val galleryAdder: GalleryAdder,
     private val storage: LocalFavoritesStorage,
 ) {
-    private val exh by lazy {
-        sourceManager.get(EXH_SOURCE_ID) as? EHentai
-            ?: EHentai(0, true, context)
-    }
 
     private val throttleManager by lazy { ThrottleManager() }
 
@@ -88,6 +84,9 @@ class FavoritesSyncHelper(
     }
 
     private suspend fun beginSync() {
+        val exh = sourceManager.get(EXH_SOURCE_ID) as? EHentai
+            ?: EHentai(0, true, context)
+
         // Check if logged in
         if (!exhPreferences.enableExhentai.get()) {
             status.value = FavoritesSyncStatus.SyncError.NotLoggedInSyncError
@@ -149,9 +148,9 @@ class FavoritesSyncHelper(
             applyRemoteCategories(favorites.second)
 
             // Apply change sets
-            applyChangeSetToLocal(errorList, remoteChanges)
+            applyChangeSetToLocal(exh, errorList, remoteChanges)
             if (localChanges != null) {
-                applyChangeSetToRemote(errorList, localChanges)
+                applyChangeSetToRemote(exh, errorList, localChanges)
             }
 
             status.value = FavoritesSyncStatus.Processing.CleaningUp
@@ -218,7 +217,7 @@ class FavoritesSyncHelper(
         }
     }
 
-    private suspend fun addGalleryRemote(errorList: MutableList<FavoritesSyncStatus.SyncError.GallerySyncError>, gallery: FavoriteEntry) {
+    private suspend fun addGalleryRemote(exh: EHentai, errorList: MutableList<FavoritesSyncStatus.SyncError.GallerySyncError>, gallery: FavoriteEntry) {
         val url = "${exh.baseUrl}/gallerypopups.php?gid=${gallery.gid}&t=${gallery.token}&act=addfav"
 
         val request = POST(
@@ -231,7 +230,7 @@ class FavoritesSyncHelper(
                 .build(),
         )
 
-        if (!explicitlyRetryExhRequest(10, request)) {
+        if (!explicitlyRetryExhRequest(exh, 10, request)) {
             val error = FavoritesSyncStatus.SyncError.GallerySyncError.UnableToAddGalleryToRemote(
                 gallery.title,
                 gallery.gid,
@@ -246,7 +245,7 @@ class FavoritesSyncHelper(
         }
     }
 
-    private suspend fun explicitlyRetryExhRequest(retryCount: Int, request: Request): Boolean {
+    private suspend fun explicitlyRetryExhRequest(exh: EHentai, retryCount: Int, request: Request): Boolean {
         var success = false
 
         for (i in 1..retryCount) {
@@ -266,6 +265,7 @@ class FavoritesSyncHelper(
     }
 
     private suspend fun applyChangeSetToRemote(
+        exh: EHentai,
         errorList: MutableList<FavoritesSyncStatus.SyncError.GallerySyncError>,
         changeSet: ChangeSet,
     ) {
@@ -287,7 +287,7 @@ class FavoritesSyncHelper(
                 body = formBody.build(),
             )
 
-            if (!explicitlyRetryExhRequest(10, request)) {
+            if (!explicitlyRetryExhRequest(exh, 10, request)) {
                 if (exhPreferences.exhLenientSync.get()) {
                     errorList += FavoritesSyncStatus.SyncError.GallerySyncError.UnableToDeleteFromRemote
                 } else {
@@ -309,11 +309,12 @@ class FavoritesSyncHelper(
 
             throttleManager.throttle()
 
-            addGalleryRemote(errorList, it)
+            addGalleryRemote(exh, errorList, it)
         }
     }
 
     private suspend fun applyChangeSetToLocal(
+        exh: EHentai,
         errorList: MutableList<FavoritesSyncStatus.SyncError.GallerySyncError>,
         changeSet: ChangeSet,
     ) {

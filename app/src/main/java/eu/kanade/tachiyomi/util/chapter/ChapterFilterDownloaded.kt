@@ -20,7 +20,7 @@ fun List<Chapter>.filterDownloaded(
     // SY -->
     return filter {
         val chapterManga = mangaMap?.get(it.mangaId) ?: manga
-        downloadCache.isChapterDownloaded(it.name, it.scanlator, it.url, chapterManga.ogTitle, chapterManga.source, false)
+        downloadCache.isChapterDownloaded(it.name, it.scanlator, it.url, chapterManga.ogTitle, chapterManga.source)
     }
     // SY <--
 }

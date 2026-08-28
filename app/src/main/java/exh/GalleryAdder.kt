@@ -44,7 +44,7 @@ class GalleryAdder(
         xLogStack()
     }
 
-    fun pickSource(url: String): List<UrlImportableSource> {
+    suspend fun pickSource(url: String): List<UrlImportableSource> {
         val uri = url.toUri()
         return sourceManager.getVisibleSources()
             .mapNotNull { it.getMainSource<UrlImportableSource>() }

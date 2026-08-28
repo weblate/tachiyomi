@@ -10,14 +10,16 @@ import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.manga.model.Manga
 
 abstract class EHentaiPagingSource(
-    override val source: Source,
+    override val source: suspend () -> Source,
     networkToLocalManga: NetworkToLocalManga,
 ) : BaseSourcePagingSource(source, networkToLocalManga) {
 
     override suspend fun getPageLoadResult(
+        source: Source?,
         params: LoadParams<Long>,
-        mangasPage: MangasPage,
+        mangasPage: MangasPage
     ): LoadResult.Page<Long, Pair<Manga, RaisedSearchMetadata?>> {
+        source!!
         mangasPage as MetadataMangasPage
         val metadata = mangasPage.mangasMetadata
 
@@ -34,26 +36,26 @@ abstract class EHentaiPagingSource(
 }
 
 class EHentaiSearchPagingSource(
-    source: Source,
+    source: suspend () -> Source,
     val query: String,
     val filters: FilterList,
     networkToLocalManga: NetworkToLocalManga,
 ) : EHentaiPagingSource(source, networkToLocalManga) {
-    override suspend fun requestNextPage(currentPage: Int): MangasPage {
-        return source.getSearchManga(currentPage, query, filters)
+    override suspend fun requestNextPage(source: Source?, currentPage: Int): MangasPage {
+        return source!!.getSearchManga(currentPage, query, filters)
     }
 }
 
-class EHentaiPopularPagingSource(source: Source, networkToLocalManga: NetworkToLocalManga) :
+class EHentaiPopularPagingSource(source: suspend () -> Source, networkToLocalManga: NetworkToLocalManga) :
     EHentaiPagingSource(source, networkToLocalManga) {
-    override suspend fun requestNextPage(currentPage: Int): MangasPage {
-        return source.getPopularManga(currentPage)
+    override suspend fun requestNextPage(source: Source?, currentPage: Int): MangasPage {
+        return source!!.getPopularManga(currentPage)
     }
 }
 
-class EHentaiLatestPagingSource(source: Source, networkToLocalManga: NetworkToLocalManga) :
+class EHentaiLatestPagingSource(source: suspend () -> Source, networkToLocalManga: NetworkToLocalManga) :
     EHentaiPagingSource(source, networkToLocalManga) {
-    override suspend fun requestNextPage(currentPage: Int): MangasPage {
-        return source.getLatestUpdates(currentPage)
+    override suspend fun requestNextPage(source: Source?, currentPage: Int): MangasPage {
+        return source!!.getLatestUpdates(currentPage)
     }
 }

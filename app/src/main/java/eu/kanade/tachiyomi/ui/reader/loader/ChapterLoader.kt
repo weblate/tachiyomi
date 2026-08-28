@@ -94,15 +94,14 @@ class ChapterLoader(
     /**
      * Returns the page loader to use for this [chapter].
      */
-    private fun getPageLoader(chapter: ReaderChapter): PageLoader {
+    private suspend fun getPageLoader(chapter: ReaderChapter): PageLoader {
         val dbChapter = chapter.chapter
-        val isDownloaded = downloadManager.isChapterDownloaded(
+        val isDownloaded = downloadManager.isChapterDownloadedOnDisk(
             dbChapter.name,
             dbChapter.scanlator,
             dbChapter.url,
             /* SY --> */ manga.ogTitle, /* SY <-- */
-            manga.source,
-            skipCache = true,
+            source,
         )
         return when {
             // SY -->
@@ -119,7 +118,6 @@ class ChapterLoader(
                     chapterUrl = chapter.chapter.url,
                     mangaTitle = manga.ogTitle,
                     sourceId = manga.source,
-                    skipCache = true,
                 )
                 when {
                     isMergedMangaDownloaded -> DownloadPageLoader(

@@ -87,7 +87,6 @@ open class FeedViewModel(
         getFeedSavedSearchGlobal.subscribe()
             .distinctUntilChanged()
             .onEach {
-                sourceManager.isInitialized.first { it }
                 val items = getSourcesToGetFeed(it).map { (feed, savedSearch) ->
                     createCatalogueSearchItem(
                         feed = feed,
@@ -126,9 +125,10 @@ open class FeedViewModel(
                 _events.send(Event.TooManyFeeds)
                 return@launchIO
             }
+            val enabledSources = getEnabledSources()
             state.update { state ->
                 state.copy(
-                    dialog = Dialog.AddFeed(getEnabledSources()),
+                    dialog = Dialog.AddFeed(enabledSources),
                 )
             }
         }
@@ -164,7 +164,7 @@ open class FeedViewModel(
         return countFeedSavedSearchGlobal.await() > 10
     }
 
-    fun getEnabledSources(): List<Source> {
+    suspend fun getEnabledSources(): List<Source> {
         val languages = sourcePreferences.enabledLanguages.get()
         val pinnedSources = sourcePreferences.pinnedSources.get()
         val disabledSources = sourcePreferences.disabledSources.get()

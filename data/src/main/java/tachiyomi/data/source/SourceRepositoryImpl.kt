@@ -7,6 +7,8 @@ import dev.zacsweers.metro.SingleIn
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.source.online.HttpSource
+import exh.source.EH_SOURCE_ID
+import exh.source.EXH_SOURCE_ID
 import exh.source.MERGED_SOURCE_ID
 import exh.source.isEhBasedSource
 import kotlinx.coroutines.flow.Flow
@@ -90,33 +92,30 @@ class SourceRepositoryImpl(
         query: String,
         filterList: FilterList,
     ): SourcePagingSource {
-        val source = sourceManager.getOrStub(sourceId)
         // SY -->
-        if (source.isEhBasedSource()) {
-            return EHentaiSearchPagingSource(source, query, filterList, networkToLocalManga)
+        if (sourceId == EH_SOURCE_ID || sourceId == EXH_SOURCE_ID) {
+            return EHentaiSearchPagingSource({ sourceManager.getOrStub(sourceId) }, query, filterList, networkToLocalManga)
         }
         // SY <--
-        return SourceSearchPagingSource(source, query, filterList, networkToLocalManga)
+        return SourceSearchPagingSource({ sourceManager.getOrStub(sourceId) }, query, filterList, networkToLocalManga)
     }
 
     override fun getPopular(sourceId: Long): SourcePagingSource {
-        val source = sourceManager.getOrStub(sourceId)
         // SY -->
-        if (source.isEhBasedSource()) {
-            return EHentaiPopularPagingSource(source, networkToLocalManga)
+        if (sourceId == EH_SOURCE_ID || sourceId == EXH_SOURCE_ID) {
+            return EHentaiPopularPagingSource({ sourceManager.getOrStub(sourceId) }, networkToLocalManga)
         }
         // SY <--
-        return SourcePopularPagingSource(source, networkToLocalManga)
+        return SourcePopularPagingSource({ sourceManager.getOrStub(sourceId) }, networkToLocalManga)
     }
 
     override fun getLatest(sourceId: Long): SourcePagingSource {
-        val source = sourceManager.getOrStub(sourceId)
         // SY -->
-        if (source.isEhBasedSource()) {
-            return EHentaiLatestPagingSource(source, networkToLocalManga)
+        if (sourceId == EH_SOURCE_ID || sourceId == EXH_SOURCE_ID) {
+            return EHentaiLatestPagingSource({ sourceManager.getOrStub(sourceId) }, networkToLocalManga)
         }
         // SY <--
-        return SourceLatestPagingSource(source, networkToLocalManga)
+        return SourceLatestPagingSource({ sourceManager.getOrStub(sourceId) }, networkToLocalManga)
     }
 
     private fun mapSourceToDomainSource(source: Source): DomainSource = DomainSource(

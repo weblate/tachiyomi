@@ -97,7 +97,6 @@ import eu.kanade.tachiyomi.util.system.toShareIntent
 import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.view.setComposeContent
 import exh.source.isEhBasedSource
-import exh.ui.ifSourcesLoaded
 import exh.util.defaultReaderType
 import exh.util.mangaType
 import kotlinx.coroutines.delay
@@ -111,6 +110,7 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import logcat.LogPriority
 import mihon.app.di.AppGraph
 import mihon.app.di.appGraph
@@ -120,6 +120,7 @@ import tachiyomi.core.common.i18n.pluralStringResource
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchNonCancellable
+import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.i18n.MR
@@ -569,11 +570,7 @@ class ReaderActivity : BaseActivity() {
 
     @Composable
     fun AppBars(state: ReaderViewModel.State) {
-        if (!ifSourcesLoaded()) {
-            return
-        }
-
-        val isHttpSource = viewModel.getSource() is HttpSource
+        val isHttpSource = state.source is HttpSource
 
         val cropBorderPaged by readerPreferences.cropBorders.collectAsState()
         val cropBorderWebtoon by readerPreferences.cropBordersWebtoon.collectAsState()
@@ -731,43 +728,48 @@ class ReaderActivity : BaseActivity() {
     private fun exhRetryAll() {
         var retried = 0
 
-        viewModel.state.value.viewerChapters
-            ?.currChapter
-            ?.pages
-            ?.forEachIndexed { _, page ->
-                var shouldQueuePage = false
-                if (page.status is Page.State.Error) {
-                    shouldQueuePage = true
-                } /*else if (page.status == Page.LOAD_PAGE ||
+        lifecycleScope.launchIO {
+            viewModel.state.value.viewerChapters
+                ?.currChapter
+                ?.pages
+                ?.forEachIndexed { _, page ->
+                    var shouldQueuePage = false
+                    if (page.status is Page.State.Error) {
+                        shouldQueuePage = true
+                    } /*else if (page.status == Page.LOAD_PAGE ||
                                     page.status == Page.DOWNLOAD_IMAGE) {
                                 // Do nothing
                             }*/
 
-                if (shouldQueuePage) {
-                    page.status = Page.State.Queue
-                } else {
-                    return@forEachIndexed
-                }
-
-                // If we are using EHentai/ExHentai, get a new image URL
-                viewModel.manga?.let { m ->
-                    val src = sourceManager.get(m.source)
-                    if (src?.isEhBasedSource() == true) {
-                        page.imageUrl = null
+                    if (shouldQueuePage) {
+                        page.status = Page.State.Queue
+                    } else {
+                        return@forEachIndexed
                     }
+
+                    // If we are using EHentai/ExHentai, get a new image URL
+                    viewModel.manga?.let { m ->
+                        val src = sourceManager.get(m.source)
+                        if (src?.isEhBasedSource() == true) {
+                            page.imageUrl = null
+                        }
+                    }
+
+                    val loader = page.chapter.pageLoader
+                    if (page.index == exhCurrentpage()?.index && loader is HttpPageLoader) {
+                        loader.boostPage(page)
+                    } else {
+                        loader?.retryPage(page)
+                    }
+
+                    retried++
                 }
 
-                val loader = page.chapter.pageLoader
-                if (page.index == exhCurrentpage()?.index && loader is HttpPageLoader) {
-                    loader.boostPage(page)
-                } else {
-                    loader?.retryPage(page)
-                }
 
-                retried++
+            withUIContext {
+                toast(pluralStringResource(SYMR.plurals.eh_retry_toast, retried, retried))
             }
-
-        toast(pluralStringResource(SYMR.plurals.eh_retry_toast, retried, retried))
+        }
     }
 
     private fun exhBoostPage() {
@@ -889,7 +891,7 @@ class ReaderActivity : BaseActivity() {
 
         val manga = viewModel.state.value.manga
         val defaultReaderType = manga?.defaultReaderType(
-            manga.mangaType(sourceName = sourceManager.get(manga.source)?.name),
+            manga.mangaType(sourceName = runBlocking { sourceManager.get(manga.source)?.name }),
         )
         if (
             readerPreferences.useAutoWebtoon.get() &&

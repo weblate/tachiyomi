@@ -45,10 +45,10 @@ import androidx.compose.ui.unit.dp
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.presentation.components.AdaptiveSheet
 import eu.kanade.presentation.manga.components.MangaCover
+import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.ui.manga.MergedMangaData
 import eu.kanade.tachiyomi.util.system.toast
 import exh.source.MERGED_SOURCE_ID
-import mihon.app.di.appGraph
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Download
 import mihon.icons.materialsymbols.rounded.DragHandle
@@ -62,6 +62,7 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MergedMangaReference
+import tachiyomi.domain.source.model.StubSource
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 import tachiyomi.presentation.core.i18n.stringResource
@@ -74,7 +75,6 @@ fun EditMergedSettingsDialog(
     onPositiveClick: (List<MergedMangaReference>) -> Unit,
 ) {
     val context = LocalContext.current
-    val sourceManager = remember { context.appGraph.sourceManager }
     val references = mergedData.references
 
     LaunchedEffect(Unit) {
@@ -100,7 +100,16 @@ fun EditMergedSettingsDialog(
                     sorted
                 }
             }
-            .map { reference -> MergedEntry(mangas.firstOrNull { it.id == reference.mangaId }, reference) }
+            .map { reference ->
+                val manga = mangas.firstOrNull { it.id == reference.mangaId }
+                MergedEntry(
+                    manga,
+                    reference,
+                    mergedData.sources
+                        .firstOrNull { it.id == manga?.source }
+                        ?: StubSource(manga?.source ?: -1, lang = "", name = "")
+                )
+            }
             .toMutableStateList()
     }
     var pendingConfirm by remember { mutableStateOf<PendingConfirm?>(null) }
@@ -139,7 +148,7 @@ fun EditMergedSettingsDialog(
                         sortMode = sortMode,
                         onSortModeChange = { mode -> mergeReference = mergeReference?.copy(chapterSortMode = mode) },
                         infoOptions = entries.map {
-                            InfoOption(it.manga, sourceManager.getOrStub(it.reference.mangaSourceId).toString())
+                            InfoOption(it.manga, it.source.toString())
                         },
                         infoIndex = entries.indexOfFirst { it.reference.isInfoManga }.coerceAtLeast(0),
                         onInfoIndexChange = { selected ->
@@ -155,7 +164,6 @@ fun EditMergedSettingsDialog(
                     ReorderableItem(reorderableState, key = entry.reference.id) {
                         MergedEntryItem(
                             entry = entry,
-                            sourceName = sourceManager.getOrStub(entry.reference.mangaSourceId).toString(),
                             canReorder = isPriorityOrder,
                             onDeleteClick = { pendingConfirm = PendingConfirm.Delete(entry.reference) },
                             onToggleDownloadsClick = { pendingConfirm = PendingConfirm.Downloads(entry.reference.id) },
@@ -373,7 +381,6 @@ private fun EntryTitle(
 @Composable
 private fun ReorderableCollectionItemScope.MergedEntryItem(
     entry: MergedEntry,
-    sourceName: String,
     canReorder: Boolean,
     onDeleteClick: () -> Unit,
     onToggleDownloadsClick: () -> Unit,
@@ -403,7 +410,7 @@ private fun ReorderableCollectionItemScope.MergedEntryItem(
             )
             EntryTitle(
                 title = entry.manga?.title.orEmpty(),
-                sourceName = sourceName,
+                sourceName = entry.source.toString(),
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 12.dp),
@@ -492,7 +499,7 @@ private fun ConfirmDialog(
     )
 }
 
-private data class MergedEntry(val manga: Manga?, val reference: MergedMangaReference)
+private data class MergedEntry(val manga: Manga?, val reference: MergedMangaReference, val source: Source)
 
 private sealed class PendingConfirm(val title: StringResource, val text: StringResource) {
     data class Delete(val reference: MergedMangaReference) :

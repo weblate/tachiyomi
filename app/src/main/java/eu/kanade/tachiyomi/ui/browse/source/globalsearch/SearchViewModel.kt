@@ -16,7 +16,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -88,7 +87,7 @@ abstract class SearchViewModel(
         }
     }
 
-    open fun getEnabledSources(): List<Source> {
+    open suspend fun getEnabledSources(): List<Source> {
         return sourceManager.getVisibleSources()
             .filter { it.lang in enabledLanguages && "${it.id}" !in disabledSources }
             .sortedWith(
@@ -108,7 +107,7 @@ abstract class SearchViewModel(
         }
 
         // SY -->
-        val filteredSourceIds = extensionManager.installedExtensionsFlow.first()
+        val filteredSourceIds = extensionManager.getInstalledExtensions()
             .filter { it.pkgName == filter }
             .flatMap { it.sources }
             .map { it.id }

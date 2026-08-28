@@ -27,7 +27,7 @@ import tachiyomi.i18n.sy.SYMR
  */
 abstract class RecommendationPagingSource(
     protected val manga: Manga,
-    source: Source? = null,
+    source: (suspend () -> Source)? = null,
     networkToLocalManga: NetworkToLocalManga,
 ) : BaseSourcePagingSource(source, networkToLocalManga) {
     // Display name
@@ -100,7 +100,7 @@ abstract class TrackerRecommendationPagingSource(
     abstract suspend fun getRecsBySearch(search: String): List<SManga>
     abstract suspend fun getRecsById(id: String): List<SManga>
 
-    override suspend fun requestNextPage(currentPage: Int): MangasPage {
+    override suspend fun requestNextPage(source: Source?, currentPage: Int): MangasPage {
         val tracks = getTracks.await(manga.id)
 
         val recs = try {

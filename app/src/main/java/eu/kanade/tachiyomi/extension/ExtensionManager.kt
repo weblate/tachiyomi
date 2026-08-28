@@ -23,6 +23,7 @@ import exh.source.BlacklistedSources
 import exh.source.EH_SOURCE_ID
 import exh.source.EXH_SOURCE_ID
 import exh.source.MERGED_SOURCE_ID
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -31,7 +32,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
@@ -63,12 +63,12 @@ class ExtensionManager(
 
     val scope = CoroutineScope(SupervisorJob())
 
-    private val isInitialized = MutableStateFlow(false)
+    private val initialized = CompletableDeferred<Unit>()
 
     private val iconMap = mutableMapOf<String, Drawable>()
 
     private val installedExtensionMapFlow = MutableStateFlow(emptyMap<String, Extension.Installed>())
-    val installedExtensionsFlow = installedExtensionMapFlow.mapExtensionsOnceInitialized()
+    val installedExtensionsFlow = installedExtensionMapFlow.mapExtensionsWhenInitialized()
 
     private val availableExtensionMapFlow = MutableStateFlow(emptyMap<String, Extension.Available>())
 
@@ -78,7 +78,7 @@ class ExtensionManager(
     // SY <--
 
     private val untrustedExtensionMapFlow = MutableStateFlow(emptyMap<String, Extension.Untrusted>())
-    val untrustedExtensionsFlow = untrustedExtensionMapFlow.mapExtensionsOnceInitialized()
+    val untrustedExtensionsFlow = untrustedExtensionMapFlow.mapExtensionsWhenInitialized()
 
     init {
         scope.launch(Dispatchers.IO) {
@@ -89,8 +89,13 @@ class ExtensionManager(
 
     private var subLanguagesEnabledOnFirstRun = preferences.enabledLanguages.isSet()
 
-    fun getExtensionPackage(sourceId: Long): String? {
-        return installedExtensionMapFlow.value.values.find { extension ->
+    suspend fun getInstalledExtensions(): List<Extension.Installed> {
+        initialized.await()
+        return installedExtensionMapFlow.value.values.toList()
+    }
+
+    suspend fun getExtensionPackage(sourceId: Long): String? {
+        return getInstalledExtensions().find { extension ->
             extension.sources.any { it.id == sourceId }
         }
             ?.pkgName
@@ -105,7 +110,7 @@ class ExtensionManager(
         }
     }
 
-    fun getAppIconForSource(sourceId: Long): Drawable? {
+    suspend fun getAppIconForSource(sourceId: Long): Drawable? {
         val pkgName = getExtensionPackage(sourceId)
 
         if (pkgName != null) {
@@ -140,20 +145,26 @@ class ExtensionManager(
      * Loads and registers the installed extensions.
      */
     private fun initExtensions() {
-        val extensions = ExtensionLoader.loadExtensions(context)
+        try {
+            val extensions = ExtensionLoader.loadExtensions(context)
 
-        installedExtensionMapFlow.value = extensions
-            .filterIsInstance<LoadResult.Success>()
-            .associate { it.extension.pkgName to it.extension }
+            installedExtensionMapFlow.value = extensions
+                .filterIsInstance<LoadResult.Success>()
+                .associate { it.extension.pkgName to it.extension }
 
-        untrustedExtensionMapFlow.value = extensions
-            .filterIsInstance<LoadResult.Untrusted>()
-            .associate { it.extension.pkgName to it.extension }
-            // SY -->
-            .filterNotBlacklisted()
-        // SY <--
+            untrustedExtensionMapFlow.value = extensions
+                .filterIsInstance<LoadResult.Untrusted>()
+                .associate { it.extension.pkgName to it.extension }
+                // SY -->
+                .filterNotBlacklisted()
+            // SY <--
 
-        isInitialized.value = true
+            initialized.complete(Unit)
+        } catch (e: Throwable) {
+            // Release anything waiting on the extensions before the failure propagates
+            initialized.complete(Unit)
+            throw e
+        }
     }
 
     // EXH -->
@@ -440,10 +451,9 @@ class ExtensionManager(
     }
 
     /**
-     * Extensions are loaded in the background, and [stateIn] would replay the empty list it was
-     * seeded with at construction, so this only starts emitting once that finished.
+     * Extensions are loaded in the background, so this flow only starts emitting once that finished.
      */
-    private fun <T : Extension> StateFlow<Map<String, T>>.mapExtensionsOnceInitialized(): Flow<List<T>> {
-        return onStart { isInitialized.first { it } }.map { it.values.toList() }
+    private fun <T : Extension> StateFlow<Map<String, T>>.mapExtensionsWhenInitialized(): Flow<List<T>> {
+        return onStart { initialized.await() }.map { it.values.toList() }
     }
 }

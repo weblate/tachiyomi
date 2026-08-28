@@ -60,7 +60,6 @@ import exh.pagepreview.PagePreviewScreen
 import exh.recs.RecommendsScreen
 import exh.source.MERGED_SOURCE_ID
 import exh.source.getMainSource
-import exh.ui.ifSourcesLoaded
 import exh.ui.metadata.MetadataViewScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -73,9 +72,11 @@ import mihon.app.di.appGraph
 import mihon.feature.migration.config.MigrationConfigScreen
 import mihon.feature.migration.dialog.MigrateMangaDialog
 import tachiyomi.core.common.i18n.stringResource
+import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchUI
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.lang.withNonCancellableContext
+import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.model.Manga
@@ -97,11 +98,6 @@ class MangaScreen(
 
     @Composable
     override fun Content() {
-        if (!ifSourcesLoaded()) {
-            LoadingScreen()
-            return
-        }
-
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
         val haptic = LocalHapticFeedback.current
@@ -175,11 +171,14 @@ class MangaScreen(
                         viewModel.source,
                     )
                 } else {
-                    openMergedMangaWebview(
-                        context,
-                        navigator,
-                        successState.mergedData,
-                    )
+                    scope.launchIO {
+                        openMergedMangaWebview(
+                            context,
+                            navigator,
+                            successState.mergedData,
+                        )
+                    }
+                    Unit
                 }
             }.takeIf { isHttpSource },
             // SY <--
@@ -488,21 +487,23 @@ class MangaScreen(
         navigator.push(MetadataViewScreen(manga.id, manga.source))
     }
 
-    private fun openMergedMangaWebview(context: Context, navigator: Navigator, mergedMangaData: MergedMangaData) {
+    private suspend fun openMergedMangaWebview(context: Context, navigator: Navigator, mergedMangaData: MergedMangaData) {
         val sourceManager = context.appGraph.sourceManager
         val mergedManga = mergedMangaData.manga.values.filterNot { it.source == MERGED_SOURCE_ID }
         val sources = mergedManga.map { sourceManager.getOrStub(it.source) }
-        MaterialAlertDialogBuilder(context)
-            .setTitle(MR.strings.action_open_in_web_view.getString(context))
-            .setSingleChoiceItems(
-                Array(mergedManga.size) { index -> sources[index].toString() },
-                -1,
-            ) { dialog, index ->
-                dialog.dismiss()
-                openMangaInWebView(navigator, mergedManga[index], sources[index] as? HttpSource)
-            }
-            .setNegativeButton(MR.strings.action_cancel.getString(context), null)
-            .show()
+        withUIContext {
+            MaterialAlertDialogBuilder(context)
+                .setTitle(MR.strings.action_open_in_web_view.getString(context))
+                .setSingleChoiceItems(
+                    Array(mergedManga.size) { index -> sources[index].toString() },
+                    -1,
+                ) { dialog, index ->
+                    dialog.dismiss()
+                    openMangaInWebView(navigator, mergedManga[index], sources[index] as? HttpSource)
+                }
+                .setNegativeButton(MR.strings.action_cancel.getString(context), null)
+                .show()
+        }
     }
 
     private fun openMorePagePreviews(navigator: Navigator, manga: Manga) {

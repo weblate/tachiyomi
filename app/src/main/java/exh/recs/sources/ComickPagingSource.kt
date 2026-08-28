@@ -29,7 +29,7 @@ class ComickPagingSource(
     networkToLocalManga: NetworkToLocalManga,
     private val client: OkHttpClient,
     private val json: Json,
-) : RecommendationPagingSource(manga, comickSource, networkToLocalManga) {
+) : RecommendationPagingSource(manga, { comickSource }, networkToLocalManga) {
 
     override val name: String
         get() = "Comick"
@@ -42,7 +42,7 @@ class ComickPagingSource(
 
     private val thumbnailBaseUrl = "https://meo.comick.pictures/"
 
-    override suspend fun requestNextPage(currentPage: Int): MangasPage {
+    override suspend fun requestNextPage(source: Source?, currentPage: Int): MangasPage {
         val mangasPage = coroutineScope {
             val headers = Headers.Builder().apply {
                 add("Referer", "api.comick.fun/")

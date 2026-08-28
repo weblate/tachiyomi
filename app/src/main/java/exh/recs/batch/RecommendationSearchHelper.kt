@@ -135,7 +135,7 @@ class RecommendationSearchHelper(
                         val recSourceId = source::class.qualifiedName!!
 
                         try {
-                            val page = source.requestNextPage(1)
+                            val page = source.requestNextPage(null, 1)
 
                             // Try to filter out mangas that are already in the library
                             val mangas = page.mangas

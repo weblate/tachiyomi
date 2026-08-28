@@ -548,61 +548,63 @@ class MangaViewModel(
         status: Long?,
     ) {
         val state = successState ?: return
-        var manga = state.manga
-        if (state.manga.isLocal()) {
-            val newTitle = if (title.isNullOrBlank()) manga.url else title.trim()
-            val newAuthor = author?.trimOrNull()
-            val newArtist = artist?.trimOrNull()
-            val newThumbnailUrl = thumbnailUrl?.trimOrNull()
-            val newDesc = description?.trimOrNull()
-            manga = manga.copy(
-                ogTitle = newTitle,
-                ogAuthor = author?.trimOrNull(),
-                ogArtist = artist?.trimOrNull(),
-                ogThumbnailUrl = thumbnailUrl?.trimOrNull(),
-                ogDescription = description?.trimOrNull(),
-                ogGenre = tags?.nullIfEmpty(),
-                ogStatus = status ?: 0,
-                lastUpdate = manga.lastUpdate + 1,
-            )
-            (sourceManager.get(LocalSource.ID) as LocalSource).updateMangaInfo(manga.toSManga())
-            viewModelScope.launchNonCancellable {
-                updateManga.await(
-                    MangaUpdate(
-                        manga.id,
-                        title = newTitle,
-                        author = newAuthor,
-                        artist = newArtist,
-                        thumbnailUrl = newThumbnailUrl,
-                        description = newDesc,
-                        genre = tags,
-                        status = status,
+        viewModelScope.launchIO {
+            var manga = state.manga
+            if (state.manga.isLocal()) {
+                val newTitle = if (title.isNullOrBlank()) manga.url else title.trim()
+                val newAuthor = author?.trimOrNull()
+                val newArtist = artist?.trimOrNull()
+                val newThumbnailUrl = thumbnailUrl?.trimOrNull()
+                val newDesc = description?.trimOrNull()
+                manga = manga.copy(
+                    ogTitle = newTitle,
+                    ogAuthor = author?.trimOrNull(),
+                    ogArtist = artist?.trimOrNull(),
+                    ogThumbnailUrl = thumbnailUrl?.trimOrNull(),
+                    ogDescription = description?.trimOrNull(),
+                    ogGenre = tags?.nullIfEmpty(),
+                    ogStatus = status ?: 0,
+                    lastUpdate = manga.lastUpdate + 1,
+                )
+                (sourceManager.get(LocalSource.ID) as LocalSource).updateMangaInfo(manga.toSManga())
+                viewModelScope.launchNonCancellable {
+                    updateManga.await(
+                        MangaUpdate(
+                            manga.id,
+                            title = newTitle,
+                            author = newAuthor,
+                            artist = newArtist,
+                            thumbnailUrl = newThumbnailUrl,
+                            description = newDesc,
+                            genre = tags,
+                            status = status,
+                        ),
+                    )
+                }
+            } else {
+                val genre = if (!tags.isNullOrEmpty() && tags != state.manga.ogGenre) {
+                    tags
+                } else {
+                    null
+                }
+                setCustomMangaInfo.set(
+                    CustomMangaInfo(
+                        state.manga.id,
+                        title?.trimOrNull(),
+                        author?.trimOrNull(),
+                        artist?.trimOrNull(),
+                        thumbnailUrl?.trimOrNull(),
+                        description?.trimOrNull(),
+                        genre,
+                        status.takeUnless { it == state.manga.ogStatus },
                     ),
                 )
+                manga = manga.copy(lastUpdate = manga.lastUpdate + 1)
             }
-        } else {
-            val genre = if (!tags.isNullOrEmpty() && tags != state.manga.ogGenre) {
-                tags
-            } else {
-                null
-            }
-            setCustomMangaInfo.set(
-                CustomMangaInfo(
-                    state.manga.id,
-                    title?.trimOrNull(),
-                    author?.trimOrNull(),
-                    artist?.trimOrNull(),
-                    thumbnailUrl?.trimOrNull(),
-                    description?.trimOrNull(),
-                    genre,
-                    status.takeUnless { it == state.manga.ogStatus },
-                ),
-            )
-            manga = manga.copy(lastUpdate = manga.lastUpdate + 1)
-        }
 
-        updateSuccessState { successState ->
-            successState.copy(manga = manga)
+            updateSuccessState { successState ->
+                successState.copy(manga = manga)
+            }
         }
     }
 
@@ -897,7 +899,7 @@ class MangaViewModel(
     /**
      * Deletes all the downloads for the manga.
      */
-    private fun deleteDownloads() {
+    private suspend fun deleteDownloads() {
         val state = successState ?: return
         // SY -->
         if (state.source is MergedSource) {
@@ -1320,7 +1322,7 @@ class MangaViewModel(
      * Downloads the given list of chapters with the manager.
      * @param chapters the list of chapters to download.
      */
-    private fun downloadChapters(chapters: List<Chapter>) {
+    private suspend fun downloadChapters(chapters: List<Chapter>) {
         val state = successState ?: return
         if (state.source is MergedSource) {
             chapters.groupBy { it.mangaId }.forEach { map ->

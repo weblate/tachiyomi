@@ -28,6 +28,7 @@ import eu.kanade.tachiyomi.util.system.toast
 import tachiyomi.i18n.sy.SYMR
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
+import tachiyomi.presentation.core.screens.LoadingScreen
 
 class SmartSearchScreen(
     private val sourceId: Long,
@@ -43,7 +44,14 @@ class SmartSearchScreen(
         val navigator = LocalNavigator.currentOrThrow
         val context = LocalContext.current
         val state by viewModel.state.collectAsState()
-        LaunchedEffect(state) {
+        val source by viewModel.source.collectAsState()
+
+        if (source == null) {
+            LoadingScreen()
+            return
+        }
+
+        LaunchedEffect(state, source) {
             val results = state
             if (results != null) {
                 if (results is SmartSearchViewModel.SearchResults.Found) {
@@ -56,7 +64,7 @@ class SmartSearchScreen(
                     }
                     navigator.replace(
                         BrowseSourceScreen(
-                            sourceId = viewModel.source.id,
+                            sourceId = (source ?: return@LaunchedEffect).id,
                             listingQuery = smartSearchConfig.origTitle,
                             smartSearchConfig = smartSearchConfig,
                         ),
@@ -68,7 +76,7 @@ class SmartSearchScreen(
         Scaffold(
             topBar = { scrollBehavior ->
                 AppBar(
-                    title = viewModel.source.name,
+                    title = source?.name.orEmpty(),
                     navigateUp = navigator::pop,
                     scrollBehavior = scrollBehavior,
                 )

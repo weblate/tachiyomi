@@ -9,6 +9,7 @@ import dev.zacsweers.metro.AssistedInject
 import dev.zacsweers.metro.ContributesIntoMap
 import dev.zacsweers.metrox.viewmodel.ManualViewModelAssistedFactory
 import dev.zacsweers.metrox.viewmodel.ManualViewModelAssistedFactoryKey
+import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.ui.browse.source.SourcesScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +28,9 @@ class SmartSearchViewModel(
     sourceManager: SourceManager,
 ) : ViewModel() {
 
+    val source: StateFlow<Source?>
+        field = MutableStateFlow(null)
+
     val state: StateFlow<SearchResults?>
         field = MutableStateFlow(null)
 
@@ -38,12 +42,14 @@ class SmartSearchViewModel(
     }
     private val smartSearchEngine = SmartSourceSearchEngine(null)
 
-    val source = sourceManager.getOrStub(sourceId)
+
 
     init {
         viewModelScope.launchIO {
+            source.value = sourceManager.getOrStub(sourceId)
+
             val result = try {
-                val resultManga = smartSearchEngine.deepSearch(source, config.origTitle)
+                val resultManga = smartSearchEngine.deepSearch(source.value!!, config.origTitle)
                 if (resultManga != null) {
                     val localManga = networkToLocalManga(resultManga)
                     SearchResults.Found(localManga)

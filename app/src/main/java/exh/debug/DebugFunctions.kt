@@ -148,23 +148,33 @@ object DebugFunctions {
 
     fun clearSavedSearches() = runBlocking { database.saved_searchQueries.deleteAll() }
 
-    fun listAllSources() = sourceManager.getAll().joinToString("\n") {
-        "${it.id}: ${it.name} (${it.lang.uppercase()})"
+    fun listAllSources() = runBlocking {
+        sourceManager.getAll().joinToString("\n") {
+            "${it.id}: ${it.name} (${it.lang.uppercase()})"
+        }
     }
 
-    fun listAllSourcesClassName() = sourceManager.getAll().joinToString("\n") {
-        "${it::class.qualifiedName}: ${it.name} (${it.lang.uppercase()})"
+    fun listAllSourcesClassName() = runBlocking {
+        sourceManager.getAll().joinToString("\n") {
+            "${it::class.qualifiedName}: ${it.name} (${it.lang.uppercase()})"
+        }
     }
 
-    fun listVisibleSources() = sourceManager.getVisibleSources().joinToString("\n") {
-        "${it.id}: ${it.name} (${it.lang.uppercase()})"
+    fun listVisibleSources() = runBlocking {
+        sourceManager.getVisibleSources().joinToString("\n") {
+            "${it.id}: ${it.name} (${it.lang.uppercase()})"
+        }
     }
 
-    fun listAllHttpSources() = sourceManager.getOnlineSources().joinToString("\n") {
-        "${it.id}: ${it.name} (${it.lang.uppercase()})"
+    fun listAllHttpSources() = runBlocking {
+        sourceManager.getOnlineSources().joinToString("\n") {
+            "${it.id}: ${it.name} (${it.lang.uppercase()})"
+        }
     }
-    fun listVisibleHttpSources() = sourceManager.getVisibleOnlineSources().joinToString("\n") {
-        "${it.id}: ${it.name} (${it.lang.uppercase()})"
+    fun listVisibleHttpSources() = runBlocking {
+        sourceManager.getVisibleOnlineSources().joinToString("\n") {
+            "${it.id}: ${it.name} (${it.lang.uppercase()})"
+        }
     }
 
     fun convertAllEhentaiGalleriesToExhentai() = convertSources(EH_SOURCE_ID, EXH_SOURCE_ID)

@@ -36,14 +36,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import tachiyomi.domain.source.model.StubSource
 import tachiyomi.domain.source.repository.StubSourceRepository
 import tachiyomi.domain.source.service.SourceManager
@@ -66,16 +64,18 @@ class AndroidSourceManager(
     // SY <--
 ) : SourceManager {
 
-    private val _isInitialized = MutableStateFlow(false)
-    override val isInitialized: StateFlow<Boolean> = _isInitialized.asStateFlow()
-
     private val scope = CoroutineScope(Job() + Dispatchers.IO)
 
-    private val sourcesMapFlow = MutableStateFlow(ConcurrentHashMap<Long, Source>())
+    /**
+     * Null until the extensions have loaded, so that nothing observes the empty seed value.
+     */
+    private val sourcesMapFlow = MutableStateFlow<Map<Long, Source>?>(null)
 
     private val stubSourcesMap = ConcurrentHashMap<Long, StubSource>()
 
-    override val sources: Flow<List<Source>> = sourcesMapFlow.map { it.values.toList() }
+    override val sources: Flow<List<Source>> = sourcesMapFlow
+        .filterNotNull()
+        .map { it.values.toList() }
 
     init {
         scope.launch {
@@ -107,7 +107,6 @@ class AndroidSourceManager(
                         }
                     }
                     sourcesMapFlow.value = mutableMap
-                    _isInitialized.value = true
                 }
         }
 
@@ -171,38 +170,47 @@ class AndroidSourceManager(
         // EXH <--
     }
 
-    override fun get(sourceKey: Long): Source? {
-        return sourcesMapFlow.value[sourceKey]
+    /**
+     * Awaits the extensions to have loaded before returning the sources.
+     */
+    private suspend fun sourcesMap(): Map<Long, Source> = sourcesMapFlow.filterNotNull().first()
+
+    override suspend fun get(sourceKey: Long): Source? {
+        return sourcesMap()[sourceKey]
     }
 
-    override fun getOrStub(sourceKey: Long): Source {
-        return sourcesMapFlow.value[sourceKey] ?: stubSourcesMap.getOrPut(sourceKey) {
-            runBlocking { createStubSource(sourceKey) }
+    override suspend fun getOrStub(sourceKey: Long): Source {
+        return sourcesMap()[sourceKey] ?: stubSourcesMap.getOrPut(sourceKey) {
+            createStubSource(sourceKey)
         }
     }
 
-    override fun getAll() = sourcesMapFlow.value.values.toList()
+    override suspend fun getAll(): List<Source> {
+        return sourcesMap().values.toList()
+    }
 
-    override fun getOnlineSources() = sourcesMapFlow.value.values.filterIsInstance<HttpSource>()
+    override suspend fun getOnlineSources(): List<HttpSource> {
+        return sourcesMap().values.filterIsInstance<HttpSource>()
+    }
 
-    override fun getStubSources(): List<StubSource> {
+    override suspend fun getStubSources(): List<StubSource> {
         val onlineSourceIds = getOnlineSources().map { it.id }
         return stubSourcesMap.values.filterNot { it.id in onlineSourceIds }
     }
 
     // SY -->
-    override fun getVisibleOnlineSources() = sourcesMapFlow.value.values
+    override suspend fun getVisibleOnlineSources() = sourcesMap().values
         .filterIsInstance<HttpSource>()
         .filter {
             it.id !in BlacklistedSources.HIDDEN_SOURCES
         }
 
-    override fun getVisibleSources() = sourcesMapFlow.value.values
+    override suspend fun getVisibleSources() = sourcesMap().values
         .filter {
             it.id !in BlacklistedSources.HIDDEN_SOURCES
         }
 
-    fun getDelegatedCatalogueSources() = sourcesMapFlow.value.values
+    suspend fun getDelegatedCatalogueSources() = sourcesMap().values
         .filterIsInstance<EnhancedHttpSource>()
         .mapNotNull { enhancedHttpSource ->
             enhancedHttpSource.enhancedSource as? DelegatedHttpSource

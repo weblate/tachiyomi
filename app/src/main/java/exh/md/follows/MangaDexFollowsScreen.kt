@@ -22,7 +22,6 @@ import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceViewModel
 import eu.kanade.tachiyomi.ui.category.CategoryScreen
 import eu.kanade.tachiyomi.ui.manga.MangaScreen
-import exh.ui.ifSourcesLoaded
 import mihon.feature.migration.dialog.MigrateMangaDialog
 import mihon.presentation.core.util.collectAsLazyPagingItems
 import tachiyomi.core.common.util.lang.launchIO
@@ -35,10 +34,7 @@ class MangaDexFollowsScreen(private val sourceId: Long) : Screen() {
 
     @Composable
     override fun Content() {
-        if (!ifSourcesLoaded()) {
-            LoadingScreen()
-            return
-        }
+
 
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
@@ -47,6 +43,11 @@ class MangaDexFollowsScreen(private val sourceId: Long) : Screen() {
             create(sourceId = sourceId)
         }
         val state by viewModel.state.collectAsState()
+
+        if (state.source == null) {
+            LoadingScreen()
+            return
+        }
 
         val snackbarHostState = remember { SnackbarHostState() }
 
@@ -65,7 +66,7 @@ class MangaDexFollowsScreen(private val sourceId: Long) : Screen() {
             },
         ) { paddingValues ->
             BrowseSourceContent(
-                source = viewModel.source,
+                source = state.source,
                 mangaList = viewModel.mangaPagerFlowFlow.collectAsLazyPagingItems(),
                 columns = viewModel.getColumnsPreference(LocalConfiguration.current.orientation),
                 // SY -->

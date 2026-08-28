@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -35,10 +36,11 @@ import eu.kanade.presentation.util.Screen
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.preference.SharedPreferencesDataStore
 import eu.kanade.tachiyomi.source.ConfigurableSource
+import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.sourcePreferences
 import eu.kanade.tachiyomi.widget.TachiyomiTextInputEditText.Companion.setIncognito
 import exh.source.EnhancedHttpSource
-import exh.ui.ifSourcesLoaded
+import kotlinx.coroutines.launch
 import mihon.app.di.appGraph
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.screens.LoadingScreen
@@ -47,18 +49,22 @@ class SourcePreferencesScreen(val sourceId: Long) : Screen() {
 
     @Composable
     override fun Content() {
-        if (!ifSourcesLoaded()) {
+        val context = LocalContext.current
+        val navigator = LocalNavigator.currentOrThrow
+
+        val source by produceState<Source?>(initialValue = null) {
+            value = context.appGraph.sourceManager.getOrStub(sourceId)
+        }
+
+        if (source == null) {
             LoadingScreen()
             return
         }
 
-        val context = LocalContext.current
-        val navigator = LocalNavigator.currentOrThrow
-
         Scaffold(
             topBar = {
                 AppBar(
-                    title = context.appGraph.sourceManager.getOrStub(sourceId).toString(),
+                    title = source.toString(),
                     navigateUp = navigator::pop,
                     scrollBehavior = it,
                 )
@@ -126,10 +132,13 @@ class SourcePreferencesFragment : PreferenceFragmentCompat() {
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
-        preferenceScreen = populateScreen()
+        preferenceScreen = preferenceManager.createPreferenceScreen(requireContext())
+        lifecycleScope.launch {
+            preferenceScreen = populateScreen()
+        }
     }
 
-    private fun populateScreen(): PreferenceScreen {
+    private suspend fun populateScreen(): PreferenceScreen {
         val sourceId = requireArguments().getLong(SOURCE_ID)
         val appGraph = requireContext().appGraph
         // SY -->

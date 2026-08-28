@@ -106,7 +106,7 @@ open class RecommendsViewModel(
 
                     try {
                         val page = withContext(coroutineDispatcher) {
-                            recSource.requestNextPage(1)
+                            recSource.requestNextPage(null, 1)
                         }
 
                         val titles = page.mangas.map {

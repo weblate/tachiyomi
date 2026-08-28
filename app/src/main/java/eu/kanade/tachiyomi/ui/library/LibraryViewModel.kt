@@ -326,7 +326,7 @@ class LibraryViewModel(
         val groupedFavorites: Map<Category, List</* LibraryItem */ Long>>,
     )
 
-    private fun List<LibraryItem>.applyFilters(
+    private suspend fun List<LibraryItem>.applyFilters(
         trackMap: Map<Long, List<Track>>,
         trackingFilter: Map<Long, TriState>,
         preferences: ItemPreferences,
@@ -379,7 +379,7 @@ class LibraryViewModel(
         }
 
         // SY -->
-        val filterFnLewd: (LibraryItem) -> Boolean = {
+        val filterFnLewd: suspend (LibraryItem) -> Boolean = {
             applyFilter(filterLewd) { it.libraryManga.manga.isLewd() }
         }
         // SY <--
@@ -409,7 +409,7 @@ class LibraryViewModel(
         }
     }
 
-    private fun List<LibraryItem>.applyGrouping(
+    private suspend fun List<LibraryItem>.applyGrouping(
         categories: List<Category>,
         showSystemCategory: Boolean,
         // SY -->
@@ -1329,13 +1329,13 @@ class LibraryViewModel(
         return getNextChapters.await(manga.id).firstOrNull()
     }
 
-    private fun List<LibraryItem>.getGroupedMangaItems(
+    private suspend fun List<LibraryItem>.getGroupedMangaItems(
         groupType: Int,
     ): Map<Category, List</* LibraryItem */ Long>> {
         val context = preferences.context
         return when (groupType) {
             LibraryGroup.BY_TRACK_STATUS -> {
-                val tracks = runBlocking { getTracks.await() }.groupBy { it.mangaId }
+                val tracks = getTracks.await().groupBy { it.mangaId }
                 groupBy { item ->
                     val status = tracks[item.libraryManga.manga.id]?.firstNotNullOfOrNull { track ->
                         TrackStatus.parseTrackerStatus(trackerManager, track.trackerId, track.status)

@@ -122,7 +122,6 @@ class InterceptActivity : BaseActivity() {
         if (Intent.ACTION_VIEW == intent.action) {
             lifecycleScope.launchIO {
                 // wait for sources to load
-                sourceManager.isInitialized.first { it }
                 loadGallery(intent.dataString!!)
             }
         }
