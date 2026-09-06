@@ -37,7 +37,7 @@ import kotlin.time.Instant
 import tachiyomi.domain.track.model.Track as DomainTrack
 
 class KitsuApi(
-    private val trackId: Long,
+    private val trackerId: Long,
     private val client: OkHttpClient,
     interceptor: KitsuInterceptor,
 ) {
@@ -296,7 +296,7 @@ class KitsuApi(
                     .awaitSuccess()
                     .parseAs<KitsuSearchByTitleResult>()
                     .data.searchMangaByTitle.nodes
-                    .map { it.toTrackSearch(trackId) }
+                    .map { it.toTrackSearch(trackerId) }
             }
         }
     }
@@ -338,7 +338,7 @@ class KitsuApi(
                     .awaitSuccess()
                     .parseAs<KitsuSearchByIdWithLibraryResult>()
                     .data.findMangaById
-                    ?.toTrackSearch(trackId)
+                    ?.toTrackSearch(trackerId)
             }
         }
     }
@@ -440,7 +440,7 @@ class KitsuApi(
                         .data.findMangaBySlug
                 }
 
-                kitsuManga?.toTrackSearch(trackId)
+                kitsuManga?.toTrackSearch(trackerId)
             }
         }
     }

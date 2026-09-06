@@ -88,7 +88,7 @@ class Suwayomi(context: Context, id: Long) : BaseTracker(context, id, "Suwayomi"
     override suspend fun match(manga: DomainManga): TrackSearch? =
         try {
             api.getTrackSearch(manga.url.getMangaId())
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 

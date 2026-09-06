@@ -41,7 +41,7 @@ class MangaUpdates(context: Context, id: Long) : BaseTracker(context, id, "Manga
 
     private val interceptor by lazy { MangaUpdatesInterceptor(this) }
 
-    private val api by lazy { MangaUpdatesApi(interceptor, client) }
+    private val api by lazy { MangaUpdatesApi(client, interceptor) }
 
     override fun getLogo(): Int = R.drawable.brand_mangaupdates
 
@@ -86,7 +86,7 @@ class MangaUpdates(context: Context, id: Long) : BaseTracker(context, id, "Manga
         return try {
             val (series, rating) = api.getSeriesListItem(track)
             track.copyFrom(series, rating)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             track.score = 0.0
             api.addSeriesToList(track, hasReadChapters)
             track

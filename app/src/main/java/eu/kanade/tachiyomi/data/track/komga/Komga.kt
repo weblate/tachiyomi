@@ -95,7 +95,7 @@ class Komga(context: Context, id: Long) : BaseTracker(context, id, "Komga"), Enh
     override suspend fun match(manga: Manga): TrackSearch? =
         try {
             api.getTrackSearch(manga.url)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
 

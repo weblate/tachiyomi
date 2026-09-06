@@ -33,7 +33,7 @@ import uy.kohesive.injekt.injectLazy
 import tachiyomi.domain.track.model.Track as DomainTrack
 
 class BangumiApi(
-    private val trackId: Long,
+    private val trackerId: Long,
     private val client: OkHttpClient,
     interceptor: BangumiInterceptor,
 ) {
@@ -109,7 +109,7 @@ class BangumiApi(
                     .parseAs<BGMSearchResult>()
                     .data
                     .filter { it.platform == null || it.platform == "漫画" }
-                    .map { it.toTrackSearch(trackId) }
+                    .map { it.toTrackSearch(trackerId) }
             }
         }
     }
@@ -123,7 +123,7 @@ class BangumiApi(
                     .awaitSuccess()
                     .parseAs<BGMSubject>()
                     .takeIf { it.platform == null || it.platform == "漫画" }
-                    ?.toTrackSearch(trackId)
+                    ?.toTrackSearch(trackerId)
             }
         }
     }
