@@ -134,21 +134,22 @@ class BackupRestorer(
         }
 
         coroutineScope {
-            // SY -->
-            // Manga restore resolves categories by name, so it must not race the
-            // category restore — a delta carrying a new category and a manga in it
-            // would silently skip the assignment.
-            val categoriesJob = if (options.categories) {
+            val restoreCategoriesJob = if (options.categories) {
                 restoreCategories(backup.backupCategories)
             } else {
                 null
             }
+            // SY -->
             if (options.savedSearches) {
                 restoreSavedSearches(backup.backupSavedSearches)
             }
             // SY <--
             if (options.appSettings) {
-                restoreAppPreferences(backup.backupPreferences, backup.backupCategories.takeIf { options.categories })
+                restoreAppPreferences(
+                    backup.backupPreferences,
+                    backup.backupCategories.takeIf { options.categories },
+                    restoreCategoriesJob,
+                )
             }
             if (options.sourceSettings) {
                 restoreSourcePreferences(backup.backupSourcePreferences)
@@ -157,9 +158,7 @@ class BackupRestorer(
                 restoreManga(
                     backup.backupManga,
                     if (options.categories) backup.backupCategories else emptyList(),
-                    // SY -->
-                    categoriesJob,
-                    // SY <--
+                    restoreCategoriesJob,
                 )
             }
             if (options.extensionStores) {
@@ -201,13 +200,9 @@ class BackupRestorer(
     private fun CoroutineScope.restoreManga(
         backupMangas: List<BackupManga>,
         backupCategories: List<BackupCategory>,
-        // SY -->
-        categoriesJob: Job? = null,
-        // SY <--
+        categoriesRestoreJob: Job?,
     ) = launch {
-        // SY -->
-        categoriesJob?.join()
-        // SY <--
+        categoriesRestoreJob?.join()
         mangaRestorer.sortByNew(backupMangas)
             /* SY --> */.sortedBy { it.source == MERGED_SOURCE_ID } /* SY <-- */
             .chunked(100)
@@ -251,8 +246,10 @@ class BackupRestorer(
     private fun CoroutineScope.restoreAppPreferences(
         preferences: List<BackupPreference>,
         categories: List<BackupCategory>?,
+        categoriesRestoreJob: Job?,
     ) = launch {
         ensureActive()
+        categoriesRestoreJob?.join()
         preferenceRestorer.restoreApp(
             preferences,
             categories,
