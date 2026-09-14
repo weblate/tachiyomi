@@ -1,12 +1,10 @@
 package eu.kanade.tachiyomi.extension.api
 
-import android.content.Context
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.SingleIn
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.extension.model.Extension
-import eu.kanade.tachiyomi.extension.util.ExtensionLoader
 import exh.source.BlacklistedSources
 import mihon.domain.extension.interactor.UpdateExtensionStores
 import mihon.domain.extension.repository.ExtensionStoreRepository
@@ -27,7 +25,11 @@ class ExtensionApi(
         return withIOContext { repository.fetchExtensions() }
     }
 
-    suspend fun checkForUpdates(context: Context) {
+    /**
+     * @param loadedExtensions Extensions already loaded by [eu.kanade.tachiyomi.extension.ExtensionManager].
+     * Only their versions are read, so there's nothing to gain from loading them a second time.
+     */
+    suspend fun checkForUpdates(loadedExtensions: List<Extension.Loaded>) {
         updateExtensionStores()
 
         val extensions = findExtensions()
@@ -36,14 +38,8 @@ class ExtensionApi(
         val blacklistEnabled = sourcePreferences.enableSourceBlacklist.get()
         // SY <--
 
-        val loadedExtensions = ExtensionLoader.loadExtensions(context)
-            .filterIsInstance<Extension.Loaded>()
-            // SY -->
-            .filterNot { it.isBlacklisted(blacklistEnabled) }
-        // SY <--
-
         val extensionsWithUpdate = mutableListOf<Extension.Loaded>()
-        for (installedExt in loadedExtensions) {
+        for (installedExt in loadedExtensions /* SY --> */.filterNot { it.isBlacklisted(blacklistEnabled) } /* SY <-- */) {
             val pkgName = installedExt.pkgName
             val availableExt = extensions.find { it.pkgName == pkgName } ?: continue
             val hasUpdatedVer = availableExt.versionCode > installedExt.versionCode

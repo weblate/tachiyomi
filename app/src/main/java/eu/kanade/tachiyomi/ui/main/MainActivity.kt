@@ -72,6 +72,7 @@ import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.data.cache.ChapterCache
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.notification.NotificationReceiver
+import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.extension.api.ExtensionApi
 import eu.kanade.tachiyomi.ui.base.activity.BaseActivity
 import eu.kanade.tachiyomi.ui.browse.source.browse.BrowseSourceScreen
@@ -136,6 +137,8 @@ class MainActivity : BaseActivity() {
     @Inject private lateinit var getIncognitoState: GetIncognitoState
 
     @Inject private lateinit var extensionApi: ExtensionApi
+
+    @Inject private lateinit var extensionManager: ExtensionManager
 
     // SY -->
     @Inject private lateinit var sourcePreferences: SourcePreferences
@@ -415,7 +418,7 @@ class MainActivity : BaseActivity() {
         // Extensions updates
         LaunchedEffect(Unit) {
             try {
-                extensionApi.checkForUpdates(context)
+                extensionApi.checkForUpdates(extensionManager.getLoadedExtensions())
             } catch (e: Exception) {
                 logcat(LogPriority.ERROR, e)
             }
