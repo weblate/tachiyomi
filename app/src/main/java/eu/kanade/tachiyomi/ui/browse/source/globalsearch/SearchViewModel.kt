@@ -107,7 +107,7 @@ abstract class SearchViewModel(
         }
 
         // SY -->
-        val filteredSourceIds = extensionManager.getInstalledExtensions()
+        val filteredSourceIds = extensionManager.getLoadedExtensions()
             .filter { it.pkgName == filter }
             .flatMap { it.sources }
             .map { it.id }

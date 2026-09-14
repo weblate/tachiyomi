@@ -79,7 +79,7 @@ class AndroidSourceManager(
 
     init {
         scope.launch {
-            extensionManager.installedExtensionsFlow
+            extensionManager.loadedExtensionsFlow
                 // SY -->
                 .combine(exhPreferences.enableExhentai.changes()) { extensions, enableExhentai ->
                     extensions to enableExhentai
