@@ -38,6 +38,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import dev.icerock.moko.resources.StringResource
 import eu.kanade.presentation.browse.components.BaseBrowseItem
 import eu.kanade.presentation.browse.components.ExtensionIcon
+import eu.kanade.presentation.browse.components.label
 import eu.kanade.presentation.components.WarningBanner
 import eu.kanade.presentation.manga.components.DotSeparatorNoSpaceText
 import eu.kanade.presentation.more.settings.screen.browse.ExtensionStoresScreen
@@ -365,25 +366,31 @@ private fun ExtensionItemContent(
                     )
                 }
 
-                val warning = when {
-                    extension is Extension.Untrusted -> MR.strings.ext_untrusted
-                    extension is Extension.Installed && extension.isObsolete -> MR.strings.ext_obsolete
-                    // SY -->
-                    extension is Extension.Installed && extension.isRedundant -> SYMR.strings.ext_redundant
-                    // SY <--
-                    extension.isNsfw -> MR.strings.ext_nsfw_short
-                    else -> null
-                }
-                if (warning != null) {
+                val warnings = listOfNotNull(
+                    when {
+                        extension is Extension.Untrusted ->
+                            MR.strings.ext_untrusted to MaterialTheme.colorScheme.error
+                        extension is Extension.Installed && extension.isObsolete ->
+                            MR.strings.ext_obsolete to MaterialTheme.colorScheme.error
+                        // SY -->
+                        extension is Extension.Installed && extension.isRedundant ->
+                            SYMR.strings.ext_redundant to MaterialTheme.colorScheme.error
+                        // SY <--
+                        else -> null
+                    },
+                    extension.contentWarning.label?.let { it.title to it.color },
+                )
+                warnings.forEach { (label, color) ->
                     if (hasAlreadyShownAnElement) DotSeparatorNoSpaceText()
                     hasAlreadyShownAnElement = true
                     Text(
-                        text = stringResource(warning).uppercase(),
-                        color = MaterialTheme.colorScheme.error,
+                        text = stringResource(label).uppercase(),
+                        color = color,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+
                 if (extension is Extension.Installed && !extension.isShared) {
                     if (hasAlreadyShownAnElement) DotSeparatorNoSpaceText()
                     Text(
