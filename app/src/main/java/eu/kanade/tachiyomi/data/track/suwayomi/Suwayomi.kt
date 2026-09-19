@@ -109,4 +109,6 @@ class Suwayomi(context: Context, id: Long) : BaseTracker(context, id, "Suwayomi"
         val preferences = api.sourcePreferences()
         return preferences.getBoolean(TRACKER_DELETE_KEY, TRACKER_DELETE_DEFAULT)
     }
+
+    override suspend fun updateUserConfig() = Unit
 }

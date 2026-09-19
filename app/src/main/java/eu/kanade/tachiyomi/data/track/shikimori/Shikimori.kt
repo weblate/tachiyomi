@@ -142,6 +142,11 @@ class Shikimori(context: Context, id: Long) : BaseTracker(context, id, "Shikimor
         }
     }
 
+    override suspend fun updateUserConfig() {
+        val currentUser = api.getCurrentUser()
+        saveDisplayUsername(currentUser.nickname)
+    }
+
     fun saveToken(oauth: SMOAuth?) {
         trackPreferences.trackToken(this).set(json.encodeToString(oauth))
     }

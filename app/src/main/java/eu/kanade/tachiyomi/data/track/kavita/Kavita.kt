@@ -141,4 +141,6 @@ class Kavita(context: Context, id: Long) : BaseTracker(context, id, "Kavita"), E
         }
         authentications = oauth
     }
+
+    override suspend fun updateUserConfig() = Unit
 }

@@ -108,4 +108,6 @@ class Komga(context: Context, id: Long) : BaseTracker(context, id, "Komga"), Enh
         } else {
             null
         }
+
+    override suspend fun updateUserConfig() = Unit
 }
