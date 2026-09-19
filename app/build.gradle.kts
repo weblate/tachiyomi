@@ -1,7 +1,9 @@
-
-import mihon.gradle.getBuildTime
+import com.android.build.api.variant.ApplicationVariant
+import com.android.build.api.variant.BuildConfigField
+import mihon.gradle.getCurrentTime
 import mihon.gradle.getLatestCommitCount
 import mihon.gradle.getLatestCommitSha
+import mihon.gradle.getLatestCommitTime
 import mihon.gradle.tasks.ReplaceShortcutsPlaceholderTask
 
 plugins {
@@ -37,9 +39,6 @@ android {
 
         buildConfigField("String", "UPSTREAM_VERSION", """"0.20.1"""")
 
-        buildConfigField("String", "COMMIT_COUNT", "\"${getLatestCommitCount()}\"")
-        buildConfigField("String", "COMMIT_SHA", "\"${getLatestCommitSha()}\"")
-        buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLatestCommitTime = false)}\"")
         buildConfigField("boolean", "INCLUDE_UPDATER", "false")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -47,7 +46,6 @@ android {
 
     buildTypes {
         named("debug") {
-            versionNameSuffix = "-${getLatestCommitCount()}"
             applicationIdSuffix = ".debug"
             isPseudoLocalesEnabled = true
         }
@@ -57,7 +55,6 @@ android {
             isProfileable = true
             setProguardFiles(listOf(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"))
 
-            buildConfigField("String", "BUILD_TIME", "\"${getBuildTime(useLatestCommitTime = true)}\"")
             buildConfigField("boolean", "INCLUDE_UPDATER", "true")
         }
         create("foss") {
@@ -337,7 +334,32 @@ dependencies {
     implementation(sylibs.zxing.android.embedded)
 }
 
+val latestCommitCount = getLatestCommitCount()
+val latestCommitSha = getLatestCommitSha()
+val latestCommitTime = getLatestCommitTime()
+val currentTime = getCurrentTime()
+
+fun ApplicationVariant.buildConfigField(type: String, name: String, value: Provider<String>) {
+    buildConfigFields?.put(name, value.map { BuildConfigField(type, it, null) })
+}
+
 androidComponents {
+    onVariants { variant ->
+        val isUnstableBuild = variant.buildType == "debug" || variant.buildType == "nightly"
+        val buildTime = if (isUnstableBuild) currentTime else latestCommitTime
+
+        variant.buildConfigField("String", "COMMIT_COUNT", latestCommitCount.map { "\"$it\"" })
+        variant.buildConfigField("String", "COMMIT_SHA", latestCommitSha.map { "\"$it\"" })
+        variant.buildConfigField("String", "BUILD_TIME", buildTime.map { "\"$it\"" })
+
+        if (isUnstableBuild) {
+            variant.outputs.forEach { output ->
+                val versionName = output.versionName.get()
+                output.versionName.set(latestCommitCount.map { "$versionName-$it" })
+            }
+        }
+    }
+
     onVariants { variant ->
         val resSource = variant.sources.res ?: return@onVariants
 
