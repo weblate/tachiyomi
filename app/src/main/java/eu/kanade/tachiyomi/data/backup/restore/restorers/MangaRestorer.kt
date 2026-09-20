@@ -18,8 +18,6 @@ import exh.EXHMigrations
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import tachiyomi.data.Database
-import tachiyomi.data.MemoColumnAdapter
-import tachiyomi.data.UpdateStrategyColumnAdapter
 import tachiyomi.data.manga.MangaMapper
 import tachiyomi.data.manga.MergedMangaMapper
 import tachiyomi.domain.category.interactor.GetCategories
@@ -167,7 +165,7 @@ class MangaRestorer(
             artist = manga.ogArtist,
             author = manga.ogAuthor,
             description = manga.ogDescription,
-            genre = manga.ogGenre?.joinToString(separator = ", "),
+            genre = manga.ogGenre,
             title = manga.ogTitle,
             status = manga.ogStatus,
             thumbnailUrl = manga.ogThumbnailUrl,
@@ -182,14 +180,14 @@ class MangaRestorer(
             coverLastModified = manga.coverLastModified,
             dateAdded = manga.dateAdded,
             mangaId = manga.id,
-            updateStrategy = manga.updateStrategy.let(UpdateStrategyColumnAdapter::encode),
+            updateStrategy = manga.updateStrategy,
             version = manga.version,
             // SY -->
             lastModifiedAt = if (isSync) manga.lastModifiedAt else null,
             isSyncing = syncingFlag,
             // SY <--
             notes = manga.notes,
-            memo = manga.memo.let(MemoColumnAdapter::encode),
+            memo = manga.memo,
         )
         return manga
     }
@@ -301,7 +299,7 @@ class MangaRestorer(
                     lastModifiedAt = if (isSync) chapter.lastModifiedAt else null,
                     isSyncing = syncingFlag,
                     // SY <--
-                    memo = chapter.memo.let(MemoColumnAdapter::encode),
+                    memo = chapter.memo,
                 )
             }
         }
