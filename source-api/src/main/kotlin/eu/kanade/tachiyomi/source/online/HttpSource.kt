@@ -40,7 +40,12 @@ abstract class HttpSource : CatalogueSource {
     // SY -->
     protected val network: NetworkHelper by lazy {
         val network = Injekt.get<NetworkHelper>()
-        object : NetworkHelper(Injekt.get<Application>(), Injekt.get<NetworkPreferences>(), network.isDebugBuild) {
+        object : NetworkHelper(
+            network.scope,
+            Injekt.get<Application>(),
+            Injekt.get<NetworkPreferences>(),
+            network.isDebugBuild,
+        ) {
             override val client: OkHttpClient
                 get() = delegate?.networkHttpClient ?: network.client
                     .newBuilder()

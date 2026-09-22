@@ -2,6 +2,7 @@ package eu.kanade.tachiyomi.ui.browse.migration.sources
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -13,7 +14,6 @@ import eu.kanade.presentation.browse.MigrateSourceScreen
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.TabContent
 import eu.kanade.tachiyomi.ui.browse.migration.manga.MigrateMangaScreen
-import kotlinx.coroutines.DelicateCoroutinesApi
 import mihon.app.di.appGraph
 import mihon.feature.migration.config.MigrationConfigScreen
 import mihon.icons.materialsymbols.MaterialSymbols
@@ -27,6 +27,9 @@ import tachiyomi.presentation.core.i18n.stringResource
 @Composable
 fun Screen.migrateSourceTab(): TabContent {
     val context = LocalContext.current
+    // SY -->
+    val scope = rememberCoroutineScope()
+    // SY <--
     val uriHandler = LocalUriHandler.current
     val navigator = LocalNavigator.currentOrThrow
     val viewModel = metroViewModel<MigrateSourceViewModel>()
@@ -55,8 +58,7 @@ fun Screen.migrateSourceTab(): TabContent {
                 // SY -->
                 onClickAll = { source ->
                     // TODO: Jay wtf, need to clean this up sometime
-                    @OptIn(DelicateCoroutinesApi::class)
-                    launchIO {
+                    scope.launchIO {
                         val manga = context.appGraph.getFavorites.await()
                         val sourceMangas =
                             manga.asSequence().filter { it.source == source.id }.map { it.id }.toList()

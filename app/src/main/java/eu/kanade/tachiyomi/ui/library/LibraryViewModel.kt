@@ -57,7 +57,6 @@ import exh.source.nHentaiSourceIds
 import exh.util.cancellable
 import exh.util.isLewd
 import exh.util.nullIfBlank
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -885,9 +884,8 @@ class LibraryViewModel(
         clearSelection()
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     fun syncMangaToDex() {
-        launchIO {
+        viewModelScope.launchIO {
             MdUtil.getEnabledMangaDex(sourcePreferences, sourceManager)?.let { mdex ->
                 state.value.selectedManga.fastFilter { it.source in mangaDexSourceIds }.fastForEach { manga ->
                     mdex.updateFollowStatus(MdUtil.getMangaId(manga.url), FollowStatus.READING)

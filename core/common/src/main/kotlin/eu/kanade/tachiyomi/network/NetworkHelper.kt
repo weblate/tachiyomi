@@ -7,6 +7,8 @@ import dev.zacsweers.metro.SingleIn
 import eu.kanade.tachiyomi.network.interceptor.CloudflareInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UncaughtExceptionInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UserAgentInterceptor
+import kotlinx.coroutines.CoroutineScope
+import mihon.core.metro.AppCoroutineScope
 import mihon.core.metro.IsDebugBuild
 import okhttp3.Cache
 import okhttp3.OkHttpClient
@@ -19,6 +21,7 @@ import kotlin.time.Duration.Companion.seconds
 @SingleIn(AppScope::class)
 /* SY --> */
 open /* SY <-- */ class NetworkHelper(
+    @AppCoroutineScope /* SY --> */ val /* SY <-- */ scope: CoroutineScope,
     private val context: Context,
     private val preferences: NetworkPreferences,
     // SY -->
@@ -72,7 +75,7 @@ open /* SY <-- */ class NetworkHelper(
     /* SY --> */
     open /* SY <-- */ val client = clientBuilder
         .addInterceptor(
-            CloudflareInterceptor(context, cookieJar, ::defaultUserAgentProvider),
+            CloudflareInterceptor(context, cookieJar, scope, ::defaultUserAgentProvider),
         )
         .build()
 

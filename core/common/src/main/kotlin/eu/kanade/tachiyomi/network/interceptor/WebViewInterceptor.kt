@@ -10,7 +10,7 @@ import eu.kanade.tachiyomi.util.system.WebViewUtil
 import eu.kanade.tachiyomi.util.system.setDefaultSettings
 import eu.kanade.tachiyomi.util.system.setUserAgent
 import eu.kanade.tachiyomi.util.system.toast
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import okhttp3.Headers
 import okhttp3.Interceptor
 import okhttp3.Request
@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit
 
 abstract class WebViewInterceptor(
     private val context: Context,
+    private val scope: CoroutineScope,
     private val defaultUserAgentProvider: () -> String,
 ) : Interceptor {
 
@@ -50,7 +51,6 @@ abstract class WebViewInterceptor(
 
     abstract fun intercept(chain: Interceptor.Chain, request: Request, response: Response): Response
 
-    @OptIn(DelicateCoroutinesApi::class)
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
         val response = chain.proceed(request)
@@ -59,7 +59,7 @@ abstract class WebViewInterceptor(
         }
 
         if (!WebViewUtil.supportsWebView(context)) {
-            launchUI {
+            scope.launchUI {
                 context.toast(MR.strings.information_webview_required, Toast.LENGTH_LONG)
             }
             return response

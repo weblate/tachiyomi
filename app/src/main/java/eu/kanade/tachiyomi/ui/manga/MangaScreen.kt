@@ -62,7 +62,7 @@ import exh.source.MERGED_SOURCE_ID
 import exh.source.getMainSource
 import exh.ui.metadata.MetadataViewScreen
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
@@ -224,7 +224,7 @@ class MangaScreen(
             onMergedSettingsClicked = viewModel::showEditMergedSettingsDialog,
             onMergeClicked = { openSmartSearch(navigator, successState.manga) },
             onMergeWithAnotherClicked = {
-                mergeWithAnother(navigator, context, successState.manga, viewModel::smartSearchMerge)
+                mergeWithAnother(scope, navigator, context, successState.manga, viewModel::smartSearchMerge)
             },
             onOpenPagePreview = {
                 openPagePreview(context, successState.chapters.minByOrNull { it.chapter.sourceOrder }?.chapter, it)
@@ -524,14 +524,14 @@ class MangaScreen(
         navigator.push(SourcesScreen(smartSearchConfig))
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     private fun mergeWithAnother(
+        scope: CoroutineScope,
         navigator: Navigator,
         context: Context,
         manga: Manga,
         smartSearchMerge: suspend (Manga, Long) -> Manga,
     ) {
-        launchUI {
+        scope.launchUI {
             try {
                 val mergedManga = withNonCancellableContext {
                     smartSearchMerge(manga, smartSearchConfig?.origMangaId!!)
