@@ -91,7 +91,7 @@ import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.model.SourceNotInstalledException
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
-import tachiyomi.domain.track.interactor.InsertTrack
+import tachiyomi.domain.track.interactor.UpsertTrack
 import tachiyomi.i18n.MR
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
@@ -139,7 +139,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
 
     @Inject private lateinit var getTracks: GetTracks
 
-    @Inject private lateinit var insertTrack: InsertTrack
+    @Inject private lateinit var upsertTrack: UpsertTrack
 
     @Inject private lateinit var trackerManager: TrackerManager
 
@@ -395,7 +395,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                                                 tracks.none { it.trackerId == TrackerManager.MDLIST }
                                             ) {
                                                 val track = mdList.createInitialTracker(manga)
-                                                insertTrack.await(mdList.refresh(track).toDomainTrack(false)!!)
+                                                upsertTrack.await(mdList.refresh(track).toDomainTrack(false)!!)
                                             }
                                         } catch (e: Exception) {
                                             if (e is CancellationException) throw e
@@ -645,7 +645,7 @@ class LibraryUpdateJob(private val context: Context, workerParams: WorkerParamet
                         status = FollowStatus.READING.long,
                     )
                     val updatedTrack = mdList.update(tracker.toDbTrack())
-                    insertTrack.await(updatedTrack.toDomainTrack(false)!!)
+                    upsertTrack.await(updatedTrack.toDomainTrack(false)!!)
                 }
             }
         }
