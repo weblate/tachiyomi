@@ -466,17 +466,10 @@ class MangaRestorer(
                         mangaId = manga.id,
                     )
 
-                if (track.forComparison() == dbTrack.forComparison()) {
-                    // Same state; skip
-                    return@mapNotNull null
-                }
+                if (track.lastChapterRead <= dbTrack.lastChapterRead) return@mapNotNull null
 
                 // Update to an existing track
-                dbTrack.copy(
-                    remoteId = track.remoteId,
-                    libraryId = track.libraryId,
-                    lastChapterRead = max(dbTrack.lastChapterRead, track.lastChapterRead),
-                )
+                dbTrack.copy(lastChapterRead = track.lastChapterRead)
             }
             .partition { it.id > 0 }
 
@@ -594,8 +587,6 @@ class MangaRestorer(
         return null
     }
     // SY <--
-
-    private fun Track.forComparison() = this.copy(id = 0L, mangaId = 0L)
 
     /**
      * Restores the excluded scanlators for the manga.
