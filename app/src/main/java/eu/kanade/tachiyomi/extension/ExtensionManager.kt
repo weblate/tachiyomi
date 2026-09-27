@@ -37,9 +37,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.domain.extension.interactor.UpdateExtensionStores
+import mihon.domain.extension.model.ExtensionStore
 import mihon.domain.extension.repository.ExtensionStoreRepository
 import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.lang.withUIContext
@@ -103,6 +105,13 @@ class ExtensionManager(
                 preferences.applyContentWarningsToInstalled.changes().distinctUntilChanged().drop(1).map {},
             )
                 .collectLatest { loadExtensions() }
+        }
+
+        // Extensions are only reloaded when the set of signing keys changes, which misses a store being
+        // removed while another with the same key stays, or a store being renamed
+        scope.launch(Dispatchers.IO) {
+            initialized.await()
+            extensionStoreRepository.getAllAsFlow().collect(::assignStores)
         }
     }
 
@@ -431,6 +440,17 @@ class ExtensionManager(
             }
         }
         updatePendingUpdatesCount()
+    }
+
+    private fun assignStores(stores: List<ExtensionStore>) {
+        fun Extension.Installed.signingStore() = stores.firstOrNull { it.signingKey in signatures }
+
+        loadedExtensionMapFlow.update { extensions ->
+            extensions.mapValues { (_, extension) -> extension.copy(store = extension.signingStore()) }
+        }
+        notLoadedExtensionMapFlow.update { extensions ->
+            extensions.mapValues { (_, extension) -> extension.copy(store = extension.signingStore()) }
+        }
     }
 
     private fun updatePendingUpdatesCount() {
