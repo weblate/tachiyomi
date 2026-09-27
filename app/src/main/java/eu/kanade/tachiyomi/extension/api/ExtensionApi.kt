@@ -38,16 +38,8 @@ class ExtensionApi(
         val blacklistEnabled = sourcePreferences.enableSourceBlacklist.get()
         // SY <--
 
-        val extensionsWithUpdate = mutableListOf<Extension.Loaded>()
-        for (installedExt in loadedExtensions /* SY --> */.filterNot { it.isBlacklisted(blacklistEnabled) } /* SY <-- */) {
-            val pkgName = installedExt.pkgName
-            val availableExt = extensions.find { it.pkgName == pkgName } ?: continue
-            val hasUpdatedVer = availableExt.versionCode > installedExt.versionCode
-            val hasUpdatedLib = availableExt.libVersion > installedExt.libVersion
-            val hasUpdate = hasUpdatedVer || hasUpdatedLib
-            if (hasUpdate) {
-                extensionsWithUpdate.add(installedExt)
-            }
+        val extensionsWithUpdate = loadedExtensions.filter {
+            /* SY --> */ !it.isBlacklisted(blacklistEnabled) && /* SY <-- */ it.findUpdate(extensions) != null
         }
 
         if (extensionsWithUpdate.isNotEmpty()) {
