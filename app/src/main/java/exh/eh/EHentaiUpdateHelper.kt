@@ -16,7 +16,7 @@ import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.chapter.interactor.GetChapterByUrl
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.chapter.model.Chapter
-import tachiyomi.domain.chapter.model.ChapterUpdate
+import tachiyomi.domain.chapter.model.ChapterRemoteUpdate
 import tachiyomi.domain.chapter.repository.ChapterRepository
 import tachiyomi.domain.history.interactor.GetHistory
 import tachiyomi.domain.history.interactor.RemoveHistory
@@ -125,7 +125,7 @@ class EHentaiUpdateHelper(
             // Apply changes to all manga
             updateManga.awaitAll(mangaUpdates)
             // Insert new chapters for accepted manga
-            chapterRepository.updateAll(chapterUpdates)
+            chapterRepository.updateAllRemote(chapterUpdates)
             chapterRepository.addAll(newChapters)
 
             val (newHistory, deleteHistory) = getHistory(
@@ -217,7 +217,7 @@ class EHentaiUpdateHelper(
         accepted: ChapterChain,
         toDiscard: List<ChapterChain>,
         chainsAsChapters: List<Chapter>,
-    ): Triple<List<ChapterUpdate>, List<Chapter>, Boolean> {
+    ): Triple<List<ChapterRemoteUpdate>, List<Chapter>, Boolean> {
         var new = false
         return toDiscard
             .flatMap { chain ->
@@ -271,7 +271,7 @@ class EHentaiUpdateHelper(
             }
             .sortedBy { it.dateUpload }
             .let { chapters ->
-                val updates = mutableListOf<ChapterUpdate>()
+                val updates = mutableListOf<ChapterRemoteUpdate>()
                 val newChapters = mutableListOf<Chapter>()
                 chapters.mapIndexed { index, chapter ->
                     val name = "v${index + 1}: " + chapter.name.substringAfter(" ")
@@ -286,11 +286,14 @@ class EHentaiUpdateHelper(
                             ),
                         )
                         else -> updates.add(
-                            ChapterUpdate(
+                            ChapterRemoteUpdate(
                                 id = chapter.id,
-                                name = name.takeUnless { chapter.name == it },
-                                chapterNumber = chapterNumber.takeUnless { chapter.chapterNumber == it },
-                                sourceOrder = sourceOrder.takeUnless { chapter.sourceOrder == it },
+                                name = name,
+                                scanlator = chapter.scanlator,
+                                chapterNumber = chapterNumber,
+                                dateUpload = chapter.dateUpload,
+                                sourceOrder = sourceOrder,
+                                memo = chapter.memo,
                             ),
                         )
                     }

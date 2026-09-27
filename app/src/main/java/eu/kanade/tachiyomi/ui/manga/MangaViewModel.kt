@@ -127,6 +127,7 @@ import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
 import tachiyomi.domain.manga.interactor.UpdateMergedSettings
 import tachiyomi.domain.manga.model.CustomMangaInfo
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.MangaRemoteUpdate
 import tachiyomi.domain.manga.model.MangaUpdate
 import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.domain.manga.model.MergeMangaSettingsUpdate
@@ -577,18 +578,24 @@ class MangaViewModel(
                 )
                 (sourceManager.get(LocalSource.ID) as LocalSource).updateMangaInfo(manga.toSManga())
                 appScope.launch {
-                    updateManga.await(
-                        MangaUpdate(
-                            manga.id,
+                    // SY -->
+                    updateManga.awaitRemote(
+                        MangaRemoteUpdate(
+                            id = manga.id,
                             title = newTitle,
                             author = newAuthor,
                             artist = newArtist,
                             thumbnailUrl = newThumbnailUrl,
                             description = newDesc,
                             genre = tags,
-                            status = status,
+                            status = status ?: 0,
+                            updateStrategy = manga.updateStrategy,
+                            memo = manga.memo,
+                            initialized = manga.initialized,
+                            coverLastModified = null,
                         ),
                     )
+                    // SY <--
                 }
             } else {
                 val genre = if (!tags.isNullOrEmpty() && tags != state.manga.ogGenre) {
