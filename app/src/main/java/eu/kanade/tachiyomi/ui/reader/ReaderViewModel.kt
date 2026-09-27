@@ -248,11 +248,27 @@ class ReaderViewModel(
         // SY -->
         val (chapters, mangaMap) = runBlocking {
             if (manga.source == MERGED_SOURCE_ID) {
-                getMergedChaptersByMangaId.await(manga.id, applyScanlatorFilter = true) to
+                getMergedChaptersByMangaId.await(manga.id, applyScanlatorFilter = true)
+                    .let { filtered ->
+                        if (filtered.any { it.id == chapterId }) {
+                            filtered
+                        } else {
+                            filtered + getMergedChaptersByMangaId.await(manga.id, applyScanlatorFilter = false)
+                                .filter { it.id == chapterId }
+                        }
+                    } to
                     getMergedMangaById.await(manga.id)
                         .associateBy { it.id }
             } else {
-                getChaptersByMangaId.await(manga.id, applyScanlatorFilter = true) to null
+                getChaptersByMangaId.await(manga.id, applyScanlatorFilter = true)
+                    .let { filtered ->
+                        if (filtered.any { it.id == chapterId }) {
+                            filtered
+                        } else {
+                            filtered + getChaptersByMangaId.await(manga.id, applyScanlatorFilter = false)
+                                .filter { it.id == chapterId }
+                        }
+                    } to null
             }
         }
         fun isChapterDownloaded(chapter: Chapter): Boolean {
