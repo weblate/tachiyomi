@@ -444,7 +444,7 @@ class SyncManager(
             val key = Pair(nonFavorite.source, nonFavorite.url)
             localMangaMap[key]?.let { localManga ->
                 if (localManga.favorite != nonFavorite.favorite) {
-                    mangaRepository.update(MangaUpdate(id = localManga.id, favorite = nonFavorite.favorite))
+                    mangaRepository.update(MangaUpdate(localManga.id) { favorite = nonFavorite.favorite })
                 }
             }
         }

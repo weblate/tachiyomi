@@ -105,18 +105,16 @@ class EHentaiUpdateHelper(
             val (chapterUpdates, newChapters, new) = getChapterList(accepted, toDiscard, chainsAsChapters)
 
             toDiscard.forEach {
-                mangaUpdates += MangaUpdate(
-                    id = it.manga.id,
-                    favorite = false,
-                    dateAdded = 0,
-                )
+                mangaUpdates += MangaUpdate(it.manga.id) {
+                    favorite = false
+                    dateAdded = 0
+                }
             }
             if (!accepted.manga.favorite) {
-                mangaUpdates += MangaUpdate(
-                    id = accepted.manga.id,
-                    favorite = true,
-                    dateAdded = System.currentTimeMillis(),
-                )
+                mangaUpdates += MangaUpdate(accepted.manga.id) {
+                    favorite = true
+                    dateAdded = System.currentTimeMillis()
+                }
             }
 
             val newAccepted = ChapterChain(accepted.manga, newChapters, emptyList())

@@ -71,8 +71,8 @@ import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
 import tachiyomi.domain.manga.interactor.GetFlatMetadataById
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.model.Manga
+import tachiyomi.domain.manga.model.MangaUpdate
 import tachiyomi.domain.manga.model.MangaWithChapterCount
-import tachiyomi.domain.manga.model.toMangaUpdate
 import tachiyomi.domain.source.interactor.DeleteSavedSearchById
 import tachiyomi.domain.source.interactor.GetRemoteManga
 import tachiyomi.domain.source.interactor.InsertSavedSearch
@@ -341,23 +341,24 @@ open class BrowseSourceViewModel(
      * @param manga the manga to update.
      */
     fun changeMangaFavorite(manga: Manga) {
-        appScope.launch {
-            val new = manga.copy(
-                favorite = !manga.favorite,
-                dateAdded = when (manga.favorite) {
-                    true -> 0
-                    false -> Clock.System.now().toEpochMilliseconds()
-                },
-            )
-
-            if (!new.favorite) {
+        viewModelScope.launch {
+            val update = if (manga.favorite) {
                 manga.removeCovers(coverCache)
+                MangaUpdate(manga.id) {
+                    favorite = false
+                    dateAdded = 0
+                    coverLastModified = Clock.System.now().toEpochMilliseconds()
+                }
             } else {
                 setMangaDefaultChapterFlags.await(manga)
                 addTracks.bindEnhancedTrackers(manga, sourceManager.getOrStub(manga.source))
+                MangaUpdate(manga.id) {
+                    favorite = true
+                    dateAdded = Clock.System.now().toEpochMilliseconds()
+                }
             }
 
-            updateManga.await(new.toMangaUpdate())
+            updateManga.await(update)
         }
     }
 

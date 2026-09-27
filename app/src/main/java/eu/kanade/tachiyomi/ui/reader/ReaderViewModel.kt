@@ -807,11 +807,10 @@ class ReaderViewModel(
                 }
 
                 updateChapter.await(
-                    ChapterUpdate(
-                        id = readerChapter.chapter.id!!,
-                        read = readerChapter.chapter.read,
-                        lastPageRead = pageIndex.toLong(),
-                    ),
+                    ChapterUpdate(readerChapter.chapter.id!!) {
+                        read = readerChapter.chapter.read
+                        lastPageRead = pageIndex.toLong()
+                    },
                 )
             }
 
@@ -832,10 +831,7 @@ class ReaderViewModel(
                 val chapterUpdates = getUnfilteredChapterList()
                     .filter { it.sourceOrder > readerChapter.chapter.source_order }
                     .map { chapter ->
-                        ChapterUpdate(
-                            id = chapter.id,
-                            read = true,
-                        )
+                        ChapterUpdate(chapter.id) { read = true }
                     }
                 updateChapter.awaitAll(chapterUpdates)
             }
@@ -856,7 +852,7 @@ class ReaderViewModel(
                     chapter.isRecognizedNumber &&
                     chapter.chapterNumber.toFloat() == readerChapter.chapter.chapter_number
                 ) {
-                    ChapterUpdate(id = chapter.id, read = true)
+                    ChapterUpdate(chapter.id) { read = true }
                 } else {
                     null
                 }
@@ -946,10 +942,9 @@ class ReaderViewModel(
         // On Main so quick toggles are saved in order
         viewModelScope.launch {
             updateChapter.await(
-                ChapterUpdate(
-                    id = chapter.id!!,
-                    bookmark = bookmarked,
-                ),
+                ChapterUpdate(chapter.id!!) {
+                    bookmark = bookmarked
+                },
             )
         }
 
@@ -967,10 +962,7 @@ class ReaderViewModel(
         // On Main so quick toggles are saved in order
         viewModelScope.launch {
             updateChapter.await(
-                ChapterUpdate(
-                    id = chapterId,
-                    bookmark = bookmarked,
-                ),
+                ChapterUpdate(chapterId) { bookmark = bookmarked },
             )
         }
     }

@@ -1,33 +1,24 @@
 package tachiyomi.domain.manga.model
 
-data class MangaUpdate(
-    val id: Long,
-    val favorite: Boolean? = null,
-    val lastUpdate: Long? = null,
-    val nextUpdate: Long? = null,
-    val fetchInterval: Int? = null,
-    val dateAdded: Long? = null,
-    val viewerFlags: Long? = null,
-    val chapterFlags: Long? = null,
-    val coverLastModified: Long? = null,
-    val notes: String? = null,
-    // SY -->
-    val url: String? = null,
-    val filteredScanlators: List<String>? = null,
-    // SY <--
-)
+import mihon.domain.common.PartialUpdate
 
-fun Manga.toMangaUpdate(): MangaUpdate {
-    return MangaUpdate(
-        id = id,
-        favorite = favorite,
-        lastUpdate = lastUpdate,
-        nextUpdate = nextUpdate,
-        fetchInterval = fetchInterval,
-        dateAdded = dateAdded,
-        viewerFlags = viewerFlags,
-        chapterFlags = chapterFlags,
-        coverLastModified = coverLastModified,
-        notes = notes,
-    )
+class MangaUpdate(val id: Long, block: MangaUpdate.() -> Unit) : PartialUpdate() {
+    var favorite: Boolean? by field(null)
+    var lastUpdate: Long? by field(null)
+    var nextUpdate: Long? by field(null)
+    var fetchInterval: Int? by field(null)
+    var dateAdded: Long? by field(null)
+    var viewerFlags: Long? by field(null)
+    var chapterFlags: Long? by field(null)
+    var coverLastModified: Long? by field(null)
+    var notes: String? by field(null)
+
+    // SY -->
+    var url: String? by field(null)
+    var filteredScanlators: List<String>? by field(null)
+    // SY <--
+
+    init {
+        block()
+    }
 }

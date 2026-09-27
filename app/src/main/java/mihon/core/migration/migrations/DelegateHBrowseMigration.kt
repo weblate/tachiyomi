@@ -32,7 +32,7 @@ class DelegateHBrowseMigration(
         // Migrate BHrowse URLs
         val hBrowseManga = getMangaBySource.await(HBROWSE_SOURCE_ID)
         val mangaUpdates = hBrowseManga.map {
-            MangaUpdate(it.id, url = it.url + "/c00001/")
+            MangaUpdate(it.id) { url = it.url + "/c00001/" }
         }
         updateManga.awaitAll(mangaUpdates)
         return@withContext true

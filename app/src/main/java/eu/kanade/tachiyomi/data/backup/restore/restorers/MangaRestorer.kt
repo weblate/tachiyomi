@@ -89,11 +89,11 @@ class MangaRestorer(
             )
         }
 
-        // SY -->
-        restoreRepository.restoreManga(entries, isSync) {
-            fetchInterval.toMangaUpdate(it, now, timeZone, currentFetchWindow)
+        restoreRepository.restoreManga(entries, /* SY --> */ isSync /* SY <-- */) {
+            fetchInterval.withFetchInterval(it, now, timeZone, currentFetchWindow)
         }
 
+        // SY -->
         if (isSync) {
             mangaRepository.resetIsSyncing()
             chapterRepository.resetIsSyncing()
