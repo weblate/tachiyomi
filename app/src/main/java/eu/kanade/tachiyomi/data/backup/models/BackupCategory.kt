@@ -18,18 +18,7 @@ class BackupCategory(
     @ProtoNumber(601) var version: Long = 0,
     @ProtoNumber(602) var uid: Long = 0,
     @ProtoNumber(603) var lastModifiedAt: Long = 0,
-) {
-    fun toCategory(id: Long) = Category(
-        id = id,
-        name = this@BackupCategory.name,
-        flags = this@BackupCategory.flags,
-        order = this@BackupCategory.order,
-        version = this@BackupCategory.version,
-        uid = this@BackupCategory.uid,
-        lastModifiedAt = this@BackupCategory.lastModifiedAt,
-        /*mangaOrder = this@BackupCategory.mangaOrder*/
-    )
-}
+)
 
 val backupCategoryMapper = { category: Category ->
     BackupCategory(
