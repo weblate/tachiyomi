@@ -26,10 +26,11 @@ class ExtensionApi(
     }
 
     /**
-     * @param loadedExtensions Extensions already loaded by [eu.kanade.tachiyomi.extension.ExtensionManager].
-     * Only their versions are read, so there's nothing to gain from loading them a second time.
+     * @param installedExtensions Extensions already read by [eu.kanade.tachiyomi.extension.ExtensionManager],
+     * loaded or not. Only their versions and signatures are read, so there's nothing to gain from reading them
+     * a second time.
      */
-    suspend fun checkForUpdates(loadedExtensions: List<Extension.Loaded>) {
+    suspend fun checkForUpdates(installedExtensions: List<Extension.Installed>) {
         updateExtensionStores()
 
         val extensions = findExtensions()
@@ -38,7 +39,7 @@ class ExtensionApi(
         val blacklistEnabled = sourcePreferences.enableSourceBlacklist.get()
         // SY <--
 
-        val extensionsWithUpdate = loadedExtensions.filter {
+        val extensionsWithUpdate = installedExtensions.filter {
             /* SY --> */ !it.isBlacklisted(blacklistEnabled) && /* SY <-- */ it.findUpdate(extensions) != null
         }
 

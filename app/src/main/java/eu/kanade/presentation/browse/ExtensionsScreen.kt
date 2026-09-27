@@ -84,7 +84,7 @@ fun ExtensionScreen(
     onOpenWebView: (Extension.Available) -> Unit,
     onInstallExtension: (Extension.Available) -> Unit,
     onUninstallExtension: (Extension.Installed) -> Unit,
-    onUpdateExtension: (Extension.Loaded) -> Unit,
+    onUpdateExtension: (Extension.Installed) -> Unit,
     onTrustExtension: (Extension.NotLoaded) -> Unit,
     onOpenExtension: (Extension.Loaded) -> Unit,
     onClickUpdateAll: () -> Unit,
@@ -145,7 +145,7 @@ private fun ExtensionContent(
     onOpenWebView: (Extension.Available) -> Unit,
     onInstallExtension: (Extension.Available) -> Unit,
     onUninstallExtension: (Extension.Installed) -> Unit,
-    onUpdateExtension: (Extension.Loaded) -> Unit,
+    onUpdateExtension: (Extension.Installed) -> Unit,
     onTrustExtension: (Extension.NotLoaded) -> Unit,
     onOpenExtension: (Extension.Loaded) -> Unit,
     onClickUpdateAll: () -> Unit,
@@ -233,7 +233,9 @@ private fun ExtensionContent(
                         when (it) {
                             is Extension.Available -> onOpenWebView(it)
                             is Extension.Loaded -> onOpenExtension(it)
-                            else -> {}
+                            is Extension.NotLoaded -> {
+                                notLoadedState = it
+                            }
                         }
                     },
                     onClickItemCancel = onClickItemCancel,
@@ -248,7 +250,11 @@ private fun ExtensionContent(
                                 }
                             }
                             is Extension.NotLoaded -> {
-                                notLoadedState = it
+                                if (it.hasUpdate) {
+                                    onUpdateExtension(it)
+                                } else {
+                                    notLoadedState = it
+                                }
                             }
                         }
                     },
@@ -481,7 +487,7 @@ private fun ExtensionItemActions(
                     }
                     is Extension.NotLoaded -> {
                         val isUntrusted = extension.reason is Extension.NotLoaded.Reason.Untrusted
-                        IconButton(onClick = { onClickItemAction(extension) }) {
+                        IconButton(onClick = { onClickItemSecondaryAction(extension) }) {
                             Icon(
                                 imageVector = if (isUntrusted) {
                                     MaterialSymbols.Rounded.VerifiedUser
@@ -494,6 +500,15 @@ private fun ExtensionItemActions(
                                     stringResource(MR.strings.ext_not_loaded)
                                 },
                             )
+                        }
+
+                        if (extension.hasUpdate) {
+                            IconButton(onClick = { onClickItemAction(extension) }) {
+                                Icon(
+                                    imageVector = MaterialSymbols.Rounded.Download,
+                                    contentDescription = stringResource(MR.strings.ext_update),
+                                )
+                            }
                         }
                     }
                     is Extension.Available -> {
