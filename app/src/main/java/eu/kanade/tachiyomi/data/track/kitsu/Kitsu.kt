@@ -194,7 +194,7 @@ class Kitsu(context: Context, id: Long) : BaseTracker(context, id, "Kitsu"), Del
             logcat(LogPriority.ERROR) { "Unsupported Kitsu score type: $ratingSystem" }
             scorePreference.set(RATING_ADVANCED)
         }
-        saveDisplayUsername(currentUser.profile.name)
+        saveDisplayUsername(currentUser.name)
         saveCredentials(username, currentUser.id)
     }
 
@@ -208,7 +208,7 @@ class Kitsu(context: Context, id: Long) : BaseTracker(context, id, "Kitsu"), Del
             logcat(LogPriority.ERROR) { "Unsupported Kitsu score type: $ratingSystem" }
             scorePreference.set(RATING_ADVANCED)
         }
-        saveDisplayUsername(currentUser.profile.name)
+        saveDisplayUsername(currentUser.name)
     }
 
     override fun logout() {
@@ -216,7 +216,7 @@ class Kitsu(context: Context, id: Long) : BaseTracker(context, id, "Kitsu"), Del
         interceptor.newAuth(null)
     }
 
-    override suspend fun getMangaMetadata(track: DomainTrack): TrackMangaMetadata {
+    override suspend fun getMangaMetadata(track: DomainTrack): TrackMangaMetadata? {
         return api.getMangaMetadata(track)
     }
 

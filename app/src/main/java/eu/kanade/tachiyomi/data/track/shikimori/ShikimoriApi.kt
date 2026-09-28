@@ -2,26 +2,31 @@ package eu.kanade.tachiyomi.data.track.shikimori
 
 import android.net.Uri
 import androidx.core.net.toUri
+import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.network.okHttpClient
 import eu.kanade.tachiyomi.data.database.models.Track
 import eu.kanade.tachiyomi.data.track.model.TrackMangaMetadata
 import eu.kanade.tachiyomi.data.track.model.TrackSearch
 import eu.kanade.tachiyomi.data.track.shikimori.dto.SMLibraryIdResponse
-import eu.kanade.tachiyomi.data.track.shikimori.dto.SMMetadata
 import eu.kanade.tachiyomi.data.track.shikimori.dto.SMOAuth
-import eu.kanade.tachiyomi.data.track.shikimori.dto.SMSearchResult
 import eu.kanade.tachiyomi.data.track.shikimori.dto.SMUser
-import eu.kanade.tachiyomi.data.track.shikimori.dto.SMUserListResult
-import eu.kanade.tachiyomi.data.track.shikimori.dto.SMUserResult
 import eu.kanade.tachiyomi.network.DELETE
 import eu.kanade.tachiyomi.network.POST
 import eu.kanade.tachiyomi.network.PUT
 import eu.kanade.tachiyomi.network.awaitSuccess
+import eu.kanade.tachiyomi.network.dataOrElse
 import eu.kanade.tachiyomi.network.jsonMime
 import eu.kanade.tachiyomi.network.parseAs
+import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import mihon.graphql.shikimori.ShikimoriGetCurrentUserQuery
+import mihon.graphql.shikimori.ShikimoriGetLibMangaQuery
+import mihon.graphql.shikimori.ShikimoriGetMangaDetailsQuery
+import mihon.graphql.shikimori.ShikimoriGetMangaMetadataQuery
+import mihon.graphql.shikimori.ShikimoriSearchMangaQuery
 import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -38,6 +43,16 @@ class ShikimoriApi(
     private val json: Json by injectLazy()
 
     private val authClient = client.newBuilder().addInterceptor(interceptor).build()
+
+    private val graphQlClient by lazy {
+        ApolloClient.Builder()
+            .serverUrl("$API_URL/graphql")
+            .okHttpClient(authClient)
+            .dispatcher(Dispatchers.IO)
+            // required to log the error body in dataOrElse, which also properly closes it
+            .httpExposeErrorBody(true)
+            .build()
+    }
 
     suspend fun addLibManga(track: Track, userId: String): Track {
         return withIOContext {
@@ -104,238 +119,97 @@ class ShikimoriApi(
     }
 
     suspend fun search(search: String): List<TrackSearch> {
-        return withIOContext {
-            val query = $$"""
-            |query($query: String) {
-                |mangas(search: $query, limit: 20, kind:"!light_novel,!novel") {
-                    |id
-                    |name
-                    |chapters
-                    |kind
-                    |poster {
-                        |mainUrl
-                    |}
-                    |score
-                    |url
-                    |status
-                    |airedOn {
-                        |date
-                    |}
-                    |description
-                    |personRoles {
-                        |person {
-                            |name
-                        |}
-                        |rolesEn
-                    |}
-                |}
-            |}
-            """.trimMargin()
-            val payload = buildJsonObject {
-                put("query", query)
-                putJsonObject("variables") {
-                    put("query", search)
+        return graphQlClient
+            .query(
+                ShikimoriSearchMangaQuery(search = search),
+            )
+            .execute()
+            .dataOrElse(
+                errorLog = "Shikimori: Search failed",
+                default = { emptyList() },
+            ) {
+                it.mangas.map { manga ->
+                    manga.toTrackSearch(trackerId)
                 }
             }
-            with(json) {
-                authClient.newCall(
-                    POST(
-                        GRAPHQL_API_URL,
-                        body = payload.toString().toRequestBody(jsonMime),
-                    ),
-                )
-                    .awaitSuccess()
-                    .parseAs<SMSearchResult>()
-                    .data.mangas
-                    .map { it.toTrack(trackerId) }
-            }
-        }
     }
 
     suspend fun getMangaDetails(id: Int): TrackSearch? {
-        return withIOContext {
-            val query = $$"""
-            |query($query: String) {
-                |mangas(ids: $query, limit: 1, kind:"!light_novel,!novel") {
-                    |id
-                    |name
-                    |chapters
-                    |kind
-                    |poster {
-                        |mainUrl
-                    |}
-                    |score
-                    |url
-                    |status
-                    |airedOn {
-                        |date
-                    |}
-                    |description
-                    |personRoles {
-                        |person {
-                            |name
-                        |}
-                        |rolesEn
-                    |}
-                |}
-            |}
-            """.trimMargin()
-            val payload = buildJsonObject {
-                put("query", query)
-                putJsonObject("variables") {
-                    put("query", "$id")
-                }
-            }
-
-            with(json) {
-                authClient.newCall(
-                    POST(
-                        GRAPHQL_API_URL,
-                        body = payload.toString().toRequestBody(jsonMime),
-                    ),
-                )
-                    .awaitSuccess()
-                    .parseAs<SMSearchResult>()
-                    .data.mangas
+        return graphQlClient
+            .query(
+                ShikimoriGetMangaDetailsQuery(query = "$id"),
+            )
+            .execute()
+            .dataOrElse(
+                errorLog = "Shikimori: Failed to get manga details",
+                default = { null },
+            ) {
+                it.mangas
                     .firstOrNull()
-                    ?.toTrack(trackerId)
+                    ?.toTrackSearch(trackerId)
             }
-        }
     }
 
     suspend fun findLibManga(track: Track): Track? {
-        return withIOContext {
-            val query = $$"""
-                |query($id: String) {
-                    |mangas(ids: $id, limit: 1) {
-                        |id
-                        |url
-                        |name
-                        |chapters
-                        |userRate {
-                            |id
-                            |chapters
-                            |status
-                            |score
-                        |}
-                    |}
-                |}
-            """.trimMargin()
-
-            val payload = buildJsonObject {
-                put("query", query)
-                putJsonObject("variables") {
-                    put("id", track.remote_id.toString())
-                }
-            }
-            with(json) {
-                val listResult = authClient.newCall(
-                    POST(
-                        GRAPHQL_API_URL,
-                        body = payload.toString().toRequestBody(jsonMime),
-                    ),
-                )
-                    .awaitSuccess()
-                    .parseAs<SMUserListResult>()
-                    .data.mangas
-                    .firstOrNull()
+        return graphQlClient
+            .query(
+                ShikimoriGetLibMangaQuery(
+                    remote_id = track.remote_id.toString(),
+                ),
+            )
+            .execute()
+            .dataOrElse(
+                errorLog = "Shikimori: Failed to find manga in library",
+                default = { null },
+            ) {
+                val mangaResult = it.mangas.firstOrNull()
 
                 // Shikimori has no user list query that allows query by ID, so we go via the "mangas" query & include
                 // userRate data which will be null if the title is not in the user's list.
                 // If it was removed on Shikimori and is still linked in the app, notify user via returning null here
                 // which throws an exception at the Shikimori.refresh call
-                if (listResult?.userRate == null) {
+                if (mangaResult?.userRate == null) {
                     null
                 } else {
-                    listResult.toTrack(trackerId)
+                    mangaResult.toTrack(trackerId)
                 }
             }
-        }
     }
 
     suspend fun getCurrentUser(): SMUser {
-        return with(json) {
-            val query = """
-            |{
-                |currentUser {
-                    |id
-                    |nickname
-                |}
-            |}
-            """.trimMargin()
-            val payload = buildJsonObject {
-                put("query", query)
-            }
-            authClient.newCall(
-                POST(
-                    GRAPHQL_API_URL,
-                    body = payload.toString().toRequestBody(jsonMime),
-                ),
+        return graphQlClient
+            .query(
+                ShikimoriGetCurrentUserQuery(),
             )
-                .awaitSuccess()
-                .parseAs<SMUserResult>()
-                .data.currentUser
-        }
-    }
-
-    suspend fun getMangaMetadata(track: DomainTrack): TrackMangaMetadata {
-        return withIOContext {
-            val query = """
-                |query(${'$'}ids: String!) {
-                    |mangas(ids: ${'$'}ids) {
-                        |id
-                        |name
-                        |description
-                        |poster {
-                            |originalUrl
-                        |}
-                        |personRoles {
-                            |person {
-                                |name
-                            |}
-                            |rolesEn
-                        |}
-                    |}
-                |}
-            """.trimMargin()
-            val payload = buildJsonObject {
-                put("query", query)
-                putJsonObject("variables") {
-                    put("ids", "${track.remoteId}")
+            .execute()
+            .dataOrElse(
+                errorLog = "Shikimori: Failed to get current user",
+                default = { null },
+            ) {
+                it.currentUser?.let { currentUser ->
+                    SMUser(id = currentUser.id, nickname = currentUser.nickname)
                 }
             }
-            with(json) {
-                authClient.newCall(
-                    POST(
-                        "https://shikimori.one/api/graphql",
-                        body = payload.toString().toRequestBody(jsonMime),
-                    ),
-                )
-                    .awaitSuccess()
-                    .parseAs<SMMetadata>()
-                    .let {
-                        if (it.data.mangas.isEmpty()) throw Exception("Could not get metadata from Shikimori")
-                        val manga = it.data.mangas[0]
-                        TrackMangaMetadata(
-                            remoteId = manga.id.toLong(),
-                            title = manga.name,
-                            thumbnailUrl = manga.poster.originalUrl,
-                            description = manga.description,
-                            authors = manga.personRoles
-                                .filter { it.roles.contains("Story") || it.roles.contains("Story & Art") }
-                                .map { it.person.name }
-                                .joinToString(", ")
-                                .ifEmpty { null },
-                            artists = manga.personRoles
-                                .filter { it.roles.contains("Art") || it.roles.contains("Story & Art") }
-                                .map { it.person.name }
-                                .joinToString(", ")
-                                .ifEmpty { null },
-                        )
-                    }
-            }
-        }
+            ?: throw Exception("Failed to get Shikimori user data")
     }
+
+    // SY -->
+    suspend fun getMangaMetadata(track: DomainTrack): TrackMangaMetadata? {
+        return graphQlClient
+            .query(
+                ShikimoriGetMangaMetadataQuery(
+                    ids = track.remoteId.toString(),
+                ),
+            )
+            .execute()
+            .dataOrElse(
+                errorLog = "Shikimori: Failed to get manga metadata",
+                default = { null },
+            ) {
+                it.mangas.firstOrNull()?.toTrackMangaMetadata()
+            }
+    }
+    // SY <--
 
     suspend fun accessToken(code: String): SMOAuth {
         return withIOContext {
@@ -361,7 +235,6 @@ class ShikimoriApi(
     companion object {
         private const val BASE_URL = "https://shikimori.io"
         private const val API_URL = "$BASE_URL/api"
-        private const val GRAPHQL_API_URL = "$BASE_URL/api/graphql"
         private const val OAUTH_URL = "$BASE_URL/oauth/token"
         private const val LOGIN_URL = "$BASE_URL/oauth/authorize"
 
