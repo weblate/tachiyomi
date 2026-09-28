@@ -1212,17 +1212,17 @@ class ReaderViewModel(
         val stream2 = page2.stream!!
         ImageUtil.findImageType(stream2) ?: throw Exception("Not an image")
         val imageBitmap = try {
-            ImageDecoder.new(stream1())
+            ImageDecoder.open(stream1()).use { it.decodeNext() }
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to decode stream1" }
             throw e
-        }.decode()
+        }
         val imageBitmap2 = try {
-            ImageDecoder.new(stream2())
+            ImageDecoder.open(stream2()).use { it.decodeNext() }
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Failed to decode stream2" }
             throw e
-        }.decode()
+        }
 
         val chapter = page1.chapter.chapter
 

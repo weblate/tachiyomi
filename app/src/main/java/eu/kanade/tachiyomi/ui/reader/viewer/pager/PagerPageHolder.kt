@@ -331,9 +331,9 @@ class PagerPageHolder(
         }
     }
 
-    private fun decodeImage(imageSource: BufferedSource): ImageDecoder.DecodeResult? {
+    private fun decodeImage(imageSource: BufferedSource): ImageDecoder.Frame? {
         return try {
-            ImageDecoder.new(imageSource.inputStream()).decode()
+            ImageDecoder.open(imageSource.inputStream()).use { it.decodeNext() }
         } catch (e: Exception) {
             logcat(LogPriority.ERROR, e) { "Cannot decode image" }
             null
