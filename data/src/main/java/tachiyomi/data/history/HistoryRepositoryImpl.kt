@@ -97,7 +97,7 @@ class HistoryRepositoryImpl(
                     database.historyQueries.upsert(
                         chapterId = historyUpdate.chapterId,
                         readAt = historyUpdate.readAt,
-                        time_read = historyUpdate.sessionReadDuration,
+                        readDuration = historyUpdate.sessionReadDuration,
                     )
                 }
             }

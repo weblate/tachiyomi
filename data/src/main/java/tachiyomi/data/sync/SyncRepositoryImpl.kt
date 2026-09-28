@@ -18,15 +18,15 @@ class SyncRepositoryImpl(
 
     override suspend fun resetAllSyncing() {
         database.transaction {
-            database.mangasQueries.resetIsSyncing()
-            database.chaptersQueries.resetIsSyncing()
-            database.categoriesQueries.resetIsSyncing()
+            database.mangaQueries.resetIsSyncing()
+            database.chapterQueries.resetIsSyncing()
+            database.categoryQueries.resetIsSyncing()
         }
     }
 
     override suspend fun resetMangaSyncing() {
         database.transaction {
-            database.mangasQueries.resetIsSyncing()
+            database.mangaQueries.resetIsSyncing()
         }
     }
 }

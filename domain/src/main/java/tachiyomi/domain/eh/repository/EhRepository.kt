@@ -15,5 +15,5 @@ interface EhRepository {
 
     suspend fun migrateAllNhentaiToOtherLang(otherId: Long, sources: List<Long>)
 
-    suspend fun deleteBySyncId(syncId: Long)
+    suspend fun deleteByTrackerId(trackerId: Long)
 }

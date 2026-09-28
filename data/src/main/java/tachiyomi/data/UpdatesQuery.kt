@@ -92,65 +92,65 @@ class UpdatesQuery(
                 FROM (
                     -- Normal source
                     SELECT
-                        mangas._id AS mangaId,
-                        mangas.title AS mangaTitle,
-                        chapters._id AS chapterId,
-                        chapters.name AS chapterName,
-                        chapters.scanlator,
-                        chapters.url AS chapterUrl,
-                        chapters.read,
-                        chapters.bookmark,
-                        chapters.last_page_read,
-                        mangas.source,
-                        mangas.favorite,
-                        mangas.thumbnail_url AS thumbnailUrl,
-                        mangas.cover_last_modified AS coverLastModified,
-                        chapters.date_upload AS dateUpload,
-                        chapters.date_fetch AS datefetch,
-                        excluded_scanlators.scanlator AS excludedScanlator
-                    FROM mangas
-                    JOIN chapters
-                        ON mangas._id = chapters.manga_id
-                    LEFT JOIN excluded_scanlators
-                        ON mangas._id = excluded_scanlators.manga_id
-                        AND chapters.scanlator = excluded_scanlators.scanlator
-                    WHERE mangas.source <> $MERGED_SOURCE_ID
-                    AND date_fetch > date_added
+                        manga.id AS mangaId,
+                        manga.remote_title AS mangaTitle,
+                        chapter.id AS chapterId,
+                        chapter.remote_name AS chapterName,
+                        chapter.remote_scanlator AS scanlator,
+                        chapter.remote_url AS chapterUrl,
+                        chapter.user_read AS read,
+                        chapter.user_bookmark AS bookmark,
+                        chapter.user_last_page_read AS last_page_read,
+                        manga.source_id AS source,
+                        manga.user_favorite_at IS NOT NULL AS favorite,
+                        manga.remote_cover AS thumbnailUrl,
+                        manga.state_cover_last_modified AS coverLastModified,
+                        chapter.remote_date_upload AS dateUpload,
+                        chapter.state_date_fetch AS datefetch,
+                        excluded_scanlator.scanlator AS excludedScanlator
+                    FROM manga
+                    JOIN chapter
+                        ON manga.id = chapter.manga_id
+                    LEFT JOIN excluded_scanlator
+                        ON manga.id = excluded_scanlator.manga_id
+                        AND chapter.remote_scanlator = excluded_scanlator.scanlator
+                    WHERE manga.source_id <> $MERGED_SOURCE_ID
+                    AND chapter.state_date_fetch > manga.user_favorite_at
 
                     UNION ALL
 
                     -- Merged source
                     SELECT
-                        mangas._id AS mangaId,
-                        mangas.title AS mangaTitle,
-                        chapters._id AS chapterId,
-                        chapters.name AS chapterName,
-                        chapters.scanlator,
-                        chapters.url AS chapterUrl,
-                        chapters.read,
-                        chapters.bookmark,
-                        chapters.last_page_read,
-                        mangas.source,
-                        mangas.favorite,
-                        mangas.thumbnail_url AS thumbnailUrl,
-                        mangas.cover_last_modified AS coverLastModified,
-                        chapters.date_upload AS dateUpload,
-                        chapters.date_fetch AS datefetch,
-                        excluded_scanlators.scanlator AS excludedScanlator
-                    FROM mangas
+                        manga.id AS mangaId,
+                        manga.remote_title AS mangaTitle,
+                        chapter.id AS chapterId,
+                        chapter.remote_name AS chapterName,
+                        chapter.remote_scanlator AS scanlator,
+                        chapter.remote_url AS chapterUrl,
+                        chapter.user_read AS read,
+                        chapter.user_bookmark AS bookmark,
+                        chapter.user_last_page_read AS last_page_read,
+                        manga.source_id AS source,
+                        manga.user_favorite_at IS NOT NULL AS favorite,
+                        manga.remote_cover AS thumbnailUrl,
+                        manga.state_cover_last_modified AS coverLastModified,
+                        chapter.remote_date_upload AS dateUpload,
+                        chapter.state_date_fetch AS datefetch,
+                        excluded_scanlator.scanlator AS excludedScanlator
+                    FROM manga
                     LEFT JOIN (
                         SELECT merged.manga_id, merged.merge_id
                         FROM merged
                         GROUP BY merged.merge_id
                     ) AS ME
-                        ON ME.merge_id = mangas._id
-                    JOIN chapters
-                        ON ME.manga_id = chapters.manga_id
-                    LEFT JOIN excluded_scanlators
-                        ON ME.merge_id = excluded_scanlators.manga_id
-                        AND chapters.scanlator = excluded_scanlators.scanlator
-                    WHERE mangas.source = $MERGED_SOURCE_ID
-                    AND date_fetch > date_added
+                        ON ME.merge_id = manga.id
+                    JOIN chapter
+                        ON ME.manga_id = chapter.manga_id
+                    LEFT JOIN excluded_scanlator
+                        ON ME.merge_id = excluded_scanlator.manga_id
+                        AND chapter.remote_scanlator = excluded_scanlator.scanlator
+                    WHERE manga.source_id = $MERGED_SOURCE_ID
+                    AND chapter.state_date_fetch > manga.user_favorite_at
                 ) AS combined
                 WHERE
                     favorite = 1
@@ -169,12 +169,12 @@ class UpdatesQuery(
                         -- includedEmpty being true expresses "don't care" state and bypasses the membership filter
                         :includedEmpty
                         OR EXISTS (
-                            SELECT 1 FROM mangas_categories
-                            WHERE mangas_categories.manga_id = mangaId
-                            AND COALESCE(mangas_categories.category_id, 0) IN $includedCategoriesIndexes
+                            SELECT 1 FROM manga_category
+                            WHERE manga_category.manga_id = mangaId
+                            AND COALESCE(manga_category.category_id, 0) IN $includedCategoriesIndexes
                         )
                         OR (0 IN $includedCategoriesIndexes AND NOT EXISTS (
-                            SELECT 1 FROM mangas_categories mc WHERE mc.manga_id = mangaId)
+                            SELECT 1 FROM manga_category mc WHERE mc.manga_id = mangaId)
                         )
                     )
                     AND (
@@ -182,13 +182,13 @@ class UpdatesQuery(
                         :excludedEmpty
                         OR (
                             NOT EXISTS (
-                                SELECT 1 FROM mangas_categories
-                                WHERE mangas_categories.manga_id = mangaId
-                                AND COALESCE(mangas_categories.category_id, 0) IN $excludedCategoriesIndexes
+                                SELECT 1 FROM manga_category
+                                WHERE manga_category.manga_id = mangaId
+                                AND COALESCE(manga_category.category_id, 0) IN $excludedCategoriesIndexes
                             )
                             AND (
                                 0 NOT IN $excludedCategoriesIndexes
-                                OR EXISTS (SELECT 1 FROM mangas_categories WHERE mangas_categories.manga_id = mangaId)
+                                OR EXISTS (SELECT 1 FROM manga_category WHERE manga_category.manga_id = mangaId)
                             )
                         )
                     )

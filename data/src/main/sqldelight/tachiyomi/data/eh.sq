@@ -1,28 +1,37 @@
-deleteBySyncId:
-DELETE FROM manga_sync WHERE sync_id = :syncId;
+ -- SY-specific file
+
+deleteByTrackerId:
+DELETE FROM manga_track WHERE tracker_id = :trackerId;
 
 migrateSource:
-UPDATE mangas
-SET source = :newId
-WHERE source = :oldId;
+UPDATE manga
+SET source_id = :newId
+WHERE source_id = :oldId;
 
 getChaptersByMangaIds:
-SELECT * FROM chapters WHERE manga_id IN :mangaIds;
+SELECT
+    id, manga_id, remote_url, remote_name, remote_scanlator,
+    user_read, user_bookmark, user_last_page_read, remote_chapter_number, remote_order,
+    state_date_fetch, remote_date_upload,
+    remote_memo,
+    state_last_modified_at, state_version, state_is_syncing
+FROM chapter
+WHERE manga_id IN :mangaIds;
 
 migrateAllNhentaiToOtherLang:
-UPDATE mangas
-SET source = :nh
-WHERE favorite_at IS NOT NULL AND source IN :sources;
+UPDATE manga
+SET source_id = :nh
+WHERE user_favorite_at IS NOT NULL AND source_id IN :sources;
 
 resetReaderViewerForAllManga:
-UPDATE mangas
-SET viewer = 0;
+UPDATE manga
+SET user_reader_flags = 0;
 
 fixReaderViewerBackupBug:
-UPDATE mangas
-SET viewer = 0
-WHERE viewer = -1;
+UPDATE manga
+SET user_reader_flags = 0
+WHERE user_reader_flags = -1;
 
 addAllMangaInDatabaseToLibrary:
-UPDATE mangas
-SET favorite_at = strftime('%s', 'now');
+UPDATE manga
+SET user_favorite_at = strftime('%s', 'now');

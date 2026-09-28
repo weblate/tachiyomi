@@ -35,7 +35,7 @@ class EhRepositoryImpl(
         database.ehQueries.migrateAllNhentaiToOtherLang(otherId, sources)
     }
 
-    override suspend fun deleteBySyncId(syncId: Long) {
-        database.ehQueries.deleteBySyncId(syncId)
+    override suspend fun deleteByTrackerId(trackerId: Long) {
+        database.ehQueries.deleteByTrackerId(trackerId)
     }
 }

@@ -75,13 +75,13 @@ class MangaMetadataRepositoryImpl(
     }
 
     override suspend fun getExhFavoriteMangaWithMetadata(): List<Manga> {
-        return database.mangasQueries
+        return database.mangaQueries
             .getEhMangaWithMetadata(EH_SOURCE_ID, EXH_SOURCE_ID, mangaMapper::mapManga)
             .awaitAsList()
     }
 
     override suspend fun getIdsOfFavoriteMangaWithMetadata(): List<Long> {
-        return database.mangasQueries
+        return database.mangaQueries
             .getIdsOfFavoriteMangaWithMetadata()
             .awaitAsList()
     }

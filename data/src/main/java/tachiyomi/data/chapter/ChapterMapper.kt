@@ -17,11 +17,13 @@ object ChapterMapper {
         sourceOrder: Long,
         dateFetch: Long,
         dateUpload: Long,
+        memo: JsonObject,
+        // SY -->
         lastModifiedAt: Long,
         version: Long,
         @Suppress("UNUSED_PARAMETER")
         isSyncing: Long,
-        memo: JsonObject,
+        // SY <--
     ): Chapter = Chapter(
         id = id,
         mangaId = mangaId,
@@ -35,8 +37,10 @@ object ChapterMapper {
         dateUpload = dateUpload,
         chapterNumber = chapterNumber,
         scanlator = scanlator,
+        // SY -->
         lastModifiedAt = lastModifiedAt,
         version = version,
+        // SY <--
         memo = memo,
     )
 }

@@ -21,7 +21,7 @@ class DeleteOldMangaDexTracksMigration(
 
     override suspend fun invoke(migrationContext: MigrationContext): Boolean = withContext(Dispatchers.IO) {
         // Delete old mangadex trackers
-        ehRepository.deleteBySyncId(6)
+        ehRepository.deleteByTrackerId(6)
         return@withContext true
     }
 }
