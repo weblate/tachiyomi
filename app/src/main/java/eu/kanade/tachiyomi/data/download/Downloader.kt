@@ -162,8 +162,6 @@ class Downloader(
         }
 
         isPaused = false
-
-        DownloadJob.stop(context)
     }
 
     /**
@@ -272,11 +270,12 @@ class Downloader(
      * @param manga the manga of the chapters to download.
      * @param chapters the list of chapters to download.
      * @param autoStart whether to start the downloader after enqueing the chapters.
+     * @return true if the downloader should be started.
      */
-    suspend fun queueChapters(manga: Manga, chapters: List<Chapter>, autoStart: Boolean) {
-        if (chapters.isEmpty()) return
+    suspend fun queueChapters(manga: Manga, chapters: List<Chapter>, autoStart: Boolean): Boolean {
+        if (chapters.isEmpty()) return false
 
-        val source = sourceManager.get(manga.source) as? HttpSource ?: return
+        val source = sourceManager.get(manga.source) as? HttpSource ?: return false
         val wasEmpty = queueState.value.isEmpty()
         val chaptersToQueue = chapters.asSequence()
             // Filter out those already downloaded.
@@ -321,9 +320,10 @@ class Downloader(
                         NotificationHandler.openUrl(context, LibraryUpdateNotifier.HELP_WARNING_URL),
                     )
                 }
-                DownloadJob.start(context)
+                return true
             }
         }
+        return false
     }
 
     /**
