@@ -1,12 +1,20 @@
 package mihon.app.di
 
+import android.app.ActivityManager
 import android.content.Context
+import androidx.core.content.getSystemService
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.execSQL
 import app.cash.sqldelight.db.SqlDriver
+import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteConcurrencyModel.MultipleReadersSingleWriter
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteConfiguration
+import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteConnectionFactory
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteDatabaseType
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteDriver
 import com.eygraber.sqldelight.androidx.driver.FileProvider
+import com.eygraber.sqldelight.androidx.driver.SqliteJournalMode
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Provides
@@ -31,6 +39,10 @@ import tachiyomi.data.UpdateStrategyColumnAdapter
 @BindingContainer
 object AppBindings {
 
+    /**
+     * Configured like Room's connection manager: WAL unless the device is low on RAM, one writer with four
+     * readers (one in TRUNCATE mode), and a busy timeout on every connection.
+     */
     @Provides
     @SingleIn(AppScope::class)
     fun providesSqlDriver(
@@ -39,32 +51,46 @@ object AppBindings {
         securityPreferences: SecurityPreferences,
         // SY <--
     ): SqlDriver {
+        val isWal = context.getSystemService<ActivityManager>()?.isLowRamDevice ?: true
+        val configuration = AndroidxSqliteConfiguration(
+            isForeignKeyConstraintsEnabled = true,
+            journalMode = if (isWal) SqliteJournalMode.WAL else SqliteJournalMode.Truncate,
+            concurrencyModel = MultipleReadersSingleWriter(isWal = isWal, nonWalCount = 1, walCount = 4),
+        )
         // SY -->
         if (securityPreferences.encryptDatabase.get()) {
             System.loadLibrary("sqlcipher")
 
             return AndroidxSqliteDriver(
-                driver = SQLCipherDriver(
-                    CbzCrypto.getDecryptedPasswordSql(),
-                    null,
-                    null,
+                connectionFactory = busyTimeoutConnectionFactory(
+                    SQLCipherDriver(
+                        CbzCrypto.getDecryptedPasswordSql(),
+                        null,
+                        null,
+                    ),
                 ),
                 databaseType = AndroidxSqliteDatabaseType.FileProvider(context, CbzCrypto.DATABASE_NAME),
                 schema = Database.Schema,
-                configuration = AndroidxSqliteConfiguration(
-                    isForeignKeyConstraintsEnabled = true,
-                ),
+                configuration = configuration,
             )
         }
         // SY <--
         return AndroidxSqliteDriver(
-            driver = BundledSQLiteDriver(),
+            connectionFactory = busyTimeoutConnectionFactory(BundledSQLiteDriver()),
             databaseType = AndroidxSqliteDatabaseType.FileProvider(context, "tachiyomi.db"),
             schema = Database.Schema,
-            configuration = AndroidxSqliteConfiguration(
-                isForeignKeyConstraintsEnabled = true,
-            ),
+            configuration = configuration,
         )
+    }
+
+    private fun busyTimeoutConnectionFactory(sqliteDriver: SQLiteDriver) = object : AndroidxSqliteConnectionFactory {
+        override val driver: SQLiteDriver = sqliteDriver
+
+        override fun createConnection(name: String): SQLiteConnection {
+            return driver.open(name).apply {
+                execSQL("PRAGMA busy_timeout = 3000")
+            }
+        }
     }
 
     @Provides
