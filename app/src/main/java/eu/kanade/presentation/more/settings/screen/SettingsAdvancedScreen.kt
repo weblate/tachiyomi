@@ -313,7 +313,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_reset_user_agent_string),
-                    enabled = remember(userAgent) { userAgent != userAgentPref.defaultValue() },
+                    visible = remember(userAgent) { userAgent != userAgentPref.defaultValue() },
                     onClick = {
                         userAgentPref.delete()
                         context.toast(MR.strings.requires_app_restart)
@@ -610,22 +610,22 @@ object SettingsAdvancedScreen : SearchableSettings {
                     preference = sourcePreferences.dataSaverServer,
                     title = stringResource(SYMR.strings.bandwidth_data_saver_server),
                     subtitle = stringResource(SYMR.strings.data_saver_server_summary),
-                    enabled = dataSaver == DataSaver.BANDWIDTH_HERO,
+                    visible = dataSaver == DataSaver.BANDWIDTH_HERO,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = sourcePreferences.dataSaverDownloader,
                     title = stringResource(SYMR.strings.data_saver_downloader),
-                    enabled = dataSaver != DataSaver.NONE,
+                    visible = dataSaver != DataSaver.NONE,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = sourcePreferences.dataSaverIgnoreJpeg,
                     title = stringResource(SYMR.strings.data_saver_ignore_jpeg),
-                    enabled = dataSaver != DataSaver.NONE,
+                    visible = dataSaver != DataSaver.NONE,
                 ),
                 Preference.PreferenceItem.SwitchPreference(
                     preference = sourcePreferences.dataSaverIgnoreGif,
                     title = stringResource(SYMR.strings.data_saver_ignore_gif),
-                    enabled = dataSaver != DataSaver.NONE,
+                    visible = dataSaver != DataSaver.NONE,
                 ),
                 Preference.PreferenceItem.ListPreference(
                     preference = sourcePreferences.dataSaverImageQuality,
@@ -641,7 +641,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                         "90%",
                         "95%",
                     ).associateBy { it.trimEnd('%').toInt() },
-                    enabled = dataSaver != DataSaver.NONE,
+                    visible = dataSaver != DataSaver.NONE,
                 ),
                 kotlin.run {
                     val dataSaverImageFormatJpeg by sourcePreferences.dataSaverImageFormatJpeg
@@ -654,13 +654,13 @@ object SettingsAdvancedScreen : SearchableSettings {
                         } else {
                             stringResource(SYMR.strings.data_saver_image_format_summary_off)
                         },
-                        enabled = dataSaver != DataSaver.NONE,
+                        visible = dataSaver != DataSaver.NONE,
                     )
                 },
                 Preference.PreferenceItem.SwitchPreference(
                     preference = sourcePreferences.dataSaverColorBW,
                     title = stringResource(SYMR.strings.data_saver_color_bw),
-                    enabled = dataSaver == DataSaver.BANDWIDTH_HERO,
+                    visible = dataSaver == DataSaver.BANDWIDTH_HERO,
                 ),
             ),
         )

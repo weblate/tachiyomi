@@ -225,7 +225,7 @@ object SettingsEhScreen : SearchableSettings {
                 0 to stringResource(SYMR.strings.use_hentai_at_home_option_1),
                 1 to stringResource(SYMR.strings.use_hentai_at_home_option_2),
             ),
-            enabled = exhentaiEnabled,
+            visible = exhentaiEnabled,
         )
     }
 
@@ -243,7 +243,7 @@ object SettingsEhScreen : SearchableSettings {
             } else {
                 stringResource(SYMR.strings.show_japanese_titles_option_2)
             },
-            enabled = exhentaiEnabled,
+            visible = exhentaiEnabled,
         )
     }
 
@@ -261,7 +261,7 @@ object SettingsEhScreen : SearchableSettings {
             } else {
                 stringResource(SYMR.strings.use_original_images_off)
             },
-            enabled = exhentaiEnabled,
+            visible = exhentaiEnabled,
         )
     }
 
@@ -281,7 +281,7 @@ object SettingsEhScreen : SearchableSettings {
                     null,
                 )
             },
-            enabled = exhentaiEnabled,
+            visible = exhentaiEnabled,
         )
     }
 
@@ -374,7 +374,7 @@ object SettingsEhScreen : SearchableSettings {
             onClick = {
                 dialogOpen = true
             },
-            enabled = exhentaiEnabled,
+            visible = exhentaiEnabled,
         )
     }
 
@@ -404,7 +404,7 @@ object SettingsEhScreen : SearchableSettings {
             onClick = {
                 dialogOpen = true
             },
-            enabled = exhentaiEnabled,
+            visible = exhentaiEnabled,
         )
     }
 
@@ -624,7 +624,7 @@ object SettingsEhScreen : SearchableSettings {
             onClick = {
                 dialogOpen = true
             },
-            enabled = exhentaiEnabled,
+            visible = exhentaiEnabled,
         )
     }
 
@@ -790,7 +790,7 @@ object SettingsEhScreen : SearchableSettings {
             onClick = {
                 dialogOpen = true
             },
-            enabled = exhentaiEnabled,
+            visible = exhentaiEnabled,
         )
     }
 
@@ -803,7 +803,7 @@ object SettingsEhScreen : SearchableSettings {
             preference = exhPreferences.exhWatchedListDefaultState,
             title = stringResource(SYMR.strings.watched_list_default),
             subtitle = stringResource(SYMR.strings.watched_list_state_summary),
-            enabled = exhentaiEnabled,
+            visible = exhentaiEnabled,
         )
     }
 
@@ -824,7 +824,7 @@ object SettingsEhScreen : SearchableSettings {
                 "med" to stringResource(SYMR.strings.eh_image_quality_980),
                 "low" to stringResource(SYMR.strings.eh_image_quality_780),
             ),
-            enabled = exhentaiEnabled,
+            visible = exhentaiEnabled,
         )
     }
 
