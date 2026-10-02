@@ -59,7 +59,7 @@ class DownloadManager(
         get() = downloader.queueState
 
     val isDownloaderRunning
-        get() = DownloadJob.isRunningFlow(context)
+        get() = DownloadWorker.isRunningFlow(context)
 
     /**
      * Starts the download worker, which runs the downloader.
@@ -67,7 +67,7 @@ class DownloadManager(
     fun startDownloads() {
         if (downloader.isRunning) return
 
-        DownloadJob.start(context)
+        DownloadWorker.start(context)
     }
 
     /**
