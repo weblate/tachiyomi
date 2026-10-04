@@ -14,7 +14,6 @@ import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteConnectionFactory
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteDatabaseType
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteDriver
 import com.eygraber.sqldelight.androidx.driver.FileProvider
-import com.eygraber.sqldelight.androidx.driver.SqliteJournalMode
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.BindingContainer
 import dev.zacsweers.metro.Provides
@@ -40,8 +39,8 @@ import tachiyomi.data.UpdateStrategyColumnAdapter
 object AppBindings {
 
     /**
-     * Configured like Room's connection manager: WAL unless the device is low on RAM, one writer with four
-     * readers (one in TRUNCATE mode), and a busy timeout on every connection.
+     * WAL on every device, so a write never blocks reads. Low-RAM devices get one reader instead of four, since each
+     * connection keeps its own page cache.
      */
     @Provides
     @SingleIn(AppScope::class)
@@ -51,11 +50,10 @@ object AppBindings {
         securityPreferences: SecurityPreferences,
         // SY <--
     ): SqlDriver {
-        val isWal = context.getSystemService<ActivityManager>()?.isLowRamDevice ?: true
+        val isLowRam = context.getSystemService<ActivityManager>()?.isLowRamDevice == true
         val configuration = AndroidxSqliteConfiguration(
             isForeignKeyConstraintsEnabled = true,
-            journalMode = if (isWal) SqliteJournalMode.WAL else SqliteJournalMode.Truncate,
-            concurrencyModel = MultipleReadersSingleWriter(isWal = isWal, nonWalCount = 1, walCount = 4),
+            concurrencyModel = MultipleReadersSingleWriter(isWal = true, walCount = if (isLowRam) 1 else 4),
         )
         // SY -->
         if (securityPreferences.encryptDatabase.get()) {
