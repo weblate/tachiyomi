@@ -59,6 +59,7 @@ class DownloadNotifier(
      */
     fun dismissProgress() {
         context.cancelNotification(Notifications.ID_DOWNLOAD_CHAPTER_PROGRESS)
+        context.cancelNotification(Notifications.ID_DOWNLOAD_CHAPTER_PAUSED)
     }
 
     /**
@@ -69,6 +70,7 @@ class DownloadNotifier(
     fun onProgressChange(download: Download) {
         with(progressNotificationBuilder) {
             if (!isDownloading) {
+                context.cancelNotification(Notifications.ID_DOWNLOAD_CHAPTER_PAUSED)
                 setSmallIcon(android.R.drawable.stat_sys_download)
                 clearActions()
                 // Open download manager when clicked
@@ -118,13 +120,17 @@ class DownloadNotifier(
      * Show notification when download is paused.
      */
     fun onPaused() {
-        with(progressNotificationBuilder) {
+        // The progress id belongs to the download worker's foreground service, which takes the
+        // notification with it when the worker stops
+        context.notify(
+            Notifications.ID_DOWNLOAD_CHAPTER_PAUSED,
+            Notifications.CHANNEL_DOWNLOADER_PROGRESS,
+        ) {
             setContentTitle(context.stringResource(MR.strings.chapter_paused))
             setContentText(context.stringResource(MR.strings.download_notifier_download_paused))
             setSmallIcon(MaterialSymbolsR.drawable.rounded_filled_pause)
-            setProgress(0, 0, false)
-            setOngoing(false)
-            clearActions()
+            setLargeIcon(BitmapFactory.decodeResource(context.resources, R.mipmap.ic_launcher))
+            setOnlyAlertOnce(true)
             // Open download manager when clicked
             setContentIntent(NotificationHandler.openDownloadManagerPendingActivity(context))
             // Resume action
@@ -139,8 +145,6 @@ class DownloadNotifier(
                 context.stringResource(MR.strings.action_cancel_all),
                 NotificationReceiver.clearDownloadsPendingBroadcast(context),
             )
-
-            show(Notifications.ID_DOWNLOAD_CHAPTER_PROGRESS)
         }
 
         // Reset initial values
