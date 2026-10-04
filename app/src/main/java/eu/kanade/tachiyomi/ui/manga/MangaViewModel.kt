@@ -1034,29 +1034,31 @@ class MangaViewModel(
         // SY -->
         val isExhManga = manga.isEhBasedManga()
         // SY <--
+        val queuedDownloads = if (isLocal) emptyMap() else downloadManager.getQueuedDownloadsByChapterId()
+        val downloadedChapterIds = when {
+            isLocal -> emptySet()
+            // SY -->
+            mergedData != null -> groupBy { it.mangaId }
+                .flatMapTo(HashSet()) { (mangaId, chapters) ->
+                    val chapterManga = mergedData.manga[mangaId] ?: manga
+                    if (chapterManga.isLocal()) {
+                        chapters.map { it.id }
+                    } else {
+                        downloadManager.getDownloadedChapterIds(chapters, chapterManga)
+                    }
+                }
+            // SY <--
+            else -> downloadManager.getDownloadedChapterIds(this, manga)
+        }
         return map { chapter ->
-            val activeDownload = if (isLocal) {
-                null
-            } else {
-                downloadManager.getQueuedDownloadOrNull(chapter.id)
-            }
+            val activeDownload = queuedDownloads[chapter.id]
 
             // SY -->
             @Suppress("NAME_SHADOWING")
             val manga = mergedData?.manga?.get(chapter.mangaId) ?: manga
             val source = mergedData?.sources?.find { manga.source == it.id }?.takeIf { mergedData.sources.size > 2 }
             // SY <--
-            val downloaded = if (manga.isLocal()) {
-                true
-            } else {
-                downloadManager.isChapterDownloaded(
-                    chapter.name,
-                    chapter.scanlator,
-                    chapter.url,
-                    /* SY --> */ manga.ogTitle, /* <-- SY */
-                    manga.source,
-                )
-            }
+            val downloaded = isLocal || chapter.id in downloadedChapterIds
             val downloadState = when {
                 activeDownload != null -> activeDownload.status
                 downloaded -> Download.State.DOWNLOADED
