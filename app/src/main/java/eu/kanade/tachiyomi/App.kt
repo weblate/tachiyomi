@@ -41,6 +41,7 @@ import eu.kanade.tachiyomi.crash.CrashActivity
 import eu.kanade.tachiyomi.crash.GlobalExceptionHandler
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.coil.BufferedSourceFetcher
+import eu.kanade.tachiyomi.data.coil.CoverRequestInterceptor
 import eu.kanade.tachiyomi.data.coil.ImageDecoder
 import eu.kanade.tachiyomi.data.coil.MangaCoverFetcher
 import eu.kanade.tachiyomi.data.coil.MangaCoverKeyer
@@ -270,6 +271,8 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                 // SY -->
                 add(PagePreviewKeyer())
                 // SY <--
+                // Interceptor
+                add(CoverRequestInterceptor())
             }
 
             memoryCache(
