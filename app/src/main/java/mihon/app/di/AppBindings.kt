@@ -7,8 +7,10 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.SQLiteDriver
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
+import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteConcurrencyModel.MultipleReadersSingleWriter
+import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteConfigurableDriver
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteConfiguration
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteConnectionFactory
 import com.eygraber.sqldelight.androidx.driver.AndroidxSqliteDatabaseType
@@ -22,6 +24,7 @@ import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.util.storage.CbzCrypto
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
+import mihon.data.database.DatabaseRepositoryImpl
 import net.zetetic.database.sqlcipher.driver.SQLCipherDriver
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
@@ -49,12 +52,21 @@ object AppBindings {
         // SY -->
         securityPreferences: SecurityPreferences,
         // SY <--
+        databaseRepository: DatabaseRepositoryImpl,
     ): SqlDriver {
         val isLowRam = context.getSystemService<ActivityManager>()?.isLowRamDevice == true
         val configuration = AndroidxSqliteConfiguration(
             isForeignKeyConstraintsEnabled = true,
             concurrencyModel = MultipleReadersSingleWriter(isWal = true, walCount = if (isLowRam) 1 else 4),
         )
+        // Runs before the driver compares the schema version, and onOpen once the schema is ready
+        val onConfigure: suspend AndroidxSqliteConfigurableDriver.() -> Unit = {
+            val version = executePragmaQuery("user_version", { QueryResult.Value(it.apply { next() }.getLong(0)) })
+            databaseRepository.isMigrating.value = version in 1..<Database.Schema.version
+        }
+        val onOpen: suspend SqlDriver.() -> Unit = {
+            databaseRepository.isMigrating.value = false
+        }
         // SY -->
         if (securityPreferences.encryptDatabase.get()) {
             System.loadLibrary("sqlcipher")
@@ -70,6 +82,8 @@ object AppBindings {
                 databaseType = AndroidxSqliteDatabaseType.FileProvider(context, CbzCrypto.DATABASE_NAME),
                 schema = Database.Schema,
                 configuration = configuration,
+                onConfigure = onConfigure,
+                onOpen = onOpen,
             )
         }
         // SY <--
@@ -78,6 +92,8 @@ object AppBindings {
             databaseType = AndroidxSqliteDatabaseType.FileProvider(context, "tachiyomi.db"),
             schema = Database.Schema,
             configuration = configuration,
+            onConfigure = onConfigure,
+            onOpen = onOpen,
         )
     }
 

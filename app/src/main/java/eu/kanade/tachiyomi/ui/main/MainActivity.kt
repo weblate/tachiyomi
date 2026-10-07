@@ -62,6 +62,7 @@ import eu.kanade.presentation.components.AppStateBanners
 import eu.kanade.presentation.components.DownloadedOnlyBannerBackgroundColor
 import eu.kanade.presentation.components.IncognitoModeBannerBackgroundColor
 import eu.kanade.presentation.components.IndexingBannerBackgroundColor
+import eu.kanade.presentation.more.AppMigratingScreen
 import eu.kanade.presentation.more.settings.screen.ConfigureExhDialog
 import eu.kanade.presentation.more.settings.screen.about.WhatsNewDialog
 import eu.kanade.presentation.more.settings.screen.browse.ExtensionStoresScreen
@@ -96,6 +97,7 @@ import exh.source.EXH_SOURCE_ID
 import exh.source.ExhPreferences
 import exh.syDebugVersion
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
@@ -108,6 +110,7 @@ import mihon.app.di.AppGraph
 import mihon.app.di.appGraph
 import mihon.core.metro.metroGraph
 import mihon.core.migration.Migrator
+import mihon.domain.database.repository.DatabaseRepository
 import tachiyomi.core.common.Constants
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.system.logcat
@@ -132,6 +135,14 @@ class MainActivity : BaseActivity() {
     @Inject private lateinit var downloadCache: DownloadCache
 
     @Inject private lateinit var chapterCache: ChapterCache
+
+    @Inject private lateinit var databaseRepository: DatabaseRepository
+
+    private val isAppMigrating = MutableStateFlow(Migrator.isRunning)
+
+    // SY -->
+    private val didMigration = MutableStateFlow(false)
+    // SY <--
 
     @Inject private lateinit var getIncognitoState: GetIncognitoState
 
@@ -180,11 +191,15 @@ class MainActivity : BaseActivity() {
 
         super.onCreate(savedInstanceState)
 
-        val didMigration = if (isLaunch) {
+        if (isLaunch) {
             addAnalytics()
-            Migrator.awaitAndRelease()
-        } else {
-            false
+        }
+        lifecycleScope.launch {
+            // SY -->
+            val migrated = Migrator.awaitAndRelease()
+            if (isLaunch) didMigration.value = migrated
+            // SY <--
+            isAppMigrating.value = false
         }
 
         // Do not let the launcher create a new activity http://stackoverflow.com/questions/16283079
@@ -200,6 +215,15 @@ class MainActivity : BaseActivity() {
         // SY <--
 
         setComposeContent {
+            val appMigrating by isAppMigrating.collectAsState()
+            val databaseMigrating by databaseRepository.isMigrating.collectAsState()
+            if (appMigrating || databaseMigrating) {
+                AppMigratingScreen()
+                // Release the splash screen so the reason for the wait shows
+                LaunchedEffect(Unit) { ready = true }
+                return@setComposeContent
+            }
+
             val context = LocalContext.current
 
             var incognito by remember { mutableStateOf(false) }
@@ -332,7 +356,13 @@ class MainActivity : BaseActivity() {
             }
             // SY <--
 
-            var showChangelog by remember { mutableStateOf(didMigration && !BuildConfig.DEBUG && !isBenchmarkBuildType) }
+            var showChangelog by remember { mutableStateOf(false) }
+            // SY -->
+            val didMigration by didMigration.collectAsState()
+            LaunchedEffect(didMigration) {
+                if (didMigration && !BuildConfig.DEBUG && !isBenchmarkBuildType) showChangelog = true
+            }
+            // SY <--
             if (showChangelog) {
                 // SY -->
                 WhatsNewDialog(onDismissRequest = { showChangelog = false })
