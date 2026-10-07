@@ -1196,7 +1196,9 @@ class LibraryViewModel(
     }
 // SY <--
 
-    private var lastSelectionCategory: Long? = null
+    private data class LastSelection(val categoryId: Long, val mangaId: Long)
+
+    private var lastSelection: LastSelection? = null
 
     /**
      * Reads from [selection] rather than [state], which is derived asynchronously and can still
@@ -1209,7 +1211,7 @@ class LibraryViewModel(
         }
 
     fun clearSelection() {
-        lastSelectionCategory = null
+        lastSelection = null
         selection.update { setOf() }
     }
 
@@ -1218,7 +1220,7 @@ class LibraryViewModel(
             val newSelection = selection.mutate { set ->
                 if (!set.remove(manga.id)) set.add(manga.id)
             }
-            lastSelectionCategory = category.id.takeIf { newSelection.isNotEmpty() }
+            lastSelection = LastSelection(category.id, manga.id).takeIf { manga.id in newSelection }
             newSelection
         }
     }
@@ -1231,31 +1233,30 @@ class LibraryViewModel(
         val state = state.value
         selection.update { selection ->
             val newSelection = selection.mutate { list ->
-                val lastSelected = list.lastOrNull()
-                if (lastSelectionCategory != category.id) {
+                val items = state.getItemsForCategoryId(category.id).fastMap { it.id }
+                val lastMangaIndex = lastSelection
+                    ?.takeIf { it.categoryId == category.id && it.mangaId in list }
+                    ?.let { items.indexOf(it.mangaId) }
+                    ?: -1
+                val curMangaIndex = items.indexOf(manga.id)
+                if (lastMangaIndex == -1 || curMangaIndex == -1) {
                     list.add(manga.id)
                     return@mutate
                 }
 
-                val items = state.getItemsForCategoryId(category.id).fastMap { it.id }
-                val lastMangaIndex = items.indexOf(lastSelected)
-                val curMangaIndex = items.indexOf(manga.id)
-
                 val selectionRange = when {
                     lastMangaIndex < curMangaIndex -> lastMangaIndex..curMangaIndex
-                    curMangaIndex < lastMangaIndex -> curMangaIndex..lastMangaIndex
-                    // We shouldn't reach this point
-                    else -> return@mutate
+                    else -> curMangaIndex..lastMangaIndex
                 }
-                selectionRange.mapNotNull { items[it] }.let(list::addAll)
+                list.addAll(items.subList(selectionRange.first, selectionRange.last + 1))
             }
-            lastSelectionCategory = category.id
+            lastSelection = LastSelection(category.id, manga.id)
             newSelection
         }
     }
 
     fun selectAll() {
-        lastSelectionCategory = null
+        lastSelection = null
         val state = state.value
         selection.update { selection ->
             selection.mutate { list ->
@@ -1265,7 +1266,7 @@ class LibraryViewModel(
     }
 
     fun invertSelection() {
-        lastSelectionCategory = null
+        lastSelection = null
         val state = state.value
         selection.update { selection ->
             selection.mutate { list ->
