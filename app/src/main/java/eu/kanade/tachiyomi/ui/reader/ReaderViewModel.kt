@@ -731,9 +731,23 @@ class ReaderViewModel(
         // If chapter is completely read, no need to download it
         chapterToDownload = null
 
-        if (chapterToDelete != null) {
-            enqueueDeleteReadChapters(chapterToDelete)
+        if (chapterToDelete == null || !chapterToDelete.chapter.read) return
+
+        val markDuplicateAsRead = libraryPreferences.markDuplicateReadChapterAsRead.get()
+            .contains(LibraryPreferences.MARK_DUPLICATE_CHAPTER_READ_EXISTING)
+        val duplicateChapters = if (markDuplicateAsRead) {
+            unfilteredChapterList
+                .filter {
+                    it.id != chapterToDelete.chapter.id &&
+                        it.isRecognizedNumber &&
+                        it.chapterNumber.toFloat() == chapterToDelete.chapter.chapter_number
+                }
+                // The list is loaded once, before these were marked read along with chapterToDelete
+                .map { it.copy(read = true) }
+        } else {
+            emptyList()
         }
+        enqueueDeleteChapters(listOf(chapterToDelete.chapter.toDomainChapter()!!) + duplicateChapters)
     }
 
     /**
@@ -1370,22 +1384,28 @@ class ReaderViewModel(
     }
 
     /**
-     * Enqueues this [chapter] to be deleted when [deletePendingChapters] is called. The download
-     * manager handles persisting it across process deaths.
+     * Enqueues these [chapters] to be deleted when [deletePendingChapters] is called. The download
+     * manager handles persisting them across process deaths.
      */
-    private fun enqueueDeleteReadChapters(chapter: ReaderChapter) {
-        if (!chapter.chapter.read) return
-        val mergedManga = state.value.mergedManga
+    private fun enqueueDeleteChapters(chapters: List<Chapter>) {
         // SY -->
-        val manga = if (mergedManga.isNullOrEmpty()) {
-            manga
+        val mergedManga = state.value.mergedManga
+        val chaptersByManga = if (mergedManga.isNullOrEmpty()) {
+            val manga = manga ?: return
+            mapOf(manga to chapters)
         } else {
-            mergedManga[chapter.chapter.manga_id]
-        } ?: return
+            chapters.groupBy { mergedManga[it.mangaId] }
+                .mapNotNull { (manga, chapters) -> manga?.let { it to chapters } }
+                .toMap()
+        }
         // SY <--
 
         viewModelScope.launchNonCancellable {
-            downloadManager.enqueueChaptersToDelete(listOf(chapter.chapter.toDomainChapter()!!), manga)
+            // SY -->
+            chaptersByManga.forEach { (manga, chapters) ->
+                downloadManager.enqueueChaptersToDelete(chapters, manga)
+            }
+            // SY <--
         }
     }
 
