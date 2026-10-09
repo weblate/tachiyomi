@@ -49,6 +49,7 @@ class TrackerManager(
         // SY -->
         mdList,
         // SY <--
+        mangaBaka,
         myAnimeList,
         aniList,
         kitsu,
@@ -59,7 +60,6 @@ class TrackerManager(
         kavita,
         suwayomi,
         hikka,
-        mangaBaka,
     )
 
     fun loggedInTrackers() = trackers.filter { it.isLoggedIn }
