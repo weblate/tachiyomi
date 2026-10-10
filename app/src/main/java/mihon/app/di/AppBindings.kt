@@ -22,17 +22,22 @@ import dev.zacsweers.metro.Provides
 import dev.zacsweers.metro.SingleIn
 import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.util.storage.CbzCrypto
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.protobuf.ProtoBuf
+import logcat.LogPriority
+import mihon.core.firebase.FirebaseConfig
 import mihon.core.metro.AppCoroutineScope
+import mihon.core.metro.IsDebugBuild
 import mihon.data.database.DatabaseRepositoryImpl
 import net.zetetic.database.sqlcipher.driver.SQLCipherDriver
 import nl.adaptivity.xmlutil.XmlDeclMode
 import nl.adaptivity.xmlutil.core.XmlVersion
 import nl.adaptivity.xmlutil.serialization.XML
+import tachiyomi.core.common.util.system.logcat
 import tachiyomi.data.Chapters
 import tachiyomi.data.Database
 import tachiyomi.data.DateColumnAdapter
@@ -133,7 +138,20 @@ object AppBindings {
     @Provides
     @SingleIn(AppScope::class)
     @AppCoroutineScope
-    fun providesAppCoroutineScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    fun providesAppCoroutineScope(@IsDebugBuild isDebugBuild: Boolean): CoroutineScope {
+        // Work here outlives the screen that started it, so a failure would crash the app on whatever screen is open
+        // by then. Debug builds still crash so the bug gets noticed.
+        val handler = CoroutineExceptionHandler { _, throwable ->
+            if (isDebugBuild) {
+                val thread = Thread.currentThread()
+                thread.uncaughtExceptionHandler?.uncaughtException(thread, throwable)
+            } else {
+                logcat(LogPriority.ERROR, throwable) { "Uncaught exception in the app scope" }
+                FirebaseConfig.recordException(throwable)
+            }
+        }
+        return CoroutineScope(SupervisorJob() + Dispatchers.IO + handler)
+    }
 
     @Provides
     @SingleIn(AppScope::class)
