@@ -61,6 +61,7 @@ class CrashLogUtil(
             Preview build: $syDebugVersion
             Upstream Version: ${BuildConfig.UPSTREAM_VERSION}
             Installation ID: ${preferences.installationId.get()}
+            Skipped app update: ${preferences.skippedAppUpdate.get().ifEmpty { "None" }}
             Android version: ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT}; build ${Build.DISPLAY})
             Device brand: ${Build.BRAND}
             Device manufacturer: ${Build.MANUFACTURER}

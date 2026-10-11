@@ -442,7 +442,10 @@ class MainActivity : BaseActivity() {
             if (BuildConfig.INCLUDE_UPDATER) {
                 try {
                     val result = context.appGraph.updateChecker.checkForUpdate()
-                    if (result is GetApplicationRelease.Result.NewUpdate) {
+                    if (
+                        result is GetApplicationRelease.Result.NewUpdate &&
+                        result.release.version != preferences.skippedAppUpdate.get()
+                    ) {
                         val updateScreen = NewUpdateScreen(
                             versionName = result.release.version,
                             changelogInfo = result.release.info,
