@@ -20,7 +20,7 @@ dependencies {
     implementation(projects.i18nSy)
     // SY <--
 
-    //implementation(projects.core.archive)
+    // implementation(projects.core.archive)
     implementation(projects.core.common)
     implementation(projects.coreMetadata)
     implementation(projects.domain)
