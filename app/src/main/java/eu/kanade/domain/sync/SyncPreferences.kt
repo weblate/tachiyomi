@@ -13,7 +13,7 @@ class SyncPreferences(
     val clientAPIKey: Preference<String> = preferenceStore.getString("sync_client_api_key", "")
     val lastSyncTimestamp: Preference<Long> = preferenceStore.getLong(Preference.appStateKey("last_sync_timestamp"), 0L)
 
-    val lastSyncEtag: Preference<String> = preferenceStore.getString("sync_etag", "")
+    val lastSyncEtag: Preference<String> = preferenceStore.getString(Preference.appStateKey("sync_etag"), "")
 
     // SyncYomi protocol v2 state
     val syncCursor: Preference<Long> = preferenceStore.getLong(Preference.appStateKey("sync_cursor"), 0L)
