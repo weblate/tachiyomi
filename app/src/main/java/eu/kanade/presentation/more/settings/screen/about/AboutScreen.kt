@@ -1,6 +1,7 @@
 package eu.kanade.presentation.more.settings.screen.about
 
 import android.content.Context
+import android.text.format.DateFormat
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -26,6 +27,7 @@ import eu.kanade.presentation.more.LogoHeader
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.presentation.util.Screen
+import eu.kanade.presentation.util.rememberIs24HourSystem
 import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.ui.more.NewUpdateScreen
 import eu.kanade.tachiyomi.util.lang.toDateTimestampString
@@ -57,6 +59,7 @@ import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
+import java.util.Locale
 import kotlin.time.Instant
 
 object AboutScreen : Screen() {
@@ -70,6 +73,7 @@ object AboutScreen : Screen() {
         val navigator = LocalNavigator.currentOrThrow
         var isCheckingUpdates by remember { mutableStateOf(false) }
         val crashLogUtil = remember { context.appGraph.crashLogUtil }
+        val is24HourSystem = rememberIs24HourSystem()
 
         // SY -->
         var showWhatsNewDialog by remember { mutableStateOf(false) }
@@ -94,7 +98,9 @@ object AboutScreen : Screen() {
                 item {
                     TextPreferenceWidget(
                         title = stringResource(MR.strings.version),
-                        subtitle = getVersionName(withBuildDate = true),
+                        // Keyed on the system 12/24h setting, which can change while the app is backgrounded.
+                        // Date/time prefs only change in Appearance, which recreates this screen on return.
+                        subtitle = remember(is24HourSystem) { getVersionName(withBuildDate = true) },
                         onPreferenceClick = {
                             val deviceInfo = crashLogUtil.getDebugInfo()
                             context.copyToClipboard("Debug information", deviceInfo)
@@ -291,11 +297,16 @@ object AboutScreen : Screen() {
 
     internal fun getFormattedBuildTime(): String {
         return try {
+            val context = Injekt.get<Context>()
+            val uiPreferences = context.appGraph.uiPreferences
             Instant.parse(BuildConfig.BUILD_TIME)
                 .toLocalDateTime(TimeZone.currentSystemDefault())
                 .toDateTimestampString(
-                    UiPreferences.dateFormat(
-                        Injekt.get<Context>().appGraph.uiPreferences.dateFormat.get(),
+                    UiPreferences.dateTimeFormat(
+                        uiPreferences.dateFormat.get(),
+                        uiPreferences.timeFormat.get(),
+                        Locale.getDefault(),
+                        DateFormat.is24HourFormat(context),
                     ),
                 )
         } catch (_: Exception) {
