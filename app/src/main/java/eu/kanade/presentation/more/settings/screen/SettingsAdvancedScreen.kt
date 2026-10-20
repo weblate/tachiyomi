@@ -34,6 +34,7 @@ import eu.kanade.domain.source.service.SourcePreferences.DataSaver
 import eu.kanade.presentation.more.settings.Preference
 import eu.kanade.presentation.more.settings.screen.advanced.ClearDatabaseScreen
 import eu.kanade.presentation.more.settings.screen.debug.DebugInfoScreen
+import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.library.LibraryUpdateWorker
@@ -127,6 +128,19 @@ object SettingsAdvancedScreen : SearchableSettings {
                     true
                 },
             ), SY <-- */
+            Preference.PreferenceItem.SwitchPreference(
+                preference = networkPreferences.redactSensitiveHeaders,
+                title = stringResource(MR.strings.pref_redact_sensitive_headers),
+                subtitle = stringResource(MR.strings.pref_redact_sensitive_headers_summary),
+                onValueChanged = {
+                    context.toast(MR.strings.requires_app_restart)
+                    true
+                },
+                // SY -->
+                // Headers are only logged in debug builds
+                visible = BuildConfig.DEBUG,
+                // SY <--
+            ),
             Preference.PreferenceItem.TextPreference(
                 title = stringResource(MR.strings.pref_debug_info),
                 onClick = { navigator.push(DebugInfoScreen()) },
