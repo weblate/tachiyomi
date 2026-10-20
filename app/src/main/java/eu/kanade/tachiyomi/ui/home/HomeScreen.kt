@@ -124,7 +124,7 @@ object HomeScreen : Screen() {
                             // SY -->
                             .fastFilter { it.isEnabled() }
                             // SY <--
-                            .fastForEach { NavigationSuiteItem(it, navigationSuiteType) }
+                            .fastForEach { NavigationSuiteItem(it, navigationSuiteType, /* SY --> */ alwaysShowLabel /* SY <-- */) }
                     },
                 ) {
                     AnimatedContent(
