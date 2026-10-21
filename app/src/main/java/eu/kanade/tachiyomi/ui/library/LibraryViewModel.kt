@@ -57,6 +57,7 @@ import exh.source.nHentaiSourceIds
 import exh.util.cancellable
 import exh.util.isLewd
 import exh.util.nullIfBlank
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -76,14 +77,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import mihon.core.common.utils.mutate
+import mihon.core.metro.AppCoroutineScope
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.preference.CheckboxState
 import tachiyomi.core.common.preference.TriState
 import tachiyomi.core.common.util.lang.compareToWithCollator
-import tachiyomi.core.common.util.lang.launchIO
-import tachiyomi.core.common.util.lang.launchNonCancellable
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.category.model.Category
@@ -123,6 +125,7 @@ import kotlin.time.Duration.Companion.seconds
 @ViewModelKey
 @ContributesIntoMap(AppScope::class, binding = binding<ViewModel>())
 class LibraryViewModel(
+    @AppCoroutineScope private val appScope: CoroutineScope,
     private val getLibraryManga: GetLibraryManga,
     private val getCategories: GetCategories,
     private val getTracksPerManga: GetTracksPerManga,
@@ -285,7 +288,7 @@ class LibraryViewModel(
                 // SY <--
             )
         }
-        .flowOn(Dispatchers.IO)
+        .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), null)
 
     // SY -->
@@ -718,11 +721,12 @@ class LibraryViewModel(
     suspend fun getNextUnreadChapter(manga: Manga): Chapter? {
         // SY -->
         val mergedManga = getMergedMangaById.await(manga.id).associateBy { it.id }
-        return if (manga.id == MERGED_SOURCE_ID) {
+        val chapters = if (manga.id == MERGED_SOURCE_ID) {
             getMergedChaptersByMangaId.await(manga.id, applyScanlatorFilter = true)
         } else {
             getChaptersByMangaId.await(manga.id, applyScanlatorFilter = true)
-        }.getNextUnread(manga, downloadManager, mergedManga)
+        }
+        return withContext(Dispatchers.Default) { chapters.getNextUnread(manga, downloadManager, mergedManga) }
         // SY <--
     }
 
@@ -755,7 +759,7 @@ class LibraryViewModel(
 
     private fun downloadNextChapters(amount: Int?) {
         val mangas = selectedManga
-        viewModelScope.launchNonCancellable {
+        appScope.launch {
             mangas.forEach { manga ->
                 // SY -->
                 if (manga.source == MERGED_SOURCE_ID) {
@@ -806,7 +810,7 @@ class LibraryViewModel(
 
     private fun downloadBookmarkedChapters() {
         val mangas = selectedManga
-        viewModelScope.launchNonCancellable {
+        appScope.launch {
             mangas.forEach { manga ->
                 // SY -->
                 if (manga.source == MERGED_SOURCE_ID) {
@@ -885,7 +889,7 @@ class LibraryViewModel(
     }
 
     fun syncMangaToDex() {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             MdUtil.getEnabledMangaDex(sourcePreferences, sourceManager)?.let { mdex ->
                 state.value.selectedManga.fastFilter { it.source in mangaDexSourceIds }.fastForEach { manga ->
                     mdex.updateFollowStatus(MdUtil.getMangaId(manga.url), FollowStatus.READING)
@@ -919,7 +923,7 @@ class LibraryViewModel(
      */
     fun markReadSelection(read: Boolean) {
         val selection = selectedManga
-        viewModelScope.launchNonCancellable {
+        appScope.launch {
             selection.forEach { manga ->
                 setReadStatus.await(
                     manga = manga,
@@ -938,7 +942,7 @@ class LibraryViewModel(
      * @param deleteChapters whether to delete downloaded chapters.
      */
     fun removeMangas(mangas: List<Manga>, deleteFromLibrary: Boolean, deleteChapters: Boolean) {
-        viewModelScope.launchNonCancellable {
+        appScope.launch {
             if (deleteFromLibrary) {
                 val toDelete = mangas.map {
                     it.removeCovers(coverCache)
@@ -981,7 +985,7 @@ class LibraryViewModel(
      * @param removeCategories the categories to remove in all mangas.
      */
     fun setMangaCategories(mangaList: List<Manga>, addCategories: List<Long>, removeCategories: List<Long>) {
-        viewModelScope.launchNonCancellable {
+        appScope.launch {
             mangaList.forEach { manga ->
                 val categoryIds = getCategories.await(manga.id)
                     .map { it.id }
@@ -1289,7 +1293,7 @@ class LibraryViewModel(
     }
 
     fun openChangeCategoryDialog() {
-        viewModelScope.launchIO {
+        viewModelScope.launch {
             // Create a copy of selected manga
             val mangaList = selectedManga
 

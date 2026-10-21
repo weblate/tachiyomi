@@ -98,6 +98,7 @@ import eu.kanade.tachiyomi.util.view.setComposeContent
 import exh.source.isEhBasedSource
 import exh.util.defaultReaderType
 import exh.util.mangaType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -109,7 +110,7 @@ import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.sample
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import mihon.app.di.AppGraph
 import mihon.app.di.appGraph
@@ -117,9 +118,6 @@ import mihon.core.metro.metroGraph
 import tachiyomi.core.common.Constants
 import tachiyomi.core.common.i18n.pluralStringResource
 import tachiyomi.core.common.i18n.stringResource
-import tachiyomi.core.common.util.lang.launchIO
-import tachiyomi.core.common.util.lang.launchNonCancellable
-import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.i18n.MR
@@ -461,9 +459,7 @@ class ReaderActivity : BaseActivity() {
     }
 
     override fun onPause() {
-        lifecycleScope.launchNonCancellable {
-            viewModel.updateHistory()
-        }
+        viewModel.saveHistory()
         super.onPause()
     }
 
@@ -722,7 +718,7 @@ class ReaderActivity : BaseActivity() {
     private fun exhRetryAll() {
         var retried = 0
 
-        lifecycleScope.launchIO {
+        lifecycleScope.launch(Dispatchers.IO) {
             viewModel.state.value.viewerChapters
                 ?.currChapter
                 ?.pages
@@ -759,7 +755,7 @@ class ReaderActivity : BaseActivity() {
                     retried++
                 }
 
-            withUIContext {
+            withContext(Dispatchers.Main) {
                 toast(pluralStringResource(SYMR.plurals.eh_retry_toast, retried, retried))
             }
         }
@@ -884,7 +880,7 @@ class ReaderActivity : BaseActivity() {
 
         val manga = viewModel.state.value.manga
         val defaultReaderType = manga?.defaultReaderType(
-            manga.mangaType(sourceName = runBlocking { sourceManager.get(manga.source)?.name }),
+            manga.mangaType(sourceName = viewModel.state.value.source?.name),
         )
         if (
             readerPreferences.useAutoWebtoon.get() &&
@@ -980,7 +976,7 @@ class ReaderActivity : BaseActivity() {
 
         viewModel.state.value.viewer?.setChapters(viewerChapters)
 
-        lifecycleScope.launchIO {
+        lifecycleScope.launch(Dispatchers.IO) {
             viewModel.getChapterUrl()?.let { url ->
                 assistUrl = url
             }
@@ -1082,7 +1078,7 @@ class ReaderActivity : BaseActivity() {
      * the viewer is reaching the beginning or end of a chapter or the transition page is active.
      */
     fun requestPreloadChapter(chapter: ReaderChapter) {
-        lifecycleScope.launchIO { viewModel.preload(chapter) }
+        lifecycleScope.launch(Dispatchers.IO) { viewModel.preload(chapter) }
     }
 
     /**

@@ -63,20 +63,18 @@ import exh.source.getMainSource
 import exh.ui.metadata.MetadataViewScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import mihon.app.di.appGraph
 import mihon.feature.migration.config.MigrationConfigScreen
 import mihon.feature.migration.dialog.MigrateMangaDialog
 import tachiyomi.core.common.i18n.stringResource
-import tachiyomi.core.common.util.lang.launchIO
-import tachiyomi.core.common.util.lang.launchUI
-import tachiyomi.core.common.util.lang.withIOContext
-import tachiyomi.core.common.util.lang.withNonCancellableContext
-import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.manga.model.Manga
@@ -126,7 +124,7 @@ class MangaScreen(
         LaunchedEffect(successState.manga, viewModel.source) {
             if (isHttpSource) {
                 try {
-                    withIOContext {
+                    withContext(Dispatchers.IO) {
                         assistUrl = getMangaUrl(viewModel.manga, viewModel.source)
                     }
                 } catch (e: Exception) {
@@ -171,7 +169,7 @@ class MangaScreen(
                         viewModel.source,
                     )
                 } else {
-                    scope.launchIO {
+                    scope.launch(Dispatchers.IO) {
                         openMergedMangaWebview(
                             context,
                             navigator,
@@ -492,7 +490,7 @@ class MangaScreen(
         val sourceManager = context.appGraph.sourceManager
         val mergedManga = mergedMangaData.manga.values.filterNot { it.source == MERGED_SOURCE_ID }
         val sources = mergedManga.map { sourceManager.getOrStub(it.source) }
-        withUIContext {
+        withContext(Dispatchers.Main) {
             MaterialAlertDialogBuilder(context)
                 .setTitle(MR.strings.action_open_in_web_view.getString(context))
                 .setSingleChoiceItems(
@@ -531,11 +529,12 @@ class MangaScreen(
         manga: Manga,
         smartSearchMerge: suspend (Manga, Long) -> Manga,
     ) {
-        scope.launchUI {
+        scope.launch(Dispatchers.Main) {
             try {
-                val mergedManga = withNonCancellableContext {
+                // The merge finishes even if the screen is left while it runs
+                val mergedManga = context.appGraph.appScope.async {
                     smartSearchMerge(manga, smartSearchConfig?.origMangaId!!)
-                }
+                }.await()
 
                 navigator.popUntil { it is SourcesScreen }
                 navigator.pop()

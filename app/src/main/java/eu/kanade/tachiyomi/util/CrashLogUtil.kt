@@ -15,11 +15,11 @@ import eu.kanade.tachiyomi.util.system.toast
 import exh.log.EHLogLevel
 import exh.source.ExhPreferences
 import exh.syDebugVersion
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.offsetAt
 import kotlinx.datetime.toLocalDateTime
-import tachiyomi.core.common.util.lang.withNonCancellableContext
-import tachiyomi.core.common.util.lang.withUIContext
 import kotlin.time.Clock
 
 @Inject
@@ -32,7 +32,7 @@ class CrashLogUtil(
     // SY <--
 ) {
 
-    suspend fun dumpLogs(exception: Throwable? = null) = withNonCancellableContext {
+    suspend fun dumpLogs(exception: Throwable? = null) = withContext(Dispatchers.IO) {
         try {
             val file = context.createFileInCacheDir("tachiyomi_sy_crash_logs.txt")
 
@@ -46,9 +46,9 @@ class CrashLogUtil(
             Runtime.getRuntime().exec("logcat *:$logPriority -d -v year -v zone -f ${file.absolutePath}").waitFor()
 
             val uri = file.getUriCompat(context)
-            context.startActivity(uri.toShareIntent(context, "text/plain"))
+            withContext(Dispatchers.Main) { context.startActivity(uri.toShareIntent(context, "text/plain")) }
         } catch (_: Throwable) {
-            withUIContext { context.toast("Failed to get logs") }
+            withContext(Dispatchers.Main) { context.toast("Failed to get logs") }
         }
     }
 

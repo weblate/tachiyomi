@@ -38,6 +38,8 @@ import exh.metadata.metadata.RaisedSearchMetadata
 import exh.source.ExhPreferences
 import exh.source.getMainSource
 import exh.source.mangaDexSourceIds
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -55,13 +57,12 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
+import mihon.core.metro.AppCoroutineScope
 import tachiyomi.core.common.preference.CheckboxState
 import tachiyomi.core.common.preference.mapAsCheckboxState
-import tachiyomi.core.common.util.lang.launchIO
-import tachiyomi.core.common.util.lang.launchNonCancellable
-import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.SetMangaCategories
 import tachiyomi.domain.category.model.Category
@@ -114,6 +115,7 @@ open class BrowseSourceViewModel(
     private val insertSavedSearch: InsertSavedSearch,
     private val getExhSavedSearch: GetExhSavedSearch,
     // SY <--
+    @AppCoroutineScope private val appScope: CoroutineScope,
 ) : ViewModel() {
 
     val state: StateFlow<BrowseSourceViewModel.State>
@@ -148,7 +150,7 @@ open class BrowseSourceViewModel(
     // SY <--
 
     init {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             val source = sourceManager.getOrStub(sourceId)
 
             state.update {
@@ -196,7 +198,6 @@ open class BrowseSourceViewModel(
             if (!getIncognitoState.await(source.id)) {
                 sourcePreferences.lastUsedSource.set(source.id)
             }
-
         }
     }
 
@@ -340,7 +341,7 @@ open class BrowseSourceViewModel(
      * @param manga the manga to update.
      */
     fun changeMangaFavorite(manga: Manga) {
-        viewModelScope.launch {
+        appScope.launch {
             var new = manga.copy(
                 favorite = !manga.favorite,
                 dateAdded = when (manga.favorite) {
@@ -422,7 +423,7 @@ open class BrowseSourceViewModel(
     }
 
     fun moveMangaToCategories(manga: Manga, categoryIds: List<Long>) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             setMangaCategories.await(
                 mangaId = manga.id,
                 categoryIds = categoryIds.toList(),
@@ -494,7 +495,7 @@ open class BrowseSourceViewModel(
 
     // EXH -->
     fun onSaveSearch() {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             val names = state.value.savedSearches.map { it.name }
             state.update { it.copy(dialog = Dialog.CreateSavedSearch(names)) }
         }
@@ -504,12 +505,12 @@ open class BrowseSourceViewModel(
         search: EXHSavedSearch,
         onToast: (StringResource) -> Unit,
     ) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             if (search.filterList == null && state.value.filters.isNotEmpty()) {
-                withUIContext {
+                withContext(Dispatchers.Main) {
                     onToast(SYMR.strings.save_search_invalid)
                 }
-                return@launchIO
+                return@launch
             }
 
             val allDefault = search.filterList != null && search.filterList == source!!.getFilterList()
@@ -539,7 +540,7 @@ open class BrowseSourceViewModel(
     fun saveSearch(
         name: String,
     ) {
-        viewModelScope.launchNonCancellable {
+        appScope.launch {
             val query = state.value.toolbarQuery?.takeUnless {
                 it.isBlank() || it == GetRemoteManga.QUERY_POPULAR || it == GetRemoteManga.QUERY_LATEST
             }?.trim()
@@ -559,15 +560,15 @@ open class BrowseSourceViewModel(
     }
 
     fun deleteSearch(savedSearchId: Long) {
-        viewModelScope.launchNonCancellable {
+        appScope.launch {
             deleteSavedSearchById.await(savedSearchId)
         }
     }
 
     fun onMangaDexRandom(onRandomFound: (String) -> Unit) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             val random = source!!.getMainSource<MangaDex>()?.fetchRandomMangaUrl()
-                ?: return@launchIO
+                ?: return@launch
             onRandomFound(random)
         }
     }

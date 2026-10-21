@@ -16,6 +16,8 @@ import eu.kanade.presentation.browse.FeedItemUI
 import eu.kanade.tachiyomi.source.Source
 import eu.kanade.tachiyomi.source.model.FilterList
 import eu.kanade.tachiyomi.util.system.LocaleHelper
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -33,10 +35,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
+import mihon.core.metro.AppCoroutineScope
 import mihon.domain.manga.model.toDomainManga
-import tachiyomi.core.common.util.lang.launchIO
-import tachiyomi.core.common.util.lang.launchNonCancellable
-import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.source.interactor.CountFeedSavedSearchGlobal
@@ -71,6 +71,7 @@ open class FeedViewModel(
     private val getSavedSearchBySourceId: GetSavedSearchBySourceId,
     private val insertFeedSavedSearch: InsertFeedSavedSearch,
     private val deleteFeedSavedSearchById: DeleteFeedSavedSearchById,
+    @AppCoroutineScope private val appScope: CoroutineScope,
 ) : ViewModel() {
 
     val state: StateFlow<State>
@@ -108,8 +109,8 @@ open class FeedViewModel(
 
     fun init() {
         pushed = false
-        viewModelScope.launchIO {
-            val newItems = state.value.items?.map { it.copy(results = null) } ?: return@launchIO
+        viewModelScope.launch(Dispatchers.IO) {
+            val newItems = state.value.items?.map { it.copy(results = null) } ?: return@launch
             state.update { state ->
                 state.copy(
                     items = newItems,
@@ -120,10 +121,10 @@ open class FeedViewModel(
     }
 
     fun openAddDialog() {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             if (hasTooManyFeeds()) {
                 _events.send(Event.TooManyFeeds)
-                return@launchIO
+                return@launch
             }
             val enabledSources = getEnabledSources()
             state.update { state ->
@@ -135,7 +136,7 @@ open class FeedViewModel(
     }
 
     fun openAddSearchDialog(source: Source) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             state.update { state ->
                 state.copy(
                     dialog = Dialog.AddFeedSearch(
@@ -151,7 +152,7 @@ open class FeedViewModel(
     }
 
     fun openDeleteDialog(feed: FeedSavedSearch) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             state.update { state ->
                 state.copy(
                     dialog = Dialog.DeleteFeed(feed),
@@ -183,7 +184,7 @@ open class FeedViewModel(
     }
 
     fun createFeed(source: Source, savedSearch: SavedSearch?) {
-        viewModelScope.launchNonCancellable {
+        appScope.launch {
             insertFeedSavedSearch.await(
                 FeedSavedSearch(
                     id = -1,
@@ -196,7 +197,7 @@ open class FeedViewModel(
     }
 
     fun deleteFeed(feed: FeedSavedSearch) {
-        viewModelScope.launchNonCancellable {
+        appScope.launch {
             deleteFeedSavedSearchById.await(feed.id)
         }
     }
@@ -258,7 +259,7 @@ open class FeedViewModel(
                         emptyList()
                     }
 
-                    val result = withIOContext {
+                    val result = withContext(Dispatchers.IO) {
                         itemUI.copy(
                             results = networkToLocalManga(page.map { it.toDomainManga(itemUI.source!!.id) }),
                         )

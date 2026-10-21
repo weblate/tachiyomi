@@ -24,6 +24,8 @@ import exh.source.DelegatedHttpSource
 import exh.util.trimOrNull
 import exh.util.urlImportFetchSearchManga
 import exh.util.urlImportFetchSearchMangaSuspend
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -31,7 +33,6 @@ import okhttp3.CacheControl
 import okhttp3.Response
 import rx.Observable
 import tachiyomi.core.common.util.lang.runAsObservable
-import tachiyomi.core.common.util.lang.withIOContext
 
 class NHentai(delegate: HttpSource, val context: Context) :
     DelegatedHttpSource(delegate),
@@ -208,7 +209,7 @@ class NHentai(delegate: HttpSource, val context: Context) :
     suspend fun getNhConfig() {
         try {
             val response =
-                withIOContext { client.newCall(GET("https://nhentai.net/api/v2/config", headers)).awaitSuccess() }
+                withContext(Dispatchers.IO) { client.newCall(GET("https://nhentai.net/api/v2/config", headers)).awaitSuccess() }
             val body = response.body.string()
             nhConfig = jsonParser.decodeFromString<JsonConfig>(body)
         } catch (_: Exception) {

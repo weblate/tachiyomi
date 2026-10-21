@@ -13,13 +13,14 @@ import eu.kanade.domain.manga.interactor.CreateSortTag
 import eu.kanade.domain.manga.interactor.DeleteSortTag
 import eu.kanade.domain.manga.interactor.GetSortTag
 import eu.kanade.domain.manga.interactor.ReorderSortTag
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import tachiyomi.core.common.util.lang.launchIO
+import kotlinx.coroutines.launch
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 
@@ -40,7 +41,7 @@ class SortTagViewModel(
     val events = _events.receiveAsFlow()
 
     init {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             getSortTag.subscribe()
                 .collectLatest { tags ->
                     state.update {
@@ -53,7 +54,7 @@ class SortTagViewModel(
     }
 
     fun createTag(name: String) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             when (createSortTag.await(name)) {
                 is CreateSortTag.Result.TagExists -> _events.send(SortTagEvent.TagExists)
                 else -> {}
@@ -62,13 +63,13 @@ class SortTagViewModel(
     }
 
     fun delete(tag: String) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             deleteSortTag.await(tag)
         }
     }
 
     fun moveUp(tag: String, index: Int) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             when (reorderSortTag.await(tag, index - 1)) {
                 is ReorderSortTag.Result.InternalError -> _events.send(SortTagEvent.InternalError)
                 else -> {}
@@ -77,7 +78,7 @@ class SortTagViewModel(
     }
 
     fun moveDown(tag: String, index: Int) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             when (reorderSortTag.await(tag, index + 1)) {
                 is ReorderSortTag.Result.InternalError -> _events.send(SortTagEvent.InternalError)
                 else -> {}

@@ -33,7 +33,7 @@ open /* SY <-- */ class NetworkHelper(
     /* SY --> */
     open /* SY <-- */val cookieJar = AndroidCookieJar()
 
-    private val clientBuilder: OkHttpClient.Builder = run {
+    private fun clientBuilder(): OkHttpClient.Builder = run {
         val builder = OkHttpClient.Builder()
             .cookieJar(cookieJar)
             .connectTimeout(30.seconds)
@@ -73,11 +73,13 @@ open /* SY <-- */ class NetworkHelper(
     }
 
     /* SY --> */
-    open /* SY <-- */ val client = clientBuilder
-        .addInterceptor(
-            CloudflareInterceptor(context, cookieJar, scope, ::defaultUserAgentProvider),
-        )
-        .build()
+    open /* SY <-- */ val client: OkHttpClient by lazy {
+        clientBuilder()
+            .addInterceptor(
+                CloudflareInterceptor(context, cookieJar, scope, ::defaultUserAgentProvider),
+            )
+            .build()
+    }
 
     /**
      * @deprecated Since extension-lib 1.5
@@ -85,7 +87,7 @@ open /* SY <-- */ class NetworkHelper(
     @Deprecated("The regular client handles Cloudflare by default")
     @Suppress("UNUSED")
     /* SY --> */
-    open /* SY <-- */val cloudflareClient: OkHttpClient = client
+    open /* SY <-- */val cloudflareClient: OkHttpClient get() = client
 
     fun defaultUserAgentProvider() = preferences.defaultUserAgent.get().trim()
 }

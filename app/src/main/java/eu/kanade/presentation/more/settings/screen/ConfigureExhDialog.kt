@@ -18,9 +18,9 @@ import exh.uconfig.EHConfigurator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mihon.app.di.appGraph
-import tachiyomi.core.common.util.lang.launchUI
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 import tachiyomi.presentation.core.i18n.stringResource
@@ -79,7 +79,7 @@ fun ConfigureExhDialog(run: Boolean, onRunning: () -> Unit) {
                 try {
                     delay(0.2.seconds)
                     context.appGraph.ehConfigurator.configureAll()
-                    launchUI {
+                    launch(Dispatchers.Main) {
                         context.toast(SYMR.strings.eh_settings_successfully_uploaded)
                     }
                 } catch (e: Exception) {

@@ -46,14 +46,16 @@ import exh.source.MERGED_SOURCE_ID
 import exh.source.mangaDexSourceIds
 import exh.util.nullIfBlank
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import logcat.LogPriority
@@ -64,7 +66,6 @@ import mihon.domain.chapter.interactor.FilterChaptersForDownload
 import mihon.domain.source.interactor.UpdateMangaFromRemote
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.preference.getAndSet
-import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.category.model.Category
 import tachiyomi.domain.chapter.model.Chapter
@@ -188,7 +189,7 @@ class LibraryUpdateWorker(private val context: Context, workerParams: WorkerPara
         // SY <--
         addMangaToQueue(categoryId, group, groupExtra)
 
-        return withIOContext {
+        return withContext(Dispatchers.IO) {
             try {
                 when (target) {
                     Target.CHAPTERS -> updateChapterList()
@@ -430,7 +431,10 @@ class LibraryUpdateWorker(private val context: Context, workerParams: WorkerPara
                                                 hasDownloads.store(true)
                                             }
 
-                                            libraryPreferences.newUpdatesCount.getAndSet { it + newChapters.size }
+                                            // Sources update concurrently, and getAndSet is a separate read and write
+                                            synchronized(libraryPreferences.newUpdatesCount) {
+                                                libraryPreferences.newUpdatesCount.getAndSet { it + newChapters.size }
+                                            }
 
                                             // Convert to the manga that contains new chapters
                                             newUpdates.add(manga to newChapters.toTypedArray())
@@ -479,7 +483,7 @@ class LibraryUpdateWorker(private val context: Context, workerParams: WorkerPara
         // may don't like it and they could ban the user.
         // SY -->
         if (manga.source == MERGED_SOURCE_ID) {
-            val downloadingManga = runBlocking { getMergedMangaForDownloading.await(manga.id) }
+            val downloadingManga = getMergedMangaForDownloading.await(manga.id)
                 .associateBy { it.id }
             chapters.groupBy { it.mangaId }
                 .forEach {
@@ -804,7 +808,7 @@ class LibraryUpdateWorker(private val context: Context, workerParams: WorkerPara
             }
         }
 
-        fun startNow(
+        suspend fun startNow(
             workManager: WorkManager,
             category: Category? = null,
             target: Target = Target.CHAPTERS,
@@ -865,12 +869,12 @@ class LibraryUpdateWorker(private val context: Context, workerParams: WorkerPara
             return true
         }
 
-        fun stop(context: Context) {
+        suspend fun stop(context: Context) {
             val workManager = context.workManager
             val workQuery = WorkQuery.Builder.fromTags(listOf(TAG))
                 .addStates(listOf(WorkInfo.State.RUNNING))
                 .build()
-            workManager.getWorkInfos(workQuery).get()
+            workManager.getWorkInfosFlow(workQuery).first()
                 // Should only return one work but just in case
                 .forEach {
                     workManager.cancelWorkById(it.id)

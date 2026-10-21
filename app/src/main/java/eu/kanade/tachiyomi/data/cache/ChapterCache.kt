@@ -41,24 +41,34 @@ class ChapterCache(
     private val context: Context,
     private val json: Json,
     // SY -->
-    readerPreferences: ReaderPreferences,
+    private val readerPreferences: ReaderPreferences,
     // SY <--
 ) {
 
     // --> EH
-    private val scope = CoroutineScope(Job() + Dispatchers.Main)
+    private val scope = CoroutineScope(Job() + Dispatchers.IO)
+
+    // Opened on first use, since opening it reads the disk
+    @Volatile
+    private var openDiskCache: DiskLruCache? = null
+    private val diskCacheLock = Any()
 
     /** Cache class used for cache management.  */
-    private var diskCache = setupDiskCache(readerPreferences.cacheSize.get().toLong())
+    private val diskCache: DiskLruCache
+        get() = openDiskCache ?: synchronized(diskCacheLock) {
+            openDiskCache ?: setupDiskCache(readerPreferences.cacheSize.get().toLong()).also { openDiskCache = it }
+        }
 
     init {
         readerPreferences.cacheSize.changes()
             .drop(1)
             .onEach {
-                // Save old cache for destruction later
-                val oldCache = diskCache
-                diskCache = setupDiskCache(it.toLong())
-                oldCache.close()
+                synchronized(diskCacheLock) {
+                    // Save old cache for destruction later
+                    val oldCache = openDiskCache
+                    openDiskCache = setupDiskCache(it.toLong())
+                    oldCache?.close()
+                }
             }
             .launchIn(scope)
     }
@@ -67,7 +77,8 @@ class ChapterCache(
     /**
      * Returns directory of cache.
      */
-    private val cacheDir: File = diskCache.directory
+    private val cacheDir: File
+        get() = diskCache.directory
 
     /**
      * Returns real size of directory.

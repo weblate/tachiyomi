@@ -46,8 +46,8 @@ class PagePreviewCache(
         const val PARAMETER_VALUE_COUNT = 1
     }
 
-    /** Cache class used for cache management.  */
-    private var diskCache = setupDiskCache(75)
+    /** Cache class used for cache management. Opened on first use, since opening it reads the disk.  */
+    private val diskCache by lazy { setupDiskCache(75) }
 
     /**
      * Returns directory of cache.

@@ -11,8 +11,9 @@ import eu.kanade.tachiyomi.ui.reader.model.ViewerChapters
 import eu.kanade.tachiyomi.ui.reader.viewer.calculateChapterGap
 import eu.kanade.tachiyomi.util.system.createReaderThemeContext
 import eu.kanade.tachiyomi.widget.ViewPagerAdapter
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import tachiyomi.core.common.util.lang.launchUI
+import kotlinx.coroutines.launch
 import tachiyomi.core.common.util.system.logcat
 
 /**
@@ -369,7 +370,7 @@ class PagerViewerAdapter(private val viewer: PagerViewer) : ViewPagerAdapter() {
 
         // The listener may be removed when we split a page, so the ui may not have updated properly
         // This case usually happens when we load a new chapter and the first 2 pages need to split og
-        viewer.scope.launchUI {
+        viewer.scope.launch(Dispatchers.Main) {
             delay(100)
             viewer.onPageChange(viewer.pager.currentItem)
         }

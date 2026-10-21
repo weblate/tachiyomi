@@ -57,8 +57,10 @@ import exh.util.trimAll
 import exh.util.trimOrNull
 import exh.util.urlImportFetchSearchManga
 import exh.util.urlImportFetchSearchMangaSuspend
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.add
@@ -87,7 +89,6 @@ import org.jsoup.nodes.Element
 import org.jsoup.nodes.TextNode
 import rx.Observable
 import tachiyomi.core.common.util.lang.runAsObservable
-import tachiyomi.core.common.util.lang.withIOContext
 import uy.kohesive.injekt.injectLazy
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -871,7 +872,7 @@ class EHentai(
         var favNames: List<String>? = null
 
         do {
-            val response2 = withIOContext {
+            val response2 = withContext(Dispatchers.IO) {
                 client.newCall(
                     exGet(
                         favoriteUrl,

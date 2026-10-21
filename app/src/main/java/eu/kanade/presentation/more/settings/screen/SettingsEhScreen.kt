@@ -33,7 +33,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,6 +51,9 @@ import exh.metadata.metadata.EHentaiSearchMetadata
 import exh.source.ExhPreferences
 import exh.ui.login.EhLoginActivity
 import exh.util.nullIfBlank
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import logcat.LogPriority
 import mihon.app.di.appGraph
@@ -59,9 +61,6 @@ import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.roundedfilled.Error
 import tachiyomi.core.common.i18n.pluralStringResource
 import tachiyomi.core.common.i18n.stringResource
-import tachiyomi.core.common.util.lang.launchNonCancellable
-import tachiyomi.core.common.util.lang.withIOContext
-import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.DEVICE_CHARGING
 import tachiyomi.domain.library.service.LibraryPreferences.Companion.DEVICE_ONLY_ON_WIFI
@@ -904,17 +903,16 @@ object SettingsEhScreen : SearchableSettings {
     @Composable
     fun forceSyncReset(deleteFavoriteEntries: DeleteFavoriteEntries): Preference.PreferenceItem.TextPreference {
         val context = LocalContext.current
-        val scope = rememberCoroutineScope()
         var dialogOpen by remember { mutableStateOf(false) }
         if (dialogOpen) {
             SyncResetDialog(
                 onDismissRequest = { dialogOpen = false },
                 onStartReset = {
                     dialogOpen = false
-                    scope.launchNonCancellable {
+                    context.appGraph.appScope.launch {
                         try {
                             deleteFavoriteEntries.await()
-                            withUIContext {
+                            withContext(Dispatchers.Main) {
                                 context.toast(context.stringResource(SYMR.strings.sync_state_reset), Toast.LENGTH_LONG)
                             }
                         } catch (e: Exception) {
@@ -1147,7 +1145,7 @@ object SettingsEhScreen : SearchableSettings {
         var dialogOpen by remember { mutableStateOf(false) }
         if (dialogOpen) {
             val updateInfo by produceState<String?>(null) {
-                value = withIOContext {
+                value = withContext(Dispatchers.IO) {
                     try {
                         val stats =
                             exhPreferences.exhAutoUpdateStats.get().nullIfBlank()?.let {

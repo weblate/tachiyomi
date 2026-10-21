@@ -8,13 +8,13 @@ import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoSet
 import dev.zacsweers.metro.Inject
 import eu.kanade.tachiyomi.util.system.toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mihon.core.migration.MigrateUtils
 import mihon.core.migration.Migration
 import mihon.core.migration.MigrationContext
 import tachiyomi.core.common.preference.Preference
 import tachiyomi.core.common.preference.PreferenceStore
-import tachiyomi.core.common.util.lang.withIOContext
-import tachiyomi.core.common.util.lang.withUIContext
 
 @Inject
 @ContributesIntoSet(AppScope::class)
@@ -24,10 +24,10 @@ class MoveEncryptionSettingsToAppStateMigration(
 ) : Migration {
     override val version: Float = 66f
 
-    override suspend fun invoke(migrationContext: MigrationContext): Boolean = withIOContext {
+    override suspend fun invoke(migrationContext: MigrationContext): Boolean = withContext(Dispatchers.IO) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         if (prefs.getBoolean(Preference.privateKey("encrypt_database"), false)) {
-            withUIContext {
+            withContext(Dispatchers.Main) {
                 context.toast(
                     "Restart the app to load your encrypted library",
                     Toast.LENGTH_LONG,
@@ -47,6 +47,6 @@ class MoveEncryptionSettingsToAppStateMigration(
             newKey = { Preference.appStateKey(it.replace("__PRIVATE_", "").trim()) },
         )
 
-        return@withIOContext true
+        return@withContext true
     }
 }

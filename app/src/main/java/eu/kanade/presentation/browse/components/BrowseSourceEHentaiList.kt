@@ -39,9 +39,10 @@ import exh.ui.metadata.adapters.MetadataStars
 import exh.util.SourceTagsUtil
 import exh.util.SourceTagsUtil.GenreColor
 import exh.util.floor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withContext
 import tachiyomi.core.common.i18n.pluralStringResource
-import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
@@ -105,7 +106,7 @@ fun BrowseSourceEHentaiListItem(
 
     val context = LocalContext.current
     val languageText by produceState("", metadata) {
-        value = withIOContext {
+        value = withContext(Dispatchers.IO) {
             val locale = SourceTagsUtil.getLocaleSourceUtil(
                 metadata.tags
                     .firstOrNull { it.namespace == EHentaiSearchMetadata.EH_LANGUAGE_NAMESPACE }
@@ -127,7 +128,7 @@ fun BrowseSourceEHentaiListItem(
         }
     }
     val datePosted by produceState("", metadata) {
-        value = withIOContext {
+        value = withContext(Dispatchers.IO) {
             runCatching {
                 metadata.datePosted?.let {
                     MetadataUtil.EX_DATE_FORMAT.format(Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()))
@@ -136,7 +137,7 @@ fun BrowseSourceEHentaiListItem(
         }
     }
     val genre by produceState<Pair<GenreColor, StringResource>?>(null, metadata) {
-        value = withIOContext {
+        value = withContext(Dispatchers.IO) {
             when (metadata.genre) {
                 "doujinshi" -> GenreColor.DOUJINSHI_COLOR to SYMR.strings.doujinshi
                 "manga" -> GenreColor.MANGA_COLOR to SYMR.strings.entry_type_manga
@@ -153,7 +154,7 @@ fun BrowseSourceEHentaiListItem(
         }
     }
     val rating by produceState(0f, metadata) {
-        value = withIOContext {
+        value = withContext(Dispatchers.IO) {
             val rating = metadata.averageRating?.toFloat()
             rating?.div(0.5F)?.floor()?.let { 0.5F.times(it) } ?: 0f
         }

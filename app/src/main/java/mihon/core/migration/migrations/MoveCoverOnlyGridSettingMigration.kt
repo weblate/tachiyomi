@@ -7,9 +7,10 @@ import androidx.preference.PreferenceManager
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesIntoSet
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mihon.core.migration.Migration
 import mihon.core.migration.MigrationContext
-import tachiyomi.core.common.util.lang.withIOContext
 
 @Inject
 @ContributesIntoSet(AppScope::class)
@@ -18,7 +19,7 @@ class MoveCoverOnlyGridSettingMigration(
 ) : Migration {
     override val version: Float = 28f
 
-    override suspend fun invoke(migrationContext: MigrationContext): Boolean = withIOContext {
+    override suspend fun invoke(migrationContext: MigrationContext): Boolean = withContext(Dispatchers.IO) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         if (prefs.getString("pref_display_mode_library", null) == "NO_TITLE_GRID") {
             prefs.edit(commit = true) {
@@ -26,6 +27,6 @@ class MoveCoverOnlyGridSettingMigration(
             }
         }
 
-        return@withIOContext true
+        return@withContext true
     }
 }

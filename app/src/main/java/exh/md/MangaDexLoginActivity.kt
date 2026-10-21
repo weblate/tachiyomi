@@ -5,8 +5,9 @@ import androidx.lifecycle.lifecycleScope
 import dev.zacsweers.metro.Inject
 import eu.kanade.tachiyomi.ui.setting.track.BaseOAuthLoginActivity
 import exh.md.utils.MdUtil
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
-import tachiyomi.core.common.util.lang.launchIO
+import kotlinx.coroutines.launch
 import tachiyomi.domain.source.service.SourceManager
 
 class MangaDexLoginActivity : BaseOAuthLoginActivity() {
@@ -16,12 +17,12 @@ class MangaDexLoginActivity : BaseOAuthLoginActivity() {
     override fun handleResult(uri: Uri) {
         val code = uri.getQueryParameter("code")
         if (code != null) {
-            lifecycleScope.launchIO {
+            lifecycleScope.launch(Dispatchers.IO) {
                 MdUtil.getEnabledMangaDex(sourceManager = sourceManager)?.login(code)
                 returnToSettings()
             }
         } else {
-            lifecycleScope.launchIO {
+            lifecycleScope.launch(Dispatchers.IO) {
                 MdUtil.getEnabledMangaDex(sourceManager = sourceManager)?.logout()
                 returnToSettings()
             }

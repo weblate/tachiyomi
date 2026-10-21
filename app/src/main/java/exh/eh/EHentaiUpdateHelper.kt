@@ -48,11 +48,13 @@ class EHentaiUpdateHelper(
     private val getHistoryByMangaId: GetHistory,
     private val insertFavoriteEntryAlternative: InsertFavoriteEntryAlternative,
 ) {
-    val parentLookupTable =
+    // Opened on first use, since opening it reads the disk
+    val parentLookupTable by lazy {
         MemAutoFlushingLookupTable(
             File(context.filesDir, "exh-plt.maftable"),
             GalleryEntry.Serializer(),
         )
+    }
 
     /**
      * @param chapters Cannot be an empty list!

@@ -16,6 +16,7 @@ import exh.source.EXH_SOURCE_ID
 import exh.source.nHentaiSourceIds
 import exh.util.ThrottleManager
 import exh.util.jobScheduler
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.protobuf.schema.ProtoBufSchemaGenerator
 import mihon.app.di.appGraph
@@ -321,11 +322,11 @@ object DebugFunctions {
 
     fun killSyncJobs() {
         val context = Injekt.get<Application>()
-        SyncDataJob.stop(context)
+        context.appGraph.appScope.launch { SyncDataJob.stop(context) }
     }
 
     fun killLibraryJobs() {
         val context = Injekt.get<Application>()
-        LibraryUpdateWorker.stop(context)
+        context.appGraph.appScope.launch { LibraryUpdateWorker.stop(context) }
     }
 }

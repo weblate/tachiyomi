@@ -69,15 +69,15 @@ import exh.source.EH_SOURCE_ID
 import exh.source.EXH_SOURCE_ID
 import exh.source.ExhPreferences
 import exh.util.toAnnotatedString
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import mihon.app.di.appGraph
 import okhttp3.Headers
 import tachiyomi.core.common.i18n.pluralStringResource
 import tachiyomi.core.common.i18n.stringResource
-import tachiyomi.core.common.util.lang.launchNonCancellable
-import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.chapter.interactor.GetChaptersByMangaId
 import tachiyomi.domain.library.service.LibraryPreferences
@@ -237,6 +237,7 @@ object SettingsAdvancedScreen : SearchableSettings {
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
         val networkHelper = remember { context.appGraph.networkHelper }
+        val scope = rememberCoroutineScope()
 
         val userAgentPref = networkPreferences.defaultUserAgent
         val userAgent by userAgentPref.collectAsState()
@@ -263,10 +264,12 @@ object SettingsAdvancedScreen : SearchableSettings {
                                 clearSslPreferences()
                             }
                             WebStorage.getInstance().deleteAllData()
-                            context.applicationInfo?.dataDir?.let {
-                                File("$it/app_webview/").deleteRecursively()
+                            scope.launch(Dispatchers.IO) {
+                                context.applicationInfo?.dataDir?.let {
+                                    File("$it/app_webview/").deleteRecursively()
+                                }
+                                withContext(Dispatchers.Main) { context.toast(MR.strings.webview_data_deleted) }
                             }
-                            context.toast(MR.strings.webview_data_deleted)
                         } catch (e: Throwable) {
                             logcat(LogPriority.ERROR, e)
                             context.toast(MR.strings.cache_delete_error)
@@ -327,30 +330,32 @@ object SettingsAdvancedScreen : SearchableSettings {
     private fun getLibraryGroup(
         libraryPreferences: LibraryPreferences,
     ): Preference.PreferenceGroup {
-        val scope = rememberCoroutineScope()
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
 
         return Preference.PreferenceGroup(
             title = stringResource(MR.strings.label_library),
             preferenceItems = listOf(
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_refresh_library_covers),
-                    onClick = { LibraryUpdateWorker.startNow(context.workManager, target = LibraryUpdateWorker.Target.COVERS) },
+                    onClick = {
+                        scope.launch {
+                            LibraryUpdateWorker.startNow(context.workManager, target = LibraryUpdateWorker.Target.COVERS)
+                        }
+                    },
                 ),
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(MR.strings.pref_reset_viewer_flags),
                     subtitle = stringResource(MR.strings.pref_reset_viewer_flags_summary),
                     onClick = {
-                        scope.launchNonCancellable {
+                        context.appGraph.appScope.launch {
                             val success = context.appGraph.resetViewerFlags.await()
-                            withUIContext {
-                                val message = if (success) {
-                                    MR.strings.pref_reset_viewer_flags_success
-                                } else {
-                                    MR.strings.pref_reset_viewer_flags_error
-                                }
-                                context.toast(message)
+                            val message = if (success) {
+                                MR.strings.pref_reset_viewer_flags_success
+                            } else {
+                                MR.strings.pref_reset_viewer_flags_error
                             }
+                            withContext(Dispatchers.Main) { context.toast(message) }
                         }
                     },
                 ),
@@ -513,7 +518,6 @@ object SettingsAdvancedScreen : SearchableSettings {
 
     @Composable
     private fun getDownloaderGroup(): Preference.PreferenceGroup {
-        val scope = rememberCoroutineScope()
         val context = LocalContext.current
         var dialogOpen by remember { mutableStateOf(false) }
         if (dialogOpen) {
@@ -523,7 +527,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                     dialogOpen = false
                     if (job?.isActive == true) return@CleanupDownloadsDialog
                     context.toast(SYMR.strings.starting_cleanup)
-                    job = scope.launchNonCancellable {
+                    job = context.appGraph.appScope.launch {
                         val mangaList = context.appGraph.getAllManga.await()
                         val downloadManager: DownloadManager = context.appGraph.downloadManager
                         var foldersCleared = 0
@@ -559,7 +563,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                                 }
                             }
                         }
-                        withUIContext {
+                        withContext(Dispatchers.Main) {
                             val cleanupString =
                                 if (foldersCleared == 0) {
                                     context.stringResource(SYMR.strings.no_folders_to_cleanup)

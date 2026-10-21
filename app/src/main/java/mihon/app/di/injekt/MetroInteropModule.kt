@@ -15,6 +15,7 @@ import eu.kanade.tachiyomi.data.cache.PagePreviewCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.di.InjektModule
+import eu.kanade.tachiyomi.di.addLazySingleton
 import eu.kanade.tachiyomi.di.addSingleton
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.network.JavaScriptEngine
@@ -47,123 +48,126 @@ import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.api.InjektRegistrar
 
+/**
+ * Instances are resolved on first `Injekt.get`, so creating the module at startup doesn't create them.
+ */
 @Inject
 class MetroInteropModule(
-    private val json: Json,
-    private val protoBuf: ProtoBuf,
-    private val xml: XML,
+    private val json: Lazy<Json>,
+    private val protoBuf: Lazy<ProtoBuf>,
+    private val xml: Lazy<XML>,
 
-    private val networkHelper: NetworkHelper,
-    private val javaScriptEngine: JavaScriptEngine,
+    private val networkHelper: Lazy<NetworkHelper>,
+    private val javaScriptEngine: Lazy<JavaScriptEngine>,
 
-    private val preferenceStore: PreferenceStore,
-    private val trackPreferences: TrackPreferences,
+    private val preferenceStore: Lazy<PreferenceStore>,
+    private val trackPreferences: Lazy<TrackPreferences>,
 
-    private val extensionManager: ExtensionManager,
+    private val extensionManager: Lazy<ExtensionManager>,
 
-    private val coverCache: CoverCache,
+    private val coverCache: Lazy<CoverCache>,
 
     // SY -->
     // Bridge the fork's dependencies into Injekt so the existing Injekt.get<T>()
     // call sites keep working now that the graph is Metro-backed.
     private val context: Context,
 
-    private val sourcePreferences: SourcePreferences,
+    private val sourcePreferences: Lazy<SourcePreferences>,
 
-    private val sourceManager: SourceManager,
-    private val trackerManager: TrackerManager,
+    private val sourceManager: Lazy<SourceManager>,
+    private val trackerManager: Lazy<TrackerManager>,
 
-    private val getFavorites: GetFavorites,
-    private val networkToLocalManga: NetworkToLocalManga,
+    private val getFavorites: Lazy<GetFavorites>,
+    private val networkToLocalManga: Lazy<NetworkToLocalManga>,
 
-    private val database: Database,
-    private val updateMangaFromRemote: UpdateMangaFromRemote,
-    private val insertFlatMetadata: InsertFlatMetadata,
-    private val getManga: GetManga,
-    private val getMergedReferencesById: GetMergedReferencesById,
-    private val syncChaptersWithSource: SyncChaptersWithSource,
-    private val updateManga: UpdateManga,
-    private val getCategories: GetCategories,
-    private val downloadManager: DownloadManager,
-    private val downloadPreferences: DownloadPreferences,
-    private val filterChaptersForDownload: FilterChaptersForDownload,
+    private val database: Lazy<Database>,
+    private val updateMangaFromRemote: Lazy<UpdateMangaFromRemote>,
+    private val insertFlatMetadata: Lazy<InsertFlatMetadata>,
+    private val getManga: Lazy<GetManga>,
+    private val getMergedReferencesById: Lazy<GetMergedReferencesById>,
+    private val syncChaptersWithSource: Lazy<SyncChaptersWithSource>,
+    private val updateManga: Lazy<UpdateManga>,
+    private val getCategories: Lazy<GetCategories>,
+    private val downloadManager: Lazy<DownloadManager>,
+    private val downloadPreferences: Lazy<DownloadPreferences>,
+    private val filterChaptersForDownload: Lazy<FilterChaptersForDownload>,
 
-    private val exhPreferences: ExhPreferences,
-    private val syncPreferences: SyncPreferences,
-    private val pagePreviewCache: PagePreviewCache,
-    private val getAllManga: GetAllManga,
-    private val getFlatMetadataById: GetFlatMetadataById,
-    private val metadataSourceGetMangaId: MetadataSource.GetMangaId,
-    private val metadataSourceInsertFlatMetadata: MetadataSource.InsertFlatMetadata,
-    private val metadataSourceGetFlatMetadataById: MetadataSource.GetFlatMetadataById,
-    private val galleryAdder: GalleryAdder,
-    private val getExhFavoriteMangaWithMetadata: GetExhFavoriteMangaWithMetadata,
-    private val getSearchMetadata: GetSearchMetadata,
-    private val ehentaiUpdateHelper: EHentaiUpdateHelper,
-    private val customMangaInfo: GetCustomMangaInfo,
-    private val networkPreferences: NetworkPreferences,
-    private val delegateSourcePreferences: DelegateSourcePreferences,
-    private val sqlDriver: SqlDriver,
-    private val securityPreferences: SecurityPreferences,
+    private val exhPreferences: Lazy<ExhPreferences>,
+    private val syncPreferences: Lazy<SyncPreferences>,
+    private val pagePreviewCache: Lazy<PagePreviewCache>,
+    private val getAllManga: Lazy<GetAllManga>,
+    private val getFlatMetadataById: Lazy<GetFlatMetadataById>,
+    private val metadataSourceGetMangaId: Lazy<MetadataSource.GetMangaId>,
+    private val metadataSourceInsertFlatMetadata: Lazy<MetadataSource.InsertFlatMetadata>,
+    private val metadataSourceGetFlatMetadataById: Lazy<MetadataSource.GetFlatMetadataById>,
+    private val galleryAdder: Lazy<GalleryAdder>,
+    private val getExhFavoriteMangaWithMetadata: Lazy<GetExhFavoriteMangaWithMetadata>,
+    private val getSearchMetadata: Lazy<GetSearchMetadata>,
+    private val ehentaiUpdateHelper: Lazy<EHentaiUpdateHelper>,
+    private val customMangaInfo: Lazy<GetCustomMangaInfo>,
+    private val networkPreferences: Lazy<NetworkPreferences>,
+    private val delegateSourcePreferences: Lazy<DelegateSourcePreferences>,
+    private val sqlDriver: Lazy<SqlDriver>,
+    private val securityPreferences: Lazy<SecurityPreferences>,
     // SY <--
 ) : InjektModule {
 
     override fun InjektRegistrar.registerInjectables() {
-        addSingleton(json)
-        addSingleton(protoBuf)
-        addSingleton(xml)
+        addLazySingleton(json)
+        addLazySingleton(protoBuf)
+        addLazySingleton(xml)
 
-        addSingleton(networkHelper)
-        addSingleton(javaScriptEngine)
+        addLazySingleton(networkHelper)
+        addLazySingleton(javaScriptEngine)
 
-        addSingleton(preferenceStore)
-        addSingleton(trackPreferences)
+        addLazySingleton(preferenceStore)
+        addLazySingleton(trackPreferences)
 
-        addSingleton(extensionManager)
+        addLazySingleton(extensionManager)
 
-        addSingleton(coverCache)
+        addLazySingleton(coverCache)
 
         // SY -->
         addSingleton(context.applicationContext as Application)
         addSingleton(context)
 
-        addSingleton(sourcePreferences)
+        addLazySingleton(sourcePreferences)
 
-        addSingleton(sourceManager)
-        addSingleton(trackerManager)
+        addLazySingleton(sourceManager)
+        addLazySingleton(trackerManager)
 
-        addSingleton(getFavorites)
-        addSingleton(networkToLocalManga)
+        addLazySingleton(getFavorites)
+        addLazySingleton(networkToLocalManga)
 
-        addSingleton(database)
-        addSingleton(updateMangaFromRemote)
-        addSingleton(insertFlatMetadata)
-        addSingleton(getManga)
-        addSingleton(getMergedReferencesById)
-        addSingleton(syncChaptersWithSource)
-        addSingleton(updateManga)
-        addSingleton(getCategories)
-        addSingleton(downloadManager)
-        addSingleton(downloadPreferences)
-        addSingleton(filterChaptersForDownload)
+        addLazySingleton(database)
+        addLazySingleton(updateMangaFromRemote)
+        addLazySingleton(insertFlatMetadata)
+        addLazySingleton(getManga)
+        addLazySingleton(getMergedReferencesById)
+        addLazySingleton(syncChaptersWithSource)
+        addLazySingleton(updateManga)
+        addLazySingleton(getCategories)
+        addLazySingleton(downloadManager)
+        addLazySingleton(downloadPreferences)
+        addLazySingleton(filterChaptersForDownload)
 
-        addSingleton(exhPreferences)
-        addSingleton(syncPreferences)
-        addSingleton(pagePreviewCache)
-        addSingleton(getAllManga)
-        addSingleton(getFlatMetadataById)
-        addSingleton(galleryAdder)
-        addSingleton(getExhFavoriteMangaWithMetadata)
-        addSingleton(getSearchMetadata)
-        addSingleton(ehentaiUpdateHelper)
-        addSingleton(customMangaInfo)
-        addSingleton(networkPreferences)
-        addSingleton(delegateSourcePreferences)
-        addSingleton(sqlDriver)
-        addSingleton(securityPreferences)
-        addSingleton(metadataSourceGetMangaId)
-        addSingleton(metadataSourceInsertFlatMetadata)
-        addSingleton(metadataSourceGetFlatMetadataById)
+        addLazySingleton(exhPreferences)
+        addLazySingleton(syncPreferences)
+        addLazySingleton(pagePreviewCache)
+        addLazySingleton(getAllManga)
+        addLazySingleton(getFlatMetadataById)
+        addLazySingleton(galleryAdder)
+        addLazySingleton(getExhFavoriteMangaWithMetadata)
+        addLazySingleton(getSearchMetadata)
+        addLazySingleton(ehentaiUpdateHelper)
+        addLazySingleton(customMangaInfo)
+        addLazySingleton(networkPreferences)
+        addLazySingleton(delegateSourcePreferences)
+        addLazySingleton(sqlDriver)
+        addLazySingleton(securityPreferences)
+        addLazySingleton(metadataSourceGetMangaId)
+        addLazySingleton(metadataSourceInsertFlatMetadata)
+        addLazySingleton(metadataSourceGetFlatMetadataById)
         // SY <--
     }
 }

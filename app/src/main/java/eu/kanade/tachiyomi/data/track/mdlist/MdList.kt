@@ -13,9 +13,10 @@ import eu.kanade.tachiyomi.source.model.SManga
 import exh.md.network.MangaDexAuthInterceptor
 import exh.md.utils.FollowStatus
 import exh.md.utils.MdUtil
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import tachiyomi.core.common.util.lang.awaitSingle
-import tachiyomi.core.common.util.lang.withIOContext
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
@@ -56,7 +57,7 @@ class MdList(context: Context, id: Long) : BaseTracker(context, id, "MDList") {
     override fun displayScore(track: DomainTrack) = track.score.toInt().toString()
 
     override suspend fun update(track: Track, didReadChapter: Boolean): Track {
-        return withIOContext {
+        return withContext(Dispatchers.IO) {
             val mdex = MdUtil.getEnabledMangaDex() ?: throw MangaDexNotFoundException()
 
             val remoteTrack = mdex.fetchTrackingInfo(track.tracking_url)
@@ -118,7 +119,7 @@ class MdList(context: Context, id: Long) : BaseTracker(context, id, "MDList") {
     )
 
     override suspend fun refresh(track: Track): Track {
-        return withIOContext {
+        return withContext(Dispatchers.IO) {
             val mdex = MdUtil.getEnabledMangaDex() ?: throw MangaDexNotFoundException()
             val remoteTrack = mdex.fetchTrackingInfo(track.tracking_url)
             track.copyPersonalFrom(remoteTrack)
@@ -139,7 +140,7 @@ class MdList(context: Context, id: Long) : BaseTracker(context, id, "MDList") {
     }
 
     override suspend fun search(query: String): List<TrackSearch> {
-        return withIOContext {
+        return withContext(Dispatchers.IO) {
             val mdex = MdUtil.getEnabledMangaDex() ?: throw MangaDexNotFoundException()
             mdex.getSearchManga(1, query, FilterList())
                 .mangas
@@ -167,7 +168,7 @@ class MdList(context: Context, id: Long) : BaseTracker(context, id, "MDList") {
     }
 
     override suspend fun getMangaMetadata(track: DomainTrack): TrackMangaMetadata {
-        return withIOContext {
+        return withContext(Dispatchers.IO) {
             val mdex = MdUtil.getEnabledMangaDex() ?: throw MangaDexNotFoundException()
             val manga = mdex.getMangaMetadata(track.toDbTrack())
             TrackMangaMetadata(

@@ -12,14 +12,15 @@ import dev.zacsweers.metro.Inject
 import dev.zacsweers.metro.binding
 import dev.zacsweers.metrox.viewmodel.ViewModelKey
 import eu.kanade.tachiyomi.core.security.SecurityPreferences
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import tachiyomi.core.common.preference.plusAssign
-import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 
@@ -38,7 +39,7 @@ class BiometricTimesViewModel(
     val events = _events.receiveAsFlow()
 
     init {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             // todo usecase
             preferences.authenticatorTimeRanges.changes()
                 .collectLatest { times ->
@@ -60,11 +61,11 @@ class BiometricTimesViewModel(
      */
     fun createTimeRange(timeRange: TimeRange) {
         // todo usecase
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             // Do not allow duplicate categories.
             if (timeRangeConflicts(timeRange)) {
                 _events.send(BiometricTimesEvent.TimeConflicts)
-                return@launchIO
+                return@launch
             }
 
             preferences.authenticatorTimeRanges += timeRange.toPreferenceString()
@@ -78,8 +79,8 @@ class BiometricTimesViewModel(
      */
     fun deleteTimeRanges(timeRange: TimeRangeItem) {
         // todo usecase
-        viewModelScope.launchIO {
-            val state = state.value as? BiometricTimesScreenState.Success ?: return@launchIO
+        viewModelScope.launch(Dispatchers.IO) {
+            val state = state.value as? BiometricTimesScreenState.Success ?: return@launch
             preferences.authenticatorTimeRanges.set(
                 state.timeRanges.filterNot { it == timeRange }.map { it.timeRange.toPreferenceString() }.toSet(),
             )

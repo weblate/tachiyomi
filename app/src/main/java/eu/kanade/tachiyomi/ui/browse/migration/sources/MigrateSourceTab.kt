@@ -14,12 +14,13 @@ import eu.kanade.presentation.browse.MigrateSourceScreen
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.components.TabContent
 import eu.kanade.tachiyomi.ui.browse.migration.manga.MigrateMangaScreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mihon.app.di.appGraph
 import mihon.feature.migration.config.MigrationConfigScreen
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.Help
-import tachiyomi.core.common.util.lang.launchIO
-import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.domain.manga.interactor.GetFavorites
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
@@ -58,11 +59,11 @@ fun Screen.migrateSourceTab(): TabContent {
                 // SY -->
                 onClickAll = { source ->
                     // TODO: Jay wtf, need to clean this up sometime
-                    scope.launchIO {
+                    scope.launch(Dispatchers.IO) {
                         val manga = context.appGraph.getFavorites.await()
                         val sourceMangas =
                             manga.asSequence().filter { it.source == source.id }.map { it.id }.toList()
-                        withUIContext {
+                        withContext(Dispatchers.Main) {
                             navigator.push(
                                 MigrationConfigScreen(
                                     sourceMangas,

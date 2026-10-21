@@ -13,13 +13,14 @@ import eu.kanade.domain.source.interactor.CreateSourceCategory
 import eu.kanade.domain.source.interactor.DeleteSourceCategory
 import eu.kanade.domain.source.interactor.GetSourceCategories
 import eu.kanade.domain.source.interactor.RenameSourceCategory
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
-import tachiyomi.core.common.util.lang.launchIO
+import kotlinx.coroutines.launch
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 
@@ -40,7 +41,7 @@ class SourceCategoryViewModel(
     val events = _events.receiveAsFlow()
 
     init {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             getSourceCategories.subscribe()
                 .collectLatest { categories ->
                     state.update {
@@ -58,7 +59,7 @@ class SourceCategoryViewModel(
      * @param name The name of the category to create.
      */
     fun createCategory(name: String) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             when (createSourceCategory.await(name)) {
                 is CreateSourceCategory.Result.InvalidName -> _events.send(SourceCategoryEvent.InvalidName)
                 else -> {}
@@ -72,7 +73,7 @@ class SourceCategoryViewModel(
      * @param categories The list of categories to delete.
      */
     fun deleteCategory(categories: String) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             deleteSourceCategory.await(categories)
         }
     }
@@ -84,7 +85,7 @@ class SourceCategoryViewModel(
      * @param categoryNew The new name of the category.
      */
     fun renameCategory(categoryOld: String, categoryNew: String) {
-        viewModelScope.launchIO {
+        viewModelScope.launch(Dispatchers.IO) {
             when (renameSourceCategory.await(categoryOld, categoryNew)) {
                 is CreateSourceCategory.Result.InvalidName -> _events.send(SourceCategoryEvent.InvalidName)
                 else -> {}

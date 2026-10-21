@@ -39,14 +39,14 @@ import eu.kanade.tachiyomi.util.system.toast
 import eu.kanade.tachiyomi.util.system.workManager
 import exh.md.utils.MdConstants
 import exh.md.utils.MdUtil
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import logcat.LogPriority
 import mihon.app.di.appGraph
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Group
-import tachiyomi.core.common.util.lang.launchIO
-import tachiyomi.core.common.util.lang.withIOContext
-import tachiyomi.core.common.util.lang.withUIContext
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
@@ -74,7 +74,7 @@ object SettingsMangadexScreen : SearchableSettings {
         val sourcePreferences: SourcePreferences = remember { context.appGraph.sourcePreferences }
         val trackPreferences: TrackPreferences = remember { context.appGraph.trackPreferences }
         val mdex = produceState<MangaDex?>(null) {
-            value = withIOContext { MdUtil.getEnabledMangaDex(sourcePreferences) }
+            value = withContext(Dispatchers.IO) { MdUtil.getEnabledMangaDex(sourcePreferences) }
         }.value ?: return emptyList()
 
         return listOf(
@@ -122,20 +122,20 @@ object SettingsMangadexScreen : SearchableSettings {
                 onDismissRequest = { logoutDialogOpen = false },
                 onLogoutRequest = {
                     logoutDialogOpen = false
-                    scope.launchIO {
+                    scope.launch(Dispatchers.IO) {
                         try {
                             if (mdex.logout()) {
-                                withUIContext {
+                                withContext(Dispatchers.Main) {
                                     context.toast(MR.strings.logout_success)
                                 }
                             } else {
-                                withUIContext {
+                                withContext(Dispatchers.Main) {
                                     context.toast(MR.strings.unknown_error)
                                 }
                             }
                         } catch (e: Exception) {
                             logcat(LogPriority.ERROR, e) { "Logout error" }
-                            withUIContext {
+                            withContext(Dispatchers.Main) {
                                 context.toast(MR.strings.unknown_error)
                             }
                         }
@@ -189,7 +189,7 @@ object SettingsMangadexScreen : SearchableSettings {
             title = stringResource(SYMR.strings.mangadex_preffered_source),
             subtitle = stringResource(SYMR.strings.mangadex_preffered_source_summary),
             entries = produceState(emptyMap<String, String>())  {
-                this.value = withIOContext {
+                this.value = withContext(Dispatchers.IO) {
                     MdUtil.getEnabledMangaDexs(sourcePreferences)
                         .associate { it.id.toString() to it.toString() }
                 }
@@ -262,6 +262,7 @@ object SettingsMangadexScreen : SearchableSettings {
     @Composable
     fun syncMangaDexIntoThis(sourcePreferences: SourcePreferences): Preference.PreferenceItem.TextPreference {
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
         var dialogOpen by remember { mutableStateOf(false) }
         if (dialogOpen) {
             SyncMangaDexDialog(
@@ -271,10 +272,12 @@ object SettingsMangadexScreen : SearchableSettings {
                     sourcePreferences.mangadexSyncToLibraryIndexes.set(
                         List(items.size) { index -> (index + 1).toString() }.toSet(),
                     )
-                    LibraryUpdateWorker.startNow(
-                        context.workManager,
-                        target = LibraryUpdateWorker.Target.SYNC_FOLLOWS,
-                    )
+                    scope.launch {
+                        LibraryUpdateWorker.startNow(
+                            context.workManager,
+                            target = LibraryUpdateWorker.Target.SYNC_FOLLOWS,
+                        )
+                    }
                 },
             )
         }
@@ -288,14 +291,17 @@ object SettingsMangadexScreen : SearchableSettings {
     @Composable
     fun syncLibraryToMangaDex(): Preference.PreferenceItem.TextPreference {
         val context = LocalContext.current
+        val scope = rememberCoroutineScope()
         return Preference.PreferenceItem.TextPreference(
             title = stringResource(SYMR.strings.mangadex_push_favorites_to_mangadex),
             subtitle = stringResource(SYMR.strings.mangadex_push_favorites_to_mangadex_summary),
             onClick = {
-                LibraryUpdateWorker.startNow(
-                    context.workManager,
-                    target = LibraryUpdateWorker.Target.PUSH_FAVORITES,
-                )
+                scope.launch {
+                    LibraryUpdateWorker.startNow(
+                        context.workManager,
+                        target = LibraryUpdateWorker.Target.PUSH_FAVORITES,
+                    )
+                }
             },
         )
     }

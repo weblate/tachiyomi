@@ -48,7 +48,9 @@ import exh.source.ExhPreferences
 import exh.uconfig.EHConfigurator
 import exh.ui.intercept.InterceptActivity
 import exh.ui.login.EhLoginActivity
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
+import mihon.core.metro.AppCoroutineScope
 import mihon.core.metro.IsDebugBuild
 import mihon.core.migration.Migration
 import mihon.domain.extension.interactor.GetExtensionStoreCountAsFlow
@@ -155,6 +157,12 @@ interface AppGraph : ViewModelGraph {
     val getFavorites: GetFavorites
     val getCategories: GetCategories
     val resetViewerFlags: ResetViewerFlags
+
+    // SY -->
+    @AppCoroutineScope
+    val appScope: CoroutineScope
+
+    // SY <--
     val resetCategoryFlags: ResetCategoryFlags
     val addTracks: AddTracks
     val upsertTrack: UpsertTrack

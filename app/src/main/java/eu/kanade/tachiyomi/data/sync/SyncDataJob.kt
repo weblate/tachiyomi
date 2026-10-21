@@ -13,6 +13,8 @@ import androidx.work.WorkInfo
 import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
 import dev.zacsweers.metro.Inject
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.serialization.protobuf.ProtoBuf
 import eu.kanade.domain.sync.SyncPreferences
 import eu.kanade.tachiyomi.data.backup.create.BackupCreator
@@ -101,7 +103,7 @@ class SyncDataJob(private val context: Context, workerParams: WorkerParameters) 
         private const val TAG_AUTO = "$TAG_JOB:auto"
         const val TAG_MANUAL = "$TAG_JOB:manual"
 
-        fun isRunning(context: Context): Boolean {
+        suspend fun isRunning(context: Context): Boolean {
             return context.workManager.isRunning(TAG_JOB)
         }
 
@@ -127,25 +129,28 @@ class SyncDataJob(private val context: Context, workerParams: WorkerParameters) 
         }
 
         fun startNow(context: Context, manual: Boolean = false) {
-            val wm = context.workManager
-            if (wm.isRunning(TAG_JOB)) {
-                // Already running either as a scheduled or manual job
-                return
+            // Checking the running work queries WorkManager's database
+            context.appGraph.appScope.launch {
+                val wm = context.workManager
+                if (wm.isRunning(TAG_JOB)) {
+                    // Already running either as a scheduled or manual job
+                    return@launch
+                }
+                val tag = if (manual) TAG_MANUAL else TAG_AUTO
+                val request = OneTimeWorkRequestBuilder<SyncDataJob>()
+                    .addTag(TAG_JOB)
+                    .addTag(tag)
+                    .build()
+                wm.enqueueUniqueWork(tag, ExistingWorkPolicy.KEEP, request)
             }
-            val tag = if (manual) TAG_MANUAL else TAG_AUTO
-            val request = OneTimeWorkRequestBuilder<SyncDataJob>()
-                .addTag(TAG_JOB)
-                .addTag(tag)
-                .build()
-            context.workManager.enqueueUniqueWork(tag, ExistingWorkPolicy.KEEP, request)
         }
 
-        fun stop(context: Context) {
+        suspend fun stop(context: Context) {
             val wm = context.workManager
             val workQuery = WorkQuery.Builder.fromTags(listOf(TAG_JOB, TAG_AUTO, TAG_MANUAL))
                 .addStates(listOf(WorkInfo.State.RUNNING))
                 .build()
-            wm.getWorkInfos(workQuery).get()
+            wm.getWorkInfosFlow(workQuery).first()
                 // Should only return one work but just in case
                 .forEach {
                     wm.cancelWorkById(it.id)

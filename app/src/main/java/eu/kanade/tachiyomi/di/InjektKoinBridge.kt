@@ -48,6 +48,11 @@ inline fun <reified T> InjektModule.addSingleton(instance: T) {
     module.single<T> { instance }
 }
 
+inline fun <reified T> InjektModule.addLazySingleton(instance: Lazy<T>) {
+    val module = InjektKoinBridge.getModule(this)
+    module.single<T> { instance.value }
+}
+
 fun InjektScope.importModule(injektModule: InjektModule) {
     with(injektModule) { registrar.registerInjectables() }
 }
