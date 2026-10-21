@@ -9,6 +9,7 @@ import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.sync.SyncPreferences
 import eu.kanade.domain.track.service.TrackPreferences
+import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.cache.PagePreviewCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
@@ -103,6 +104,7 @@ class MetroInteropModule(
     private val networkPreferences: NetworkPreferences,
     private val delegateSourcePreferences: DelegateSourcePreferences,
     private val sqlDriver: SqlDriver,
+    private val securityPreferences: SecurityPreferences,
     // SY <--
 ) : InjektModule {
 
@@ -158,6 +160,7 @@ class MetroInteropModule(
         addSingleton(networkPreferences)
         addSingleton(delegateSourcePreferences)
         addSingleton(sqlDriver)
+        addSingleton(securityPreferences)
         addSingleton(metadataSourceGetMangaId)
         addSingleton(metadataSourceInsertFlatMetadata)
         addSingleton(metadataSourceGetFlatMetadataById)
