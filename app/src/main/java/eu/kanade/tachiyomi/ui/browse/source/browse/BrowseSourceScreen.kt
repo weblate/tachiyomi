@@ -276,6 +276,9 @@ data class BrowseSourceScreen(
         val onDismissRequest = { viewModel.setDialog(null) }
         when (val dialog = state.dialog) {
             is BrowseSourceViewModel.Dialog.Filter -> {
+                // SY -->
+                val savedSearches by viewModel.savedSearches.collectAsState()
+                // SY <--
                 SourceFilterDialog(
                     onDismissRequest = onDismissRequest,
                     filters = state.filters,
@@ -285,7 +288,7 @@ data class BrowseSourceScreen(
                     // SY -->
                     startExpanded = viewModel.startExpanded,
                     onSave = viewModel::onSaveSearch,
-                    savedSearches = state.savedSearches,
+                    savedSearches = savedSearches,
                     onSavedSearch = { search ->
                         viewModel.onSavedSearch(search) {
                             context.toast(it)

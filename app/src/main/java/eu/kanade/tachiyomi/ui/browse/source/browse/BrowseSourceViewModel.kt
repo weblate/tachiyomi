@@ -44,15 +44,15 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.WhileSubscribed
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -84,6 +84,7 @@ import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.i18n.sy.SYMR
 import xyz.nulldev.ts.api.http.serializer.FilterSerializer
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.seconds
 import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 @AssistedInject
@@ -147,6 +148,13 @@ open class BrowseSourceViewModel(
     private val filterSerializer = FilterSerializer()
 
     val sourceIsMangaDex = sourceId in mangaDexSourceIds
+
+    val savedSearches: StateFlow<List<EXHSavedSearch>> = state.map { it.source }
+        .filterNotNull()
+        .distinctUntilChanged()
+        .flatMapLatest { source -> getExhSavedSearch.subscribe(source.id, source::getFilterList) }
+        .map { it.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER, EXHSavedSearch::name)) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), emptyList())
     // SY <--
 
     init {
@@ -186,13 +194,6 @@ open class BrowseSourceViewModel(
                     search(filters = filters)
                 }
             }
-
-            getExhSavedSearch.subscribe(source.id, source::getFilterList)
-                .map { it.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER, EXHSavedSearch::name)) }
-                .onEach { savedSearches ->
-                    state.update { it.copy(savedSearches = savedSearches) }
-                }
-                .launchIn(viewModelScope)
             // SY <--
 
             if (!getIncognitoState.await(source.id)) {
@@ -486,7 +487,6 @@ open class BrowseSourceViewModel(
         val toolbarQuery: String? = null,
         val dialog: Dialog? = null,
         // SY -->
-        val savedSearches: List<EXHSavedSearch> = emptyList(),
         val filterable: Boolean = true,
         // SY <--
     ) {
@@ -496,7 +496,7 @@ open class BrowseSourceViewModel(
     // EXH -->
     fun onSaveSearch() {
         viewModelScope.launch(Dispatchers.IO) {
-            val names = state.value.savedSearches.map { it.name }
+            val names = savedSearches.value.map { it.name }
             state.update { it.copy(dialog = Dialog.CreateSavedSearch(names)) }
         }
     }
