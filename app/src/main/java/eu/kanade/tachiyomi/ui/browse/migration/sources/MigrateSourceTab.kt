@@ -21,7 +21,6 @@ import mihon.app.di.appGraph
 import mihon.feature.migration.config.MigrationConfigScreen
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.automirroredrounded.Help
-import tachiyomi.domain.manga.interactor.GetFavorites
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.core.i18n.stringResource
 

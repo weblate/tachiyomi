@@ -19,7 +19,6 @@ import exh.recs.sources.StaticResultPagingSource
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.i18n.sy.SYMR
 import tachiyomi.presentation.core.i18n.stringResource
-import tachiyomi.presentation.core.screens.LoadingScreen
 import java.io.Serializable
 
 class RecommendsScreen(private val args: Args) : Screen() {

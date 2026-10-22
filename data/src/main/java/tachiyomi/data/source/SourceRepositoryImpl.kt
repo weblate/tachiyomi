@@ -10,7 +10,6 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import exh.source.EH_SOURCE_ID
 import exh.source.EXH_SOURCE_ID
 import exh.source.MERGED_SOURCE_ID
-import exh.source.isEhBasedSource
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map

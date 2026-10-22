@@ -7,7 +7,6 @@ import eu.kanade.tachiyomi.network.parseAs
 import exh.md.dto.MangaListDto
 import exh.md.dto.RatingDto
 import exh.md.dto.RatingResponseDto
-import exh.md.dto.ReadChapterDto
 import exh.md.dto.ReadingStatusDto
 import exh.md.dto.ReadingStatusMapDto
 import exh.md.dto.ResultDto

@@ -1,6 +1,5 @@
 package eu.kanade.tachiyomi.ui.library
 
-import android.app.Application
 import android.content.Context
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.util.fastAll
@@ -78,7 +77,6 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import mihon.core.common.utils.mutate
 import mihon.core.metro.AppCoroutineScope

@@ -2,7 +2,6 @@ package tachiyomi.core.common.util.system
 
 import android.content.Context
 import android.content.res.Configuration
-import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -22,16 +21,13 @@ import androidx.core.graphics.get
 import androidx.core.graphics.green
 import androidx.core.graphics.red
 import ca.mpreg.imagedecoder.ImageDecoder
-import com.hippo.unifile.UniFile
 import logcat.LogPriority
 import okio.Buffer
 import okio.BufferedSource
 import java.io.File
 import java.io.InputStream
-import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.min
 
 object ImageUtil {
 

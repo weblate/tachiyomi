@@ -1,6 +1,5 @@
 package exh.md.utils
 
-import android.app.Application
 import android.content.Context
 import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.domain.track.service.TrackPreferences

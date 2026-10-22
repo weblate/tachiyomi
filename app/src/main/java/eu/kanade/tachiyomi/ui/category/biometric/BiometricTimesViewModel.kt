@@ -1,6 +1,5 @@
 package eu.kanade.tachiyomi.ui.category.biometric
 
-import android.app.Application
 import android.content.Context
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel

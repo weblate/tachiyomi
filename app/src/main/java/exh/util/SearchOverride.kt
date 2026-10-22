@@ -6,11 +6,8 @@ import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.online.UrlImportableSource
 import exh.GalleryAddEvent
 import exh.GalleryAdder
-import mihon.app.di.appGraph
 import rx.Observable
 import tachiyomi.core.common.util.lang.runAsObservable
-import uy.kohesive.injekt.Injekt
-import uy.kohesive.injekt.api.get
 
 /**
  * A version of fetchSearchManga that supports URL importing

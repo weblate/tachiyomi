@@ -1,6 +1,5 @@
 package eu.kanade.tachiyomi.ui.reader.loader
 
-import android.app.Application
 import android.content.Context
 import android.net.Uri
 import com.hippo.unifile.UniFile

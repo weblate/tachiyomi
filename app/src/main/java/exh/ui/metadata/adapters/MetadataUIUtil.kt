@@ -1,14 +1,7 @@
 package exh.ui.metadata.adapters
 
 import android.content.Context
-import android.graphics.Color
-import androidx.annotation.AttrRes
-import androidx.annotation.ColorInt
 import androidx.annotation.FloatRange
-import androidx.core.graphics.alpha
-import androidx.core.graphics.blue
-import androidx.core.graphics.green
-import androidx.core.graphics.red
 import exh.util.SourceTagsUtil
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.i18n.sy.SYMR

@@ -94,7 +94,6 @@ import tachiyomi.i18n.MR
 import tachiyomi.presentation.widget.WidgetManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.InjektScope
-import uy.kohesive.injekt.api.get
 import java.security.Security
 import java.text.SimpleDateFormat
 import java.util.Locale

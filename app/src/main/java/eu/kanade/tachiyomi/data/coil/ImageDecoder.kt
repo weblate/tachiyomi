@@ -1,6 +1,5 @@
 package eu.kanade.tachiyomi.data.coil
 
-import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
@@ -17,7 +16,6 @@ import coil3.decode.ImageSource
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import com.hippo.unifile.UniFile
-import eu.kanade.tachiyomi.util.storage.CbzCrypto
 import eu.kanade.tachiyomi.util.storage.CbzCrypto.Companion.getCoverStream
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit

@@ -1,6 +1,5 @@
 package exh.debug
 
-import android.app.Application
 import android.content.Context
 import dev.zacsweers.metro.Inject
 import eu.kanade.tachiyomi.BuildConfig
@@ -36,7 +35,6 @@ import tachiyomi.domain.manga.interactor.InsertFlatMetadata
 import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-import uy.kohesive.injekt.injectLazy
 import java.util.UUID
 
 @Suppress("unused")

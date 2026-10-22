@@ -1,6 +1,5 @@
 package mihon.core.migration.migrations
 
-import android.app.Application
 import android.content.Context
 import androidx.preference.PreferenceManager
 import dev.zacsweers.metro.AppScope

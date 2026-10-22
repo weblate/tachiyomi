@@ -1,6 +1,5 @@
 package tachiyomi.data.release
 
-import android.os.Build
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
 import dev.zacsweers.metro.Inject
