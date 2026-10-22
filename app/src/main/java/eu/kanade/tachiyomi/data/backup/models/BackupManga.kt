@@ -82,7 +82,6 @@ class BackupManga(
             // an entry was added. It was written by a trigger in seconds, unlike dateAdded.
             favoriteAt = if (this@BackupManga.favorite) {
                 this@BackupManga.dateAdded.takeIf { it != 0L }
-                    ?: this@BackupManga.favoriteModifiedAt?.times(1000)
                     ?: 0L
             } else {
                 null
