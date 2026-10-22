@@ -85,7 +85,7 @@ fun Manga.copyFrom(other: SManga): Manga {
     )
 }
 
-fun Manga.hasCustomCover(coverCache: CoverCache = Injekt.get()): Boolean {
+fun Manga.hasCustomCover(coverCache: CoverCache = Injekt.get<Context>().appGraph.coverCache): Boolean {
     return coverCache.hasCustomCover(id)
 }
 
@@ -98,6 +98,9 @@ fun getComicInfo(
     urls: List<String>,
     categories: List<String>?,
     sourceName: String,
+    // SY -->
+    comicInfoPadding: String?,
+    // SY <--
 ): ComicInfo {
     val date = chapter.dateUpload
         .takeIf { it != 0L }
@@ -127,7 +130,7 @@ fun getComicInfo(
         categories = categories?.let { ComicInfo.CategoriesTachiyomi(it.joinToString()) },
         source = ComicInfo.SourceMihon(sourceName),
         // SY -->
-        padding = CbzCrypto.createComicInfoPadding()?.let { ComicInfo.PaddingTachiyomiSY(it) },
+        padding = comicInfoPadding?.let { ComicInfo.PaddingTachiyomiSY(it) },
         // SY <--
         inker = null,
         colorist = null,

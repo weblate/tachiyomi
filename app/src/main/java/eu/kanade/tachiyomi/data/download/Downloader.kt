@@ -96,6 +96,7 @@ class Downloader(
     private val notifier: DownloadNotifier,
     // SY -->
     private val sourcePreferences: SourcePreferences,
+    private val cbzCrypto: CbzCrypto,
     // SY <--
 ) {
     /**
@@ -726,11 +727,20 @@ class Downloader(
         tmpDir: UniFile,
     ) {
         // SY -->
-        val encrypt = CbzCrypto.getPasswordProtectDlPref() && CbzCrypto.isPasswordSet()
+        val encryptInfo = if (cbzCrypto.getPasswordProtectDlPref() && cbzCrypto.isPasswordSet()) {
+            {
+                ZipWriter.EncryptInfo(
+                    cbzCrypto.getPreferredEncryptionAlgo(),
+                    cbzCrypto.getDecryptedPasswordCbz(),
+                )
+            }
+        } else {
+            null
+        }
         // SY <--
 
         val zip = mangaDir.createFile("$dirname.cbz$TMP_DIR_SUFFIX")!!
-        ZipWriter(context, zip, /* SY --> */ encrypt /* SY <-- */).use { writer ->
+        ZipWriter(context, zip, /* SY --> */ encryptInfo /* SY <-- */).use { writer ->
             tmpDir.listFiles()?.forEach { file ->
                 writer.write(file)
             }
@@ -762,6 +772,9 @@ class Downloader(
             urls,
             categories,
             source.name,
+            // SY -->
+            cbzCrypto.createComicInfoPadding()
+            // SY <--
         )
 
         // Remove the old file

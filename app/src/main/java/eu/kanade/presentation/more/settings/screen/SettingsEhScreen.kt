@@ -86,7 +86,7 @@ object SettingsEhScreen : SearchableSettings {
     @Composable
     override fun getTitleRes() = SYMR.strings.pref_category_eh
 
-    override fun isEnabled(): Boolean = Injekt.get<ExhPreferences>().isHentaiEnabled.get()
+    override fun isEnabled(): Boolean = Injekt.get<Context>().appGraph.exhPreferences.isHentaiEnabled.get()
 
     @Composable
     fun Reconfigure(

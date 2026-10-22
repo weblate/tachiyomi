@@ -7,6 +7,7 @@ import dev.zacsweers.metro.SingleIn
 import eu.kanade.tachiyomi.network.interceptor.CloudflareInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UncaughtExceptionInterceptor
 import eu.kanade.tachiyomi.network.interceptor.UserAgentInterceptor
+import exh.pref.DelegateSourcePreferences
 import kotlinx.coroutines.CoroutineScope
 import mihon.core.metro.AppCoroutineScope
 import mihon.core.metro.IsDebugBuild
@@ -22,9 +23,10 @@ import kotlin.time.Duration.Companion.seconds
 /* SY --> */
 open /* SY <-- */ class NetworkHelper(
     @AppCoroutineScope /* SY --> */ val /* SY <-- */ scope: CoroutineScope,
-    private val context: Context,
-    private val preferences: NetworkPreferences,
     // SY -->
+    val context: Context,
+    val preferences: NetworkPreferences,
+    val delegateSourcePreferences: DelegateSourcePreferences,
     @IsDebugBuild
     val isDebugBuild: Boolean,
     // SY <--

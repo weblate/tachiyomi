@@ -9,6 +9,7 @@ import coil3.fetch.Fetcher
 import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import eu.kanade.domain.manga.model.PagePreview
+import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.cache.PagePreviewCache
 import eu.kanade.tachiyomi.network.await
 import eu.kanade.tachiyomi.source.PagePreviewSource
@@ -238,10 +239,9 @@ class PagePreviewFetcher(
 
     class Factory(
         private val callFactoryLazy: Lazy<Call.Factory>,
+        private val pagePreviewCache: PagePreviewCache,
+        private val sourceManager: SourceManager,
     ) : Fetcher.Factory<PagePreview> {
-
-        private val pagePreviewCache: PagePreviewCache by injectLazy()
-        private val sourceManager: SourceManager by injectLazy()
 
         override fun create(data: PagePreview, options: Options, imageLoader: ImageLoader): Fetcher {
             return PagePreviewFetcher(

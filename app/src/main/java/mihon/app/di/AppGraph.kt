@@ -20,6 +20,7 @@ import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.data.backup.create.BackupCreateWorker
 import eu.kanade.tachiyomi.data.backup.restore.BackupRestoreWorker
 import eu.kanade.tachiyomi.data.cache.ChapterCache
+import eu.kanade.tachiyomi.data.cache.CoverCache
 import eu.kanade.tachiyomi.data.cache.PagePreviewCache
 import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
@@ -33,6 +34,7 @@ import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.data.updater.AppUpdateChecker
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.extension.util.ExtensionInstallActivity
+import eu.kanade.tachiyomi.network.JavaScriptEngine
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
 import eu.kanade.tachiyomi.ui.base.delegate.SecureActivityDelegateImpl
@@ -42,6 +44,8 @@ import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
 import eu.kanade.tachiyomi.ui.setting.track.BaseOAuthLoginActivity
 import eu.kanade.tachiyomi.ui.webview.WebViewActivity
 import eu.kanade.tachiyomi.util.CrashLogUtil
+import eu.kanade.tachiyomi.util.storage.CbzCrypto
+import exh.debug.DebugFunctions
 import exh.eh.EHentaiUpdateWorker
 import exh.pref.DelegateSourcePreferences
 import exh.source.ExhPreferences
@@ -50,11 +54,14 @@ import exh.ui.intercept.InterceptActivity
 import exh.ui.login.EhLoginActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
 import mihon.core.metro.AppCoroutineScope
 import mihon.core.metro.IsDebugBuild
 import mihon.core.migration.Migration
 import mihon.domain.extension.interactor.GetExtensionStoreCountAsFlow
 import mihon.domain.extension.repository.ExtensionStoreRepository
+import nl.adaptivity.xmlutil.serialization.XML
+import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.domain.backup.service.BackupPreferences
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.category.interactor.ResetCategoryFlags
@@ -66,6 +73,7 @@ import tachiyomi.domain.manga.interactor.GetAllManga
 import tachiyomi.domain.manga.interactor.GetExhFavoriteMangaWithMetadata
 import tachiyomi.domain.manga.interactor.GetFavorites
 import tachiyomi.domain.manga.interactor.GetFlatMetadataById
+import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.ResetViewerFlags
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.storage.service.StoragePreferences
@@ -123,6 +131,7 @@ interface AppGraph : ViewModelGraph {
     val downloadPreferences: DownloadPreferences
 
     // SY -->
+    val debugFunctions: DebugFunctions
     val syncPreferences: SyncPreferences
     val exhPreferences: ExhPreferences
     val delegateSourcePreferences: DelegateSourcePreferences
@@ -134,6 +143,9 @@ interface AppGraph : ViewModelGraph {
     val getFlatMetadataById: GetFlatMetadataById
     val deleteFavoriteEntries: DeleteFavoriteEntries
     val getExhFavoriteMangaWithMetadata: GetExhFavoriteMangaWithMetadata
+    val preferenceStore: PreferenceStore
+    val getManga: GetManga
+    val cbzCrypto: CbzCrypto
     // SY <--
 
     val crashLogUtil: CrashLogUtil
@@ -149,10 +161,14 @@ interface AppGraph : ViewModelGraph {
     val trackerManager: TrackerManager
     val extensionManager: ExtensionManager
     val chapterCache: ChapterCache
+    val coverCache: CoverCache
     val downloadCache: DownloadCache
 
     val json: Json
+    val protoBuf: ProtoBuf
+    val xml: XML
     val networkHelper: NetworkHelper
+    val javaScriptEngine: JavaScriptEngine
 
     val getFavorites: GetFavorites
     val getCategories: GetCategories
@@ -166,7 +182,9 @@ interface AppGraph : ViewModelGraph {
     val resetCategoryFlags: ResetCategoryFlags
     val addTracks: AddTracks
     val upsertTrack: UpsertTrack
+    // SY -->
     val getTracks: GetTracks
+    // SY <--
 
     val getExtensionStoreCountAsFlow: GetExtensionStoreCountAsFlow
 

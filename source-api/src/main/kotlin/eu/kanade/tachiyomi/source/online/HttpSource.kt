@@ -42,8 +42,9 @@ abstract class HttpSource : CatalogueSource {
         val network = Injekt.get<NetworkHelper>()
         object : NetworkHelper(
             network.scope,
-            Injekt.get<Application>(),
-            Injekt.get<NetworkPreferences>(),
+            network.context,
+            network.preferences,
+            network.delegateSourcePreferences, 
             network.isDebugBuild,
         ) {
             override val client: OkHttpClient
@@ -535,7 +536,7 @@ abstract class HttpSource : CatalogueSource {
 
     // EXH -->
     private var delegate: DelegatedHttpSource? = null
-        get() = if (Injekt.get<DelegateSourcePreferences>().delegateSources.get()) {
+        get() = if (Injekt.get<NetworkHelper>().delegateSourcePreferences.delegateSources.get()) {
             field
         } else {
             null

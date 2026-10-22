@@ -42,6 +42,7 @@ class MangaRestorer(
     @Assisted private val isSync: Boolean,
 
     private val database: Database,
+    private val mangaMapper: MangaMapper,
     private val getCategories: GetCategories,
     private val getMangaByUrlAndSourceId: GetMangaByUrlAndSourceId,
     private val getChaptersByMangaId: GetChaptersByMangaId,
@@ -531,7 +532,7 @@ class MangaRestorer(
                 val mergedManga = database.mangasQueries.getMangaByUrlAndSource(
                     backupMergedMangaReference.mangaUrl,
                     backupMergedMangaReference.mangaSourceId,
-                    MangaMapper::mapManga,
+                    mangaMapper::mapManga,
                 )
                     .awaitAsOneOrNull()
                     ?: return@forEach

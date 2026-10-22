@@ -2,6 +2,7 @@ package exh.debug
 
 import android.app.Application
 import android.content.Context
+import dev.zacsweers.metro.Inject
 import eu.kanade.tachiyomi.BuildConfig
 import eu.kanade.tachiyomi.data.backup.models.Backup
 import eu.kanade.tachiyomi.data.library.LibraryUpdateWorker
@@ -39,17 +40,20 @@ import uy.kohesive.injekt.injectLazy
 import java.util.UUID
 
 @Suppress("unused")
-object DebugFunctions {
-    private val context: Context by injectLazy()
-    private val database: Database by injectLazy()
-    private val sourceManager: SourceManager by injectLazy()
-    private val updateMangaFromRemote: UpdateMangaFromRemote by injectLazy()
-    private val getFavorites: GetFavorites by injectLazy()
-    private val getFlatMetadataById: GetFlatMetadataById by injectLazy()
-    private val insertFlatMetadata: InsertFlatMetadata by injectLazy()
-    private val getExhFavoriteMangaWithMetadata: GetExhFavoriteMangaWithMetadata by injectLazy()
-    private val getSearchMetadata: GetSearchMetadata by injectLazy()
-    private val getAllManga: GetAllManga by injectLazy()
+@Inject
+class DebugFunctions(
+    private val context: Context,
+    private val database: Database,
+    private val sourceManager: SourceManager,
+    private val updateMangaFromRemote: UpdateMangaFromRemote,
+    private val getFavorites: GetFavorites,
+    private val getFlatMetadataById: GetFlatMetadataById,
+    private val insertFlatMetadata: InsertFlatMetadata,
+    private val getExhFavoriteMangaWithMetadata: GetExhFavoriteMangaWithMetadata,
+    private val getSearchMetadata: GetSearchMetadata,
+    private val getAllManga: GetAllManga,
+) {
+
 
     fun forceUpgradeMigration(): Boolean {
         val migrationContext = MigrationContext(dryrun = false, 0)
@@ -321,12 +325,12 @@ object DebugFunctions {
     fun exportProtobufScheme() = ProtoBufSchemaGenerator.generateSchemaText(Backup.serializer().descriptor)
 
     fun killSyncJobs() {
-        val context = Injekt.get<Application>()
+        val context = Injekt.get<Context>()
         context.appGraph.appScope.launch { SyncDataJob.stop(context) }
     }
 
     fun killLibraryJobs() {
-        val context = Injekt.get<Application>()
+        val context = Injekt.get<Context>()
         context.appGraph.appScope.launch { LibraryUpdateWorker.stop(context) }
     }
 }

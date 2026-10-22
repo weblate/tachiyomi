@@ -71,8 +71,9 @@ object SettingsSecurityScreen : SearchableSettings {
         val context = LocalContext.current
         val securityPreferences = remember { context.appGraph.securityPreferences }
         val privacyPreferences = remember { context.appGraph.privacyPreferences }
+        val cbzCrypto = remember { context.appGraph.cbzCrypto }
         return listOf(
-            getSecurityGroup(securityPreferences),
+            getSecurityGroup(securityPreferences, cbzCrypto),
             getFirebaseGroup(privacyPreferences),
         )
     }
@@ -80,6 +81,7 @@ object SettingsSecurityScreen : SearchableSettings {
     @Composable
     private fun getSecurityGroup(
         securityPreferences: SecurityPreferences,
+        cbzCrypto: CbzCrypto,
     ): Preference.PreferenceGroup {
         val context = LocalContext.current
         val authSupported = remember { context.isAuthenticationSupported() }
@@ -87,7 +89,7 @@ object SettingsSecurityScreen : SearchableSettings {
         val useAuth by useAuthPref.collectAsState()
 
         val scope = rememberCoroutineScope()
-        val isCbzPasswordSet by remember { CbzCrypto.isPasswordSetState(scope) }.collectAsState()
+        val isCbzPasswordSet by remember { cbzCrypto.isPasswordSetState(scope) }.collectAsState()
         val passwordProtectDownloads by securityPreferences.passwordProtectDownloads.collectAsState()
 
         return Preference.PreferenceGroup(
@@ -154,8 +156,8 @@ object SettingsSecurityScreen : SearchableSettings {
                             onReturnPassword = { password ->
                                 dialogOpen = false
 
-                                CbzCrypto.deleteKeyCbz()
-                                securityPreferences.cbzPassword.set(CbzCrypto.encryptCbz(password.replace("\n", "")))
+                                cbzCrypto.deleteKeyCbz()
+                                securityPreferences.cbzPassword.set(cbzCrypto.encryptCbz(password.replace("\n", "")))
                             },
                         )
                     }
@@ -169,7 +171,7 @@ object SettingsSecurityScreen : SearchableSettings {
                 Preference.PreferenceItem.TextPreference(
                     title = stringResource(SYMR.strings.delete_cbz_archive_password),
                     onClick = {
-                        CbzCrypto.deleteKeyCbz()
+                        cbzCrypto.deleteKeyCbz()
                         securityPreferences.cbzPassword.set("")
                     },
                     visible = isCbzPasswordSet,

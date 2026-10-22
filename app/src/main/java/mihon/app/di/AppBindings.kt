@@ -60,6 +60,7 @@ object AppBindings {
         context: Context,
         // SY -->
         securityPreferences: SecurityPreferences,
+        cbzCrypto: CbzCrypto,
         // SY <--
         databaseRepository: DatabaseRepositoryImpl,
     ): SqlDriver {
@@ -83,7 +84,7 @@ object AppBindings {
             return AndroidxSqliteDriver(
                 connectionFactory = busyTimeoutConnectionFactory(
                     SQLCipherDriver(
-                        CbzCrypto.getDecryptedPasswordSql(),
+                        cbzCrypto.getDecryptedPasswordSql(),
                         null,
                         null,
                     ),

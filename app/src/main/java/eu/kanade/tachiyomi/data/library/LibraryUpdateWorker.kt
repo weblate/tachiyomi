@@ -572,11 +572,10 @@ class LibraryUpdateWorker(private val context: Context, workerParams: WorkerPara
      * filter all follows from Mangadex and only add reading or rereading manga to library
      */
     private suspend fun syncFollows() = coroutineScope {
-        val preferences = sourcePreferences
         var count = 0
-        val mangaDex = MdUtil.getEnabledMangaDex(preferences, sourceManager = sourceManager)
+        val mangaDex = MdUtil.getEnabledMangaDex(sourcePreferences, sourceManager)
             ?: return@coroutineScope
-        val syncFollowStatusInts = preferences.mangadexSyncToLibraryIndexes.get().map { it.toInt() }
+        val syncFollowStatusInts = sourcePreferences.mangadexSyncToLibraryIndexes.get().map { it.toInt() }
 
         val size: Int
         mangaDex.fetchAllFollows()
@@ -834,10 +833,11 @@ class LibraryUpdateWorker(private val context: Context, workerParams: WorkerPara
             )
 
             // Always sync the data before library update if syncing is enabled.
-            val syncPreferences: SyncPreferences = Injekt.get()
+            val context = Injekt.get<Context>()
+            val syncPreferences: SyncPreferences = context.appGraph.syncPreferences
             if (syncPreferences.isSyncEnabled()) {
                 // Check if SyncDataJob is already running
-                if (SyncDataJob.isRunning(Injekt.get<Context>())) {
+                if (SyncDataJob.isRunning(context)) {
                     // SyncDataJob is already running
                     return false
                 }

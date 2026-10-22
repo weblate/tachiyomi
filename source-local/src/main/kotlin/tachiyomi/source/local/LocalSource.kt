@@ -14,6 +14,7 @@ import eu.kanade.tachiyomi.source.model.SChapter
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.SMangaUpdate
 import eu.kanade.tachiyomi.util.lang.compareToCaseInsensitiveNaturalOrder
+import eu.kanade.tachiyomi.util.storage.CbzCrypto
 import eu.kanade.tachiyomi.util.storage.EpubFile
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -71,6 +72,7 @@ class LocalSource(
     private val coverManager: LocalCoverManager,
     // SY -->
     private val localSourceAllowHiddenFiles: LocalSourceAllowHiddenFiles,
+    private val cbzCrypto: CbzCrypto,
     // SY <--
 ) : Source, UnmeteredSource {
 
@@ -177,7 +179,7 @@ class LocalSource(
         val existingFile = mangaDirFiles
             .firstOrNull { it.name == COMIC_INFO_FILE }
         val comicInfoArchiveFile = mangaDirFiles.firstOrNull { it.name == COMIC_INFO_ARCHIVE }
-        val comicInfoArchiveReader = comicInfoArchiveFile?.archiveReader(context)
+        val comicInfoArchiveReader = comicInfoArchiveFile?.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz)
         val existingComicInfo =
             (existingFile?.openInputStream() ?: comicInfoArchiveReader?.getInputStream(COMIC_INFO_FILE))?.use {
                 AndroidXmlReader(it, StandardCharsets.UTF_8.name()).use { xmlReader ->
@@ -254,7 +256,7 @@ class LocalSource(
                 comicInfoArchiveFile != null -> {
                     noXmlFile?.delete()
 
-                    comicInfoArchiveFile.archiveReader(context).getInputStream(COMIC_INFO_FILE)
+                    comicInfoArchiveFile.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz).getInputStream(COMIC_INFO_FILE)
                         ?.let { setMangaDetailsFromComicInfoFile(it, manga) }
                 }
 
@@ -293,7 +295,7 @@ class LocalSource(
                     if (copiedFile != null && copiedFile.name != COMIC_INFO_ARCHIVE) {
                         setMangaDetailsFromComicInfoFile(copiedFile.openInputStream(), manga)
                     } else if (copiedFile != null && copiedFile.name == COMIC_INFO_ARCHIVE) {
-                        copiedFile.archiveReader(context).getInputStream(COMIC_INFO_FILE)
+                        copiedFile.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz).getInputStream(COMIC_INFO_FILE)
                             ?.let { setMangaDetailsFromComicInfoFile(it, manga) }
                     } // SY <--
                     else {
@@ -317,7 +319,7 @@ class LocalSource(
                 }
             }
         } else {
-            chapter.archiveReader(context).use { reader ->
+            chapter.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz).use { reader ->
                 reader.getInputStream(COMIC_INFO_FILE)?.use {
                     block(it, /* SY --> */ reader.encrypted /* SY <-- */)
                 }
@@ -346,7 +348,7 @@ class LocalSource(
         if (encrypt) {
             val comicInfoArchiveFile = folder.createFile(COMIC_INFO_ARCHIVE)
             comicInfoArchiveFile?.let { archive ->
-                ZipWriter(context, archive, encrypt = true).use { writer ->
+                ZipWriter(context, archive, encryptInfo = { ZipWriter.EncryptInfo(cbzCrypto.getPreferredEncryptionAlgo(), cbzCrypto.getDecryptedPasswordCbz()) }).use { writer ->
                     writer.write(comicInfoFileStream.use { it.readBytes() }, COMIC_INFO_FILE)
                 }
             }
@@ -414,7 +416,7 @@ class LocalSource(
                     try {
                         val format = Format.valueOf(chapterFile)
                         if (format is Format.Epub) {
-                            EpubFile(format.file.archiveReader(context)).use { epub ->
+                            EpubFile(format.file.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz)).use { epub ->
                                 epub.fillMetadata(manga, this)
                             }
                         } else {
@@ -481,7 +483,7 @@ class LocalSource(
                     entry?.let { coverManager.update(manga, it.openInputStream()) }
                 }
                 is Format.Archive -> {
-                    format.file.archiveReader(context).use { reader ->
+                    format.file.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz).use { reader ->
                         val entry = reader.useEntries { entries ->
                             entries
                                 .sortedWith { f1, f2 -> f1.name.compareToCaseInsensitiveNaturalOrder(f2.name) }
@@ -492,7 +494,7 @@ class LocalSource(
                     }
                 }
                 is Format.Epub -> {
-                    EpubFile(format.file.archiveReader(context)).use { epub ->
+                    EpubFile(format.file.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz)).use { epub ->
                         val entry = epub.getImagesFromPages().firstOrNull()
 
                         entry?.let { coverManager.update(manga, epub.getInputStream(it)!!) }

@@ -58,6 +58,7 @@ class FavoritesSyncHelper(
     private val renameCategory: RenameCategory,
     private val exhPreferences: ExhPreferences,
     private val sourceManager: SourceManager,
+    private val ehentaiFactory: EHentai.Factory,
     private val galleryAdder: GalleryAdder,
     private val storage: LocalFavoritesStorage,
 ) {
@@ -84,7 +85,7 @@ class FavoritesSyncHelper(
 
     private suspend fun beginSync() {
         val exh = sourceManager.get(EXH_SOURCE_ID) as? EHentai
-            ?: EHentai(0, true, context)
+            ?: ehentaiFactory.create(0, true)
 
         // Check if logged in
         if (!exhPreferences.enableExhentai.get()) {

@@ -66,6 +66,7 @@ import eu.kanade.tachiyomi.util.chapter.removeDuplicates
 import eu.kanade.tachiyomi.util.editCover
 import eu.kanade.tachiyomi.util.lang.byteSize
 import eu.kanade.tachiyomi.util.lang.takeBytes
+import eu.kanade.tachiyomi.util.storage.CbzCrypto
 import eu.kanade.tachiyomi.util.storage.DiskUtil
 import eu.kanade.tachiyomi.util.storage.DiskUtil.MAX_FILE_NAME_BYTES
 import eu.kanade.tachiyomi.util.storage.cacheImageDir
@@ -164,6 +165,7 @@ class ReaderViewModel(
     private val getMergedChaptersByMangaId: GetMergedChaptersByMangaId,
     private val setReadStatus: SetReadStatus,
     private val sourcePreferences: SourcePreferences,
+    private val cbzCrypto: CbzCrypto,
     // SY <--
 ) : ViewModel() {
 
@@ -469,12 +471,15 @@ class ReaderViewModel(
                     chapterCache = chapterCache,
                     appScope = appScope,
                     manga = manga,
-                    source = source, /* SY --> */
+                    source = source,
+                    // SY -->
                     sourceManager = sourceManager,
                     readerPrefs = readerPreferences,
                     mergedReferences = mergedReferences,
                     mergedManga = mergedManga,
-                    sourcePreferences = sourcePreferences, /* SY <-- */
+                    sourcePreferences = sourcePreferences,
+                    cbzCrypto = cbzCrypto
+                    // SY <--
                 )
 
                 chapterList = loadChapterList()

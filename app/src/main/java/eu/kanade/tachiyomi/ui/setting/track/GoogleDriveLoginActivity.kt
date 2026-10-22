@@ -12,6 +12,7 @@ import tachiyomi.i18n.sy.SYMR
 
 class GoogleDriveLoginActivity : BaseOAuthLoginActivity() {
     @Inject private lateinit var googleDriveService: GoogleDriveService
+
     override fun handleResult(uri: Uri) {
         val code = uri.getQueryParameter("code")
         val error = uri.getQueryParameter("error")

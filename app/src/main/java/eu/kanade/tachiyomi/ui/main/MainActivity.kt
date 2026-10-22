@@ -92,6 +92,7 @@ import eu.kanade.tachiyomi.util.system.isNavigationBarNeedsScrim
 import eu.kanade.tachiyomi.util.system.isPreviewBuildType
 import eu.kanade.tachiyomi.util.view.setComposeContent
 import exh.debug.DebugToggles
+import exh.debug.asPref
 import exh.eh.EHentaiUpdateWorker
 import exh.log.DebugModeOverlay
 import exh.source.BlacklistedSources
@@ -118,6 +119,7 @@ import mihon.core.metro.metroGraph
 import mihon.core.migration.Migrator
 import mihon.domain.database.repository.DatabaseRepository
 import tachiyomi.core.common.Constants
+import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.library.service.LibraryPreferences
 import tachiyomi.domain.release.interactor.GetApplicationRelease
@@ -158,6 +160,8 @@ class MainActivity : BaseActivity() {
 
     // SY -->
     @Inject private lateinit var sourcePreferences: SourcePreferences
+
+    @Inject private lateinit var preferenceStore: PreferenceStore
     // SY <--
 
     // To be checked by splash screen. If true then splash screen will be removed.
@@ -368,7 +372,7 @@ class MainActivity : BaseActivity() {
             // SY -->
             if (hasDebugOverlay) {
                 val isDebugOverlayEnabled by remember {
-                    DebugToggles.ENABLE_DEBUG_OVERLAY.asPref(lifecycleScope)
+                    DebugToggles.ENABLE_DEBUG_OVERLAY.asPref(preferenceStore, lifecycleScope)
                 }
                 val enableSourceBlacklist by remember {
                     sourcePreferences.enableSourceBlacklist.asState(lifecycleScope)

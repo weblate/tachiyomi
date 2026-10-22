@@ -56,6 +56,7 @@ import eu.kanade.tachiyomi.util.chapter.getNextUnread
 import eu.kanade.tachiyomi.util.removeCovers
 import eu.kanade.tachiyomi.util.system.toast
 import exh.debug.DebugToggles
+import exh.debug.isEnabled
 import exh.eh.EHentaiUpdateHelper
 import exh.log.xLogD
 import exh.md.utils.FollowStatus
@@ -94,6 +95,7 @@ import mihon.domain.chapter.interactor.FilterChaptersForDownload
 import mihon.domain.source.interactor.UpdateMangaFromRemote
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.preference.CheckboxState
+import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.core.common.preference.TriState
 import tachiyomi.core.common.preference.mapAsCheckboxState
 import tachiyomi.core.common.util.system.logcat
@@ -176,6 +178,7 @@ class MangaViewModel(
     private val upsertTrack: UpsertTrack,
     private val setCustomMangaInfo: SetCustomMangaInfo,
     private val updateHelper: EHentaiUpdateHelper,
+    private val preferenceStore: PreferenceStore,
     // SY <--
     private val getDuplicateLibraryManga: GetDuplicateLibraryManga,
     private val getAvailableScanlators: GetAvailableScanlators,
@@ -300,7 +303,7 @@ class MangaViewModel(
                 .onEach { (manga, chapters) ->
                     if (chapters.isNotEmpty() &&
                         manga.isEhBasedManga() &&
-                        DebugToggles.ENABLE_EXH_ROOT_REDIRECT.enabled
+                        DebugToggles.ENABLE_EXH_ROOT_REDIRECT.isEnabled(preferenceStore)
                     ) {
                         // Check for gallery in library and accept manga with lowest id
                         // Find chapters sharing same root

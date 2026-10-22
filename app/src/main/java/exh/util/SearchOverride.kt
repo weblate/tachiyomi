@@ -6,20 +6,18 @@ import eu.kanade.tachiyomi.source.model.MangasPage
 import eu.kanade.tachiyomi.source.online.UrlImportableSource
 import exh.GalleryAddEvent
 import exh.GalleryAdder
+import mihon.app.di.appGraph
 import rx.Observable
 import tachiyomi.core.common.util.lang.runAsObservable
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
-
-private val galleryAdder by lazy {
-    Injekt.get<GalleryAdder>()
-}
 
 /**
  * A version of fetchSearchManga that supports URL importing
  */
 fun UrlImportableSource.urlImportFetchSearchManga(
     context: Context,
+    galleryAdder: GalleryAdder,
     query: String,
     fail: () -> Observable<MangasPage>,
 ): Observable<MangasPage> =
@@ -47,6 +45,7 @@ fun UrlImportableSource.urlImportFetchSearchManga(
  */
 suspend fun UrlImportableSource.urlImportFetchSearchMangaSuspend(
     context: Context,
+    galleryAdder: GalleryAdder,
     query: String,
     fail: suspend () -> MangasPage,
 ): MangasPage =

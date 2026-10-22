@@ -1,5 +1,6 @@
 package eu.kanade.presentation.more.settings.screen
 
+import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -48,6 +49,7 @@ import mihon.app.di.appGraph
 import mihon.icons.materialsymbols.MaterialSymbols
 import mihon.icons.materialsymbols.rounded.Group
 import tachiyomi.core.common.util.system.logcat
+import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 import tachiyomi.presentation.core.components.material.padding
@@ -65,7 +67,8 @@ object SettingsMangadexScreen : SearchableSettings {
     override fun getTitleRes() = SYMR.strings.pref_category_mangadex
 
     override fun isEnabled(): Boolean = runBlocking {
-        MdUtil.getEnabledMangaDexs(Injekt.get()).isNotEmpty()
+        val appGraph = Injekt.get<Context>().appGraph
+        MdUtil.getEnabledMangaDexs(appGraph.sourcePreferences, appGraph.sourceManager).isNotEmpty()
     }
 
     @Composable
@@ -73,13 +76,14 @@ object SettingsMangadexScreen : SearchableSettings {
         val context = LocalContext.current
         val sourcePreferences: SourcePreferences = remember { context.appGraph.sourcePreferences }
         val trackPreferences: TrackPreferences = remember { context.appGraph.trackPreferences }
+        val sourceManager: SourceManager = remember { context.appGraph.sourceManager }
         val mdex = produceState<MangaDex?>(null) {
-            value = withContext(Dispatchers.IO) { MdUtil.getEnabledMangaDex(sourcePreferences) }
+            value = withContext(Dispatchers.IO) { MdUtil.getEnabledMangaDex(sourcePreferences, sourceManager) }
         }.value ?: return emptyList()
 
         return listOf(
             loginPreference(mdex, trackPreferences),
-            preferredMangaDexId(sourcePreferences),
+            preferredMangaDexId(sourcePreferences, sourceManager),
             syncMangaDexIntoThis(sourcePreferences),
             syncLibraryToMangaDex(),
         )
@@ -183,6 +187,7 @@ object SettingsMangadexScreen : SearchableSettings {
     @Composable
     fun preferredMangaDexId(
         sourcePreferences: SourcePreferences,
+        sourceManager: SourceManager,
     ): Preference.PreferenceItem.ListPreference<String> {
         return Preference.PreferenceItem.ListPreference(
             preference = sourcePreferences.preferredMangaDexId,
@@ -190,7 +195,7 @@ object SettingsMangadexScreen : SearchableSettings {
             subtitle = stringResource(SYMR.strings.mangadex_preffered_source_summary),
             entries = produceState(emptyMap<String, String>())  {
                 this.value = withContext(Dispatchers.IO) {
-                    MdUtil.getEnabledMangaDexs(sourcePreferences)
+                    MdUtil.getEnabledMangaDexs(sourcePreferences, sourceManager)
                         .associate { it.id.toString() to it.toString() }
                 }
             }.value,

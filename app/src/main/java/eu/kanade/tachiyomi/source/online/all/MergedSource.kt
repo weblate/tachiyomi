@@ -1,5 +1,8 @@
 package eu.kanade.tachiyomi.source.online.all
 
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import eu.kanade.domain.chapter.interactor.SyncChaptersWithSource
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.toSManga
@@ -33,20 +36,27 @@ import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MergedMangaReference
 import tachiyomi.domain.source.service.SourceManager
-import uy.kohesive.injekt.injectLazy
 
-class MergedSource : HttpSource() {
-    private val getManga: GetManga by injectLazy()
-    private val getMergedReferencesById: GetMergedReferencesById by injectLazy()
-    private val syncChaptersWithSource: SyncChaptersWithSource by injectLazy()
-    private val networkToLocalManga: NetworkToLocalManga by injectLazy()
-    private val updateManga: UpdateManga by injectLazy()
-    private val updateMangaFromRemote: UpdateMangaFromRemote by injectLazy()
-    private val getCategories: GetCategories by injectLazy()
-    private val sourceManager: SourceManager by injectLazy()
-    private val downloadManager: DownloadManager by injectLazy()
-    private val downloadPreferences: DownloadPreferences by injectLazy()
-    private val filterChaptersForDownload: FilterChaptersForDownload by injectLazy()
+@AssistedInject
+class MergedSource(
+    @Assisted
+    private val sourceManager: SourceManager,
+    private val getManga: GetManga,
+    private val getMergedReferencesById: GetMergedReferencesById,
+    private val syncChaptersWithSource: SyncChaptersWithSource,
+    private val networkToLocalManga: NetworkToLocalManga,
+    private val updateManga: UpdateManga,
+    private val updateMangaFromRemote: UpdateMangaFromRemote,
+    private val getCategories: GetCategories,
+    private val downloadManager: DownloadManager,
+    private val downloadPreferences: DownloadPreferences,
+    private val filterChaptersForDownload: FilterChaptersForDownload,
+) : HttpSource() {
+
+    @AssistedFactory
+    fun interface Factory {
+        fun create(sourceManager: SourceManager): MergedSource
+    }
 
     override val id: Long = MERGED_SOURCE_ID
 

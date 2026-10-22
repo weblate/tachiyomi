@@ -7,8 +7,8 @@ import tachiyomi.domain.source.service.SourceManager
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 
-suspend fun Manga.isLewd(): Boolean {
-    val sourceName = Injekt.get<SourceManager>().get(source)?.name
+suspend fun Manga.isLewd(sourceManager: SourceManager): Boolean {
+    val sourceName = sourceManager.get(source)?.name
 
     if (isEhBasedManga() || source in nHentaiSourceIds) {
         return genre.orEmpty().none { tag -> isNonHentaiTag(tag) }

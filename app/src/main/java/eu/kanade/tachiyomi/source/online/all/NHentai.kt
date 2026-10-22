@@ -3,6 +3,9 @@ package eu.kanade.tachiyomi.source.online.all
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import dev.zacsweers.metro.Assisted
+import dev.zacsweers.metro.AssistedFactory
+import dev.zacsweers.metro.AssistedInject
 import eu.kanade.tachiyomi.network.GET
 import eu.kanade.tachiyomi.network.awaitSuccess
 import eu.kanade.tachiyomi.network.newCachelessCallWithProgress
@@ -17,6 +20,7 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.MetadataSource
 import eu.kanade.tachiyomi.source.online.NamespaceSource
 import eu.kanade.tachiyomi.source.online.UrlImportableSource
+import exh.GalleryAdder
 import exh.metadata.metadata.NHentaiSearchMetadata
 import exh.metadata.metadata.RaisedSearchMetadata
 import exh.metadata.metadata.base.RaisedTag
@@ -34,12 +38,25 @@ import okhttp3.Response
 import rx.Observable
 import tachiyomi.core.common.util.lang.runAsObservable
 
-class NHentai(delegate: HttpSource, val context: Context) :
+@AssistedInject
+class NHentai(
+    @Assisted delegate: HttpSource,
+    val context: Context,
+    override val getMangaId: MetadataSource.GetMangaId,
+    override val insertFlatMetadata: MetadataSource.InsertFlatMetadata,
+    override val getFlatMetadataById: MetadataSource.GetFlatMetadataById,
+    private val galleryAdder: GalleryAdder,
+) :
     DelegatedHttpSource(delegate),
     MetadataSource<NHentaiSearchMetadata, Response>,
     UrlImportableSource,
     NamespaceSource,
     PagePreviewSource {
+    @AssistedFactory
+    fun interface Factory {
+        fun create(delegate: HttpSource): NHentai
+    }
+
     override val metaClass = NHentaiSearchMetadata::class
     override fun newMetaInstance() = NHentaiSearchMetadata()
     override val lang = delegate.lang
@@ -57,13 +74,13 @@ class NHentai(delegate: HttpSource, val context: Context) :
     // Support direct URL importing
     @Deprecated("Use the non-RxJava API instead", replaceWith = ReplaceWith("getSearchManga"))
     override fun fetchSearchManga(page: Int, query: String, filters: FilterList) =
-        urlImportFetchSearchManga(context, query) {
+        urlImportFetchSearchManga(context, galleryAdder, query) {
             @Suppress("DEPRECATION")
             super<DelegatedHttpSource>.fetchSearchManga(page, query, filters)
         }
 
     override suspend fun getSearchManga(page: Int, query: String, filters: FilterList): MangasPage {
-        return urlImportFetchSearchMangaSuspend(context, query) {
+        return urlImportFetchSearchMangaSuspend(context, galleryAdder, query) {
             super<DelegatedHttpSource>.getSearchManga(page, query, filters)
         }
     }

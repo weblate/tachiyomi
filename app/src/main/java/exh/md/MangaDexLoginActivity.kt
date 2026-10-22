@@ -3,6 +3,7 @@ package exh.md
 import android.net.Uri
 import androidx.lifecycle.lifecycleScope
 import dev.zacsweers.metro.Inject
+import eu.kanade.domain.source.service.SourcePreferences
 import eu.kanade.tachiyomi.ui.setting.track.BaseOAuthLoginActivity
 import exh.md.utils.MdUtil
 import kotlinx.coroutines.Dispatchers
@@ -14,16 +15,18 @@ class MangaDexLoginActivity : BaseOAuthLoginActivity() {
 
     @Inject private lateinit var sourceManager: SourceManager
 
+    @Inject private lateinit var sourcePreferences: SourcePreferences
+
     override fun handleResult(uri: Uri) {
         val code = uri.getQueryParameter("code")
         if (code != null) {
             lifecycleScope.launch(Dispatchers.IO) {
-                MdUtil.getEnabledMangaDex(sourceManager = sourceManager)?.login(code)
+                MdUtil.getEnabledMangaDex(sourcePreferences, sourceManager)?.login(code)
                 returnToSettings()
             }
         } else {
             lifecycleScope.launch(Dispatchers.IO) {
-                MdUtil.getEnabledMangaDex(sourceManager = sourceManager)?.logout()
+                MdUtil.getEnabledMangaDex(sourcePreferences, sourceManager)?.logout()
                 returnToSettings()
             }
         }

@@ -11,6 +11,7 @@ import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.all.MergedSource
 import eu.kanade.tachiyomi.ui.reader.model.ReaderChapter
 import eu.kanade.tachiyomi.ui.reader.setting.ReaderPreferences
+import eu.kanade.tachiyomi.util.storage.CbzCrypto
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -42,6 +43,7 @@ class ChapterLoader(
     private val mergedReferences: List<MergedMangaReference>,
     private val mergedManga: Map<Long, Manga>,
     private val sourcePreferences: SourcePreferences,
+    private val cbzCrypto: CbzCrypto,
     // SY <--
 ) {
 
@@ -131,13 +133,14 @@ class ChapterLoader(
                         downloadProvider = downloadProvider,
                         context = context,
                         readerPreferences = readerPrefs,
+                        cbzCrypto = cbzCrypto
                     )
                     source is HttpSource -> HttpPageLoader(chapter, source, chapterCache, appScope, readerPrefs, sourcePreferences)
                     source is LocalSource -> source.getFormat(chapter.chapter).let { format ->
                         when (format) {
                             is Format.Directory -> DirectoryPageLoader(format.file)
-                            is Format.Archive -> ArchivePageLoader(format.file.archiveReader(context), context, readerPrefs)
-                            is Format.Epub -> EpubPageLoader(format.file.archiveReader(context))
+                            is Format.Archive -> ArchivePageLoader(format.file.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz), context, readerPrefs)
+                            is Format.Epub -> EpubPageLoader(format.file.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz))
                         }
                     }
                     else -> error(context.stringResource(MR.strings.loader_not_implemented_error))
@@ -152,12 +155,15 @@ class ChapterLoader(
                 downloadProvider,
                 context,
                 readerPrefs,
+                // SY -->
+                cbzCrypto,
+                // SY <--
             )
             source is LocalSource -> source.getFormat(chapter.chapter).let { format ->
                 when (format) {
                     is Format.Directory -> DirectoryPageLoader(format.file)
-                    is Format.Archive -> ArchivePageLoader(format.file.archiveReader(context), context, readerPrefs)
-                    is Format.Epub -> EpubPageLoader(format.file.archiveReader(context))
+                    is Format.Archive -> ArchivePageLoader(format.file.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz), context, readerPrefs)
+                    is Format.Epub -> EpubPageLoader(format.file.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz))
                 }
             }
             source is HttpSource -> HttpPageLoader(chapter, source, chapterCache, appScope, readerPrefs, sourcePreferences)

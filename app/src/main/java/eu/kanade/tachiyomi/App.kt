@@ -40,6 +40,7 @@ import eu.kanade.tachiyomi.core.security.PrivacyPreferences
 import eu.kanade.tachiyomi.crash.CrashActivity
 import eu.kanade.tachiyomi.crash.GlobalExceptionHandler
 import eu.kanade.tachiyomi.data.cache.CoverCache
+import eu.kanade.tachiyomi.data.cache.PagePreviewCache
 import eu.kanade.tachiyomi.data.coil.BufferedSourceFetcher
 import eu.kanade.tachiyomi.data.coil.CoverRequestInterceptor
 import eu.kanade.tachiyomi.data.coil.ExtensionIconFetcher
@@ -53,8 +54,6 @@ import eu.kanade.tachiyomi.data.coil.PagePreviewFetcher
 import eu.kanade.tachiyomi.data.coil.PagePreviewKeyer
 import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.data.sync.SyncDataJob
-import eu.kanade.tachiyomi.di.InjektKoinBridge
-import eu.kanade.tachiyomi.di.importModule
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.network.NetworkHelper
 import eu.kanade.tachiyomi.network.NetworkPreferences
@@ -78,7 +77,7 @@ import kotlinx.coroutines.flow.onEach
 import logcat.LogPriority
 import logcat.LogcatLogger
 import mihon.app.di.AppGraph
-import mihon.app.di.injekt.MetroInteropModule
+import mihon.app.di.injekt.MetroInjektRegistrar
 import mihon.core.firebase.FirebaseConfig
 import mihon.core.metro.AppCoroutineScope
 import mihon.core.metro.GraphProvider
@@ -94,6 +93,7 @@ import tachiyomi.domain.storage.service.StorageManager
 import tachiyomi.i18n.MR
 import tachiyomi.presentation.widget.WidgetManager
 import uy.kohesive.injekt.Injekt
+import uy.kohesive.injekt.api.InjektScope
 import uy.kohesive.injekt.api.get
 import java.security.Security
 import java.text.SimpleDateFormat
@@ -120,15 +120,18 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
     // Lazy: only the image loader uses these, and process starts without UI (workers, receivers) never build it
     @Inject private lateinit var coverCache: Lazy<CoverCache>
 
+    // SY -->
+    @Inject private lateinit var pagePreviewCache: Lazy<PagePreviewCache>
+    // SY <--
+
+    @Inject private lateinit var extensionManager: Lazy<ExtensionManager>
+
     @Inject private lateinit var networkHelper: Lazy<NetworkHelper>
 
     @Inject private lateinit var sourceManager: Lazy<SourceManager>
 
-    @Inject private lateinit var extensionManager: Lazy<ExtensionManager>
 
     @Inject private lateinit var widgetManager: WidgetManager
-
-    @Inject private lateinit var injektMetroInteropModule: MetroInteropModule
 
     @Inject private lateinit var migrations: Set<Migration>
 
@@ -165,8 +168,8 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         // The first use of Dispatchers.Main finds its factory with a ServiceLoader, which reads the APK
         thread(name = "MainDispatcherPreload") { Dispatchers.Main }
 
+        Injekt = InjektScope(MetroInjektRegistrar(application = this, graphProvider = this))
         graph.inject(this)
-        setupInjekt()
 
         GlobalExceptionHandler.initialize(applicationContext, CrashActivity::class.java)
 
@@ -242,13 +245,6 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
         initializeMigrator()
     }
 
-    private fun setupInjekt() {
-        Injekt.importModule(injektMetroInteropModule)
-        // SY -->
-        InjektKoinBridge.startKoin(this)
-        // SY <--
-    }
-
     private fun initializeMigrator() {
         // SY -->
         val preference = preferenceStore.getInt(Preference.appStateKey("eh_last_version_code"), 0)
@@ -272,6 +268,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
             val callFactoryLazy = lazy { networkHelper.value.client }
             val coverCache = coverCache.value
             val sourceManager = sourceManager.value
+            val pagePreviewCache = pagePreviewCache.value
             components {
                 // NetworkFetcher.Factory
                 add(OkHttpNetworkFetcherFactory(callFactoryLazy::value))
@@ -284,7 +281,7 @@ class App : Application(), DefaultLifecycleObserver, SingletonImageLoader.Factor
                 add(ExtensionIconFetcher.ExtensionFactory(context))
                 add(ExtensionIconFetcher.SourceFactory(context, extensionManager))
                 // SY -->
-                add(PagePreviewFetcher.Factory(callFactoryLazy))
+                add(PagePreviewFetcher.Factory(callFactoryLazy, pagePreviewCache, sourceManager))
                 // SY <--
                 // Keyer
                 add(MangaCoverKeyer(coverCache))

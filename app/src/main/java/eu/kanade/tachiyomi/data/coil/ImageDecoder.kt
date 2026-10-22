@@ -1,6 +1,7 @@
 package eu.kanade.tachiyomi.data.coil
 
 import android.app.Application
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Matrix
 import androidx.core.graphics.createBitmap
@@ -17,9 +18,10 @@ import coil3.fetch.SourceFetchResult
 import coil3.request.Options
 import com.hippo.unifile.UniFile
 import eu.kanade.tachiyomi.util.storage.CbzCrypto
-import eu.kanade.tachiyomi.util.storage.CbzCrypto.getCoverStream
+import eu.kanade.tachiyomi.util.storage.CbzCrypto.Companion.getCoverStream
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
+import mihon.app.di.appGraph
 import mihon.core.common.archive.archiveReader
 import okio.BufferedSource
 import tachiyomi.core.common.util.system.ImageUtil
@@ -72,11 +74,12 @@ class ImageDecoder(private val resources: ImageSource, private val options: Opti
         if (options.webtoonStrips) return decodeStrips()
 
         // SY -->
+        val cbzCrypto = Injekt.get<Context>().appGraph.cbzCrypto
         var coverStream: BufferedInputStream? = null
-        if (resources.source().peek().use { CbzCrypto.detectCoverImageArchive(it.inputStream()) }) {
+        if (resources.source().peek().use { cbzCrypto.detectCoverImageArchive(it.inputStream()) }) {
             if (resources.source().peek().use { ImageUtil.findImageType(it.inputStream()) == null }) {
                 coverStream = UniFile.fromFile(resources.file().toFile())
-                    ?.archiveReader(context = Injekt.get<Application>())
+                    ?.archiveReader(context = Injekt.get<Context>(), cbzCrypto::getDecryptedPasswordCbz)
                     ?.getCoverStream()
             }
         }
@@ -196,7 +199,7 @@ class ImageDecoder(private val resources: ImageSource, private val options: Opti
             }
             // SY -->
             source.peek().inputStream().use { stream ->
-                if (CbzCrypto.detectCoverImageArchive(stream)) return true
+                if (Injekt.get<Context>().appGraph.cbzCrypto.detectCoverImageArchive(stream)) return true
             }
             // SY <--
             return when (type) {

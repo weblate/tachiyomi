@@ -27,7 +27,7 @@ import okio.sink
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.data.Chapters
 import tachiyomi.data.Database
-import tachiyomi.data.manga.MangaMapper.mapManga
+import tachiyomi.data.manga.MangaMapper
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.manga.model.Manga
 import java.io.File
@@ -45,6 +45,7 @@ import kotlin.time.Clock
 class SyncManager(
     private val context: Context,
     private val database: Database,
+    private val mangaMapper: MangaMapper,
     private val syncPreferences: SyncPreferences,
     private var json: Json,
     private val protoBuf: ProtoBuf,
@@ -331,19 +332,19 @@ class SyncManager(
      */
     private suspend fun getAllMangaFromDB(): List<Manga> {
         return database.mangasQueries
-            .getAllManga(::mapManga)
+            .getAllManga(mangaMapper::mapManga)
             .awaitAsList()
     }
 
     private suspend fun getAllMangaThatNeedsSync(): List<Manga> {
         return database.mangasQueries
-            .getMangasWithFavoriteTimestamp(::mapManga)
+            .getMangasWithFavoriteTimestamp(mangaMapper::mapManga)
             .awaitAsList()
     }
 
     private suspend fun getMangasModifiedSince(since: Long): List<Manga> {
         return database.mangasQueries
-            .getMangasModifiedSince(since, ::mapManga)
+            .getMangasModifiedSince(since, mangaMapper::mapManga)
             .awaitAsList()
     }
 
