@@ -35,8 +35,6 @@ class MangaDexFollowsScreen(private val sourceId: Long) : Screen() {
 
     @Composable
     override fun Content() {
-
-
         val navigator = LocalNavigator.currentOrThrow
         val scope = rememberCoroutineScope()
         val haptic = LocalHapticFeedback.current

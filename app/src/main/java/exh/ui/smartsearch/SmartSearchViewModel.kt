@@ -43,8 +43,6 @@ class SmartSearchViewModel(
     }
     private val smartSearchEngine = SmartSourceSearchEngine(null)
 
-
-
     init {
         viewModelScope.launch(Dispatchers.IO) {
             source.value = sourceManager.getOrStub(sourceId)

@@ -161,7 +161,7 @@ data object LibraryTab : Tab {
                         }
                     },
                     onClickSyncNow = {
-                                                scope.launch {
+                        scope.launch {
                             if (!SyncDataJob.isRunning(context)) {
                                 SyncDataJob.startNow(context, manual = true)
                             } else {

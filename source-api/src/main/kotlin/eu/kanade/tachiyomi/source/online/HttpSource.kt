@@ -44,7 +44,7 @@ abstract class HttpSource : CatalogueSource {
             network.scope,
             network.context,
             network.preferences,
-            network.delegateSourcePreferences, 
+            network.delegateSourcePreferences,
             network.isDebugBuild,
         ) {
             override val client: OkHttpClient

@@ -734,7 +734,7 @@ object SettingsDataScreen : SearchableSettings {
                     title = stringResource(SYMR.strings.pref_sync_now),
                     subtitle = stringResource(SYMR.strings.pref_sync_now_subtitle),
                     onClick = {
-                                                scope.launch {
+                        scope.launch {
                             if (!SyncDataJob.isRunning(context)) {
                                 SyncDataJob.startNow(context, manual = true)
                             } else {

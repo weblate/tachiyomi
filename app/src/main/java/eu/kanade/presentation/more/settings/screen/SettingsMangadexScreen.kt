@@ -193,7 +193,7 @@ object SettingsMangadexScreen : SearchableSettings {
             preference = sourcePreferences.preferredMangaDexId,
             title = stringResource(SYMR.strings.mangadex_preffered_source),
             subtitle = stringResource(SYMR.strings.mangadex_preffered_source_summary),
-            entries = produceState(emptyMap<String, String>())  {
+            entries = produceState(emptyMap<String, String>()) {
                 this.value = withContext(Dispatchers.IO) {
                     MdUtil.getEnabledMangaDexs(sourcePreferences, sourceManager)
                         .associate { it.id.toString() to it.toString() }

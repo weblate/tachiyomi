@@ -22,7 +22,7 @@ class ApiMangaParser(
     private val lang: String,
     private val getManga: MetadataSource.GetMangaId,
     private val insertFlatMetadata: MetadataSource.InsertFlatMetadata,
-    private val getFlatMetadataById: MetadataSource.GetFlatMetadataById
+    private val getFlatMetadataById: MetadataSource.GetFlatMetadataById,
 ) {
 
     val metaClass = MangaDexSearchMetadata::class

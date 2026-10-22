@@ -13,9 +13,6 @@ import androidx.work.WorkInfo
 import androidx.work.WorkQuery
 import androidx.work.WorkerParameters
 import dev.zacsweers.metro.Inject
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import kotlinx.serialization.protobuf.ProtoBuf
 import eu.kanade.domain.sync.SyncPreferences
 import eu.kanade.tachiyomi.data.backup.create.BackupCreator
 import eu.kanade.tachiyomi.data.backup.restore.restorers.MangaRestorer
@@ -25,7 +22,10 @@ import eu.kanade.tachiyomi.util.system.isOnline
 import eu.kanade.tachiyomi.util.system.isRunning
 import eu.kanade.tachiyomi.util.system.setForegroundSafely
 import eu.kanade.tachiyomi.util.system.workManager
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.protobuf.ProtoBuf
 import logcat.LogPriority
 import mihon.app.di.AppGraph
 import mihon.app.di.appGraph
@@ -48,6 +48,7 @@ class SyncDataJob(private val context: Context, workerParams: WorkerParameters) 
     @Inject private lateinit var syncPreferences: SyncPreferences
 
     @Inject private lateinit var json: Json
+
     @Inject private lateinit var protoBuf: ProtoBuf
 
     @Inject private lateinit var getCategories: GetCategories

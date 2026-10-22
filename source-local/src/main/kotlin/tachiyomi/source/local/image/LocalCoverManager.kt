@@ -72,7 +72,7 @@ class LocalCoverManager(
                     encryptInfo = {
                         ZipWriter.EncryptInfo(
                             cbzCrypto.getPreferredEncryptionAlgo(),
-                            cbzCrypto.getDecryptedPasswordCbz()
+                            cbzCrypto.getDecryptedPasswordCbz(),
                         )
                     },
                 ).use { writer ->

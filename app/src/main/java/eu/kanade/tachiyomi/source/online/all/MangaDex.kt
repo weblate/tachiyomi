@@ -129,7 +129,7 @@ class MangaDex(
             mdLang.lang,
             getManga = getMangaId,
             insertFlatMetadata = insertFlatMetadata,
-            getFlatMetadataById = getFlatMetadataById
+            getFlatMetadataById = getFlatMetadataById,
         )
     }
     private val followsHandler by lazy {

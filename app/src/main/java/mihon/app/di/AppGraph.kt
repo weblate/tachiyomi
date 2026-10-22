@@ -182,6 +182,7 @@ interface AppGraph : ViewModelGraph {
     val resetCategoryFlags: ResetCategoryFlags
     val addTracks: AddTracks
     val upsertTrack: UpsertTrack
+
     // SY -->
     val getTracks: GetTracks
     // SY <--

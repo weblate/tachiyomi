@@ -20,7 +20,6 @@ enum class DebugToggles(val default: Boolean) {
 
     // Pretend that all galleries only have a single version
     INCLUDE_ONLY_ROOT_WHEN_LOADING_EXH_VERSIONS(false),
-    ;
 }
 
 private val DebugToggles.prefKey

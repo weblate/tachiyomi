@@ -133,7 +133,7 @@ class ChapterLoader(
                         downloadProvider = downloadProvider,
                         context = context,
                         readerPreferences = readerPrefs,
-                        cbzCrypto = cbzCrypto
+                        cbzCrypto = cbzCrypto,
                     )
                     source is HttpSource -> HttpPageLoader(chapter, source, chapterCache, appScope, readerPrefs, sourcePreferences)
                     source is LocalSource -> source.getFormat(chapter.chapter).let { format ->

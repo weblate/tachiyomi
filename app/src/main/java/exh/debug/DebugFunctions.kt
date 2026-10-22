@@ -54,7 +54,6 @@ class DebugFunctions(
     private val getAllManga: GetAllManga,
 ) {
 
-
     fun forceUpgradeMigration(): Boolean {
         val migrationContext = MigrationContext(dryrun = false, 0)
         val migrationJobFactory = MigrationJobFactory(migrationContext, Migrator.scope)

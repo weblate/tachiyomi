@@ -209,7 +209,6 @@ class CbzCrypto(private val securityPreferences: SecurityPreferences) {
         }
         return String(bytes).contains(DEFAULT_COVER_NAME, ignoreCase = true)
     }
-
 }
 
 private const val BufferSize = 2048

@@ -478,7 +478,7 @@ class ReaderViewModel(
                     mergedReferences = mergedReferences,
                     mergedManga = mergedManga,
                     sourcePreferences = sourcePreferences,
-                    cbzCrypto = cbzCrypto
+                    cbzCrypto = cbzCrypto,
                     // SY <--
                 )
 

@@ -773,7 +773,7 @@ class Downloader(
             categories,
             source.name,
             // SY -->
-            cbzCrypto.createComicInfoPadding()
+            cbzCrypto.createComicInfoPadding(),
             // SY <--
         )
 
