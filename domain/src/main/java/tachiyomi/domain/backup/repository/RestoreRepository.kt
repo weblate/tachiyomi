@@ -12,7 +12,5 @@ interface RestoreRepository {
      * Restores [entries] all together: either every one of them is restored or none is. [update] is what to change on each
      * entry once its chapters and history are in place, and is part of the same all-or-nothing restore.
      */
-    // SY -->
-    suspend fun restoreManga(entries: List<RestoredManga>, isSync: Boolean, update: suspend (Manga) -> MangaUpdate)
-    // SY <--
+    suspend fun restoreManga(entries: List<RestoredManga>, /* SY --> */ isSync: Boolean, /* SY <-- */ update: suspend (Manga) -> MangaUpdate)
 }

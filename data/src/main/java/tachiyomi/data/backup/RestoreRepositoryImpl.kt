@@ -63,7 +63,7 @@ class RestoreRepositoryImpl(
             entries.forEach { entry ->
                 // A cancelled restore stops between entries and rolls the whole batch back
                 currentCoroutineContext().ensureActive()
-                val manga = restore(entry, syncingFlag)
+                val manga = restore(entry, /* SY --> */ syncingFlag /* SY <-- */)
                 mangaRepository.update(update(manga))
                 // SY -->
                 restoreMergedMangaReferences(manga.id, entry.mergedMangaReferences)
@@ -74,22 +74,18 @@ class RestoreRepositoryImpl(
         }
     }
 
-    // SY -->
-    private suspend fun restore(entry: RestoredManga, syncingFlag: Long): Manga {
-        // SY <--
+    private suspend fun restore(entry: RestoredManga, /* SY --> */ syncingFlag: Long /* SY <-- */): Manga {
         val dbManga = mangaRepository.getMangaByUrlAndSourceId(entry.manga.url, entry.manga.source)
         val manga = if (dbManga == null) {
-            entry.manga.copy(id = insertManga(entry.manga, syncingFlag))
+            entry.manga.copy(id = insertManga(entry.manga, /* SY --> */ syncingFlag /* SY <-- */))
         } else {
-            updateManga(mergeManga(entry.manga, dbManga), syncingFlag)
+            updateManga(mergeManga(entry.manga, dbManga), /* SY --> */ syncingFlag /* SY <-- */)
         }
 
         if (entry.categoryIds.isNotEmpty()) {
             mangaRepository.setMangaCategories(manga.id, entry.categoryIds)
         }
-        // SY -->
-        restoreChapters(manga, entry.chapters, syncingFlag)
-        // SY <--
+        restoreChapters(manga, entry.chapters, /* SY --> */ syncingFlag /* SY <-- */)
         restoreTracking(manga, entry.tracks)
         restoreHistory(manga, entry.history)
         restoreExcludedScanlators(manga, entry.excludedScanlators)
@@ -120,9 +116,9 @@ class RestoreRepositoryImpl(
         )
     }
 
-    // SY -->
-    private suspend fun updateManga(manga: Manga, syncingFlag: Long): Manga {
+    private suspend fun updateManga(manga: Manga, /* SY --> */ syncingFlag: Long /* SY <-- */): Manga {
         database.mangasQueries.updateFromBackup(
+            // SY -->
             artist = manga.ogArtist,
             author = manga.ogAuthor,
             description = manga.ogDescription,
@@ -151,11 +147,11 @@ class RestoreRepositoryImpl(
         return manga
     }
 
-    // SY -->
-    private suspend fun insertManga(manga: Manga, syncingFlag: Long): Long {
+    private suspend fun insertManga(manga: Manga, /* SY --> */ syncingFlag: Long /* SY <-- */): Long {
         return database.mangasQueries.insertReturningId(
             source = manga.source,
             url = manga.url,
+            // SY -->
             artist = manga.ogArtist,
             author = manga.ogAuthor,
             description = manga.ogDescription,
@@ -185,9 +181,7 @@ class RestoreRepositoryImpl(
             .awaitAsOne()
     }
 
-    // SY -->
-    private suspend fun restoreChapters(manga: Manga, restoredChapters: List<Chapter>, syncingFlag: Long) {
-        // SY <--
+    private suspend fun restoreChapters(manga: Manga, restoredChapters: List<Chapter>, /* SY --> */ syncingFlag: Long /* SY <-- */) {
         val dbChaptersByUrl = chapterRepository.getChapterByMangaId(manga.id)
             .associateBy { it.url }
 
