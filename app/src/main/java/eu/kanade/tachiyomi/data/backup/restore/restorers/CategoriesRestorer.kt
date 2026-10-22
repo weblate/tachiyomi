@@ -1,20 +1,19 @@
 package eu.kanade.tachiyomi.data.backup.restore.restorers
 
-import app.cash.sqldelight.async.coroutines.awaitAsOne
 import dev.zacsweers.metro.Assisted
 import dev.zacsweers.metro.AssistedFactory
 import dev.zacsweers.metro.AssistedInject
 import eu.kanade.tachiyomi.data.backup.models.BackupCategory
-import tachiyomi.data.Database
 import tachiyomi.domain.category.interactor.GetCategories
+import tachiyomi.domain.category.repository.CategoryRepository
 import tachiyomi.domain.library.service.LibraryPreferences
 
 @AssistedInject
 class CategoriesRestorer(
-    // SY -->
+// SY -->
     @Assisted private val isSync: Boolean,
+    private val categoryRepository: CategoryRepository,
     // SY <--
-    private val database: Database,
     private val getCategories: GetCategories,
     private val libraryPreferences: LibraryPreferences,
 ) {
@@ -37,7 +36,7 @@ class CategoriesRestorer(
 
             val categories = backupCategories
                 .sortedBy { it.order }
-                // SY -->
+// SY -->
                 .map { backupCategory ->
                     var dbCategory = if (backupCategory.uid != 0L) {
                         dbCategoriesByUid[backupCategory.uid]
@@ -50,7 +49,7 @@ class CategoriesRestorer(
                     }
 
                     if (dbCategory != null) {
-                        database.categoriesQueries.updateSync(
+                        categoryRepository.updateSync(
                             name = backupCategory.name,
                             order = backupCategory.order,
                             flags = backupCategory.flags,
@@ -62,26 +61,21 @@ class CategoriesRestorer(
                         return@map dbCategory
                     }
 
-                    // SY -->
                     // A sync delta is a converging replica, not an import: new
                     // categories must land at the position the server holds or
                     // reorders never converge across devices.
                     val order = if (isSync) backupCategory.order else nextOrder++
-                    // SY <--
-                    database.categoriesQueries.insert(
-                        backupCategory.name,
-                        order,
-                        backupCategory.flags,
-                        backupCategory.version,
-                        backupCategory.uid,
-                        backupCategory.lastModifiedAt,
-                    ).awaitAsOne()
-                        .let { id -> backupCategory.toCategory(id).copy(order = order) }
+                    categoryRepository.insertWithSync(
+                        name = backupCategory.name,
+                        order = order,
+                        flags = backupCategory.flags,
+                        version = backupCategory.version,
+                        uid = backupCategory.uid,
+                        lastModifiedAt = backupCategory.lastModifiedAt,
+                    ).let { id -> backupCategory.toCategory(id).copy(order = order) }
                 }
-            // SY <--
 
-            // SY -->
-            database.categoriesQueries.resetIsSyncing()
+            categoryRepository.resetIsSyncing()
             // SY <--
 
             libraryPreferences.categorizedDisplaySettings.set(

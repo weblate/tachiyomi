@@ -35,28 +35,13 @@ data class BackupMergedMangaReference(
     }
 }
 
-val backupMergedMangaReferenceMapper =
-    {
-            _: Long,
-            isInfoManga: Boolean,
-            getChapterUpdates: Boolean,
-            chapterSortMode: Long,
-            chapterPriority: Long,
-            downloadChapters: Boolean,
-            _: Long,
-            mergeUrl: String,
-            _: Long?,
-            mangaUrl: String,
-            mangaSourceId: Long,
-        ->
-        BackupMergedMangaReference(
-            isInfoManga = isInfoManga,
-            getChapterUpdates = getChapterUpdates,
-            chapterSortMode = chapterSortMode.toInt(),
-            chapterPriority = chapterPriority.toInt(),
-            downloadChapters = downloadChapters,
-            mergeUrl = mergeUrl,
-            mangaUrl = mangaUrl,
-            mangaSourceId = mangaSourceId,
-        )
-    }
+fun MergedMangaReference.toBackupMergedMangaReference() = BackupMergedMangaReference(
+    isInfoManga = isInfoManga,
+    getChapterUpdates = getChapterUpdates,
+    chapterSortMode = chapterSortMode,
+    chapterPriority = chapterPriority,
+    downloadChapters = downloadChapters,
+    mergeUrl = mergeUrl,
+    mangaUrl = mangaUrl,
+    mangaSourceId = mangaSourceId,
+)

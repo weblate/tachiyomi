@@ -1,6 +1,7 @@
 package tachiyomi.data.category
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
+import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
 import dev.zacsweers.metro.AppScope
 import dev.zacsweers.metro.ContributesBinding
@@ -63,7 +64,62 @@ class CategoryRepositoryImpl(
             ).awaitAsOneOrNull()
         }
     }
+
+    override suspend fun updateSync(
+        name: String,
+        order: Long,
+        flags: Long,
+        version: Long,
+        uid: Long,
+        lastModifiedAt: Long,
+        categoryId: Long,
+    ) {
+        database.categoriesQueries.updateSync(
+            name = name,
+            order = order,
+            flags = flags,
+            version = version,
+            uid = uid,
+            lastModifiedAt = lastModifiedAt,
+            categoryId = categoryId,
+        )
+    }
+
+    override suspend fun insertWithSync(
+        name: String,
+        order: Long,
+        flags: Long,
+        version: Long,
+        uid: Long,
+        lastModifiedAt: Long,
+    ): Long {
+        return database.categoriesQueries.insert(
+            name = name,
+            order = order,
+            flags = flags,
+            version = version,
+            uid = uid,
+            last_modified_at = lastModifiedAt,
+        ).awaitAsOne()
+    }
+
+    override suspend fun resetIsSyncing() {
+        database.categoriesQueries.resetIsSyncing()
+    }
+
+    override suspend fun deleteAll(categoryIds: List<Long>) {
+        database.transaction {
+            categoryIds.forEach { database.categoriesQueries.delete(it) }
+        }
+    }
+
     // SY <--
+
+    override suspend fun insertAll(categories: List<Category>) {
+        database.transaction {
+            categories.forEach { insert(it) }
+        }
+    }
 
     override suspend fun updateName(categoryId: Long, name: String) {
         database.categoriesQueries.updateName(name = name, categoryId = categoryId)

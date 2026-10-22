@@ -12,6 +12,9 @@ import tachiyomi.domain.manga.model.MergeMangaSettingsUpdate
 import tachiyomi.domain.manga.model.MergedMangaReference
 import tachiyomi.domain.manga.repository.MangaMergeRepository
 
+/**
+ * SY-specific file
+ */
 class MangaMergeRepositoryImpl(
     private val database: Database,
     private val mangaMapper: MangaMapper,
@@ -139,6 +142,12 @@ class MangaMergeRepositoryImpl(
     override suspend fun getMergeMangaForDownloading(mergeId: Long): List<Manga> {
         return database.mergedQueries
             .selectMergedMangasForDownloadingById(mergeId, mangaMapper::mapManga)
+            .awaitAsList()
+    }
+
+    override suspend fun getAllReferences(): List<MergedMangaReference> {
+        return database.mergedQueries
+            .selectAll(MergedMangaMapper::map)
             .awaitAsList()
     }
 }

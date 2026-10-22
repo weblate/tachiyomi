@@ -19,6 +19,10 @@ interface ChapterRepository {
 
     suspend fun getChapterByMangaId(mangaId: Long, applyScanlatorFilter: Boolean = false): List<Chapter>
 
+    // SY -->
+    suspend fun getChaptersByMangaIds(mangaIds: List<Long>): List<Chapter>
+    // SY <--
+
     suspend fun getScanlatorsByMangaId(mangaId: Long): List<String>
 
     fun getScanlatorsByMangaIdAsFlow(mangaId: Long): Flow<List<String>>
@@ -44,5 +48,7 @@ interface ChapterRepository {
     suspend fun getScanlatorsByMergeId(mangaId: Long): List<String>
 
     fun getScanlatorsByMergeIdAsFlow(mangaId: Long): Flow<List<String>>
+
+    suspend fun resetIsSyncing()
     // SY <--
 }

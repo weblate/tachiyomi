@@ -17,7 +17,32 @@ interface CategoryRepository {
 
     // SY -->
     suspend fun insert(category: Category): Long?
+
+    suspend fun updateSync(
+        name: String,
+        order: Long,
+        flags: Long,
+        version: Long,
+        uid: Long,
+        lastModifiedAt: Long,
+        categoryId: Long,
+    )
+
+    suspend fun insertWithSync(
+        name: String,
+        order: Long,
+        flags: Long,
+        version: Long,
+        uid: Long,
+        lastModifiedAt: Long,
+    ): Long
+
+    suspend fun resetIsSyncing()
+
+    suspend fun deleteAll(categoryIds: List<Long>)
     // SY <--
+
+    suspend fun insertAll(categories: List<Category>)
 
     suspend fun updateName(categoryId: Long, name: String)
 

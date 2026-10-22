@@ -108,6 +108,14 @@ class ChapterRepositoryImpl(
             .awaitAsList()
     }
 
+    // SY -->
+    override suspend fun getChaptersByMangaIds(mangaIds: List<Long>): List<Chapter> {
+        return database.ehQueries
+            .getChaptersByMangaIds(mangaIds, ::mapChapter)
+            .awaitAsList()
+    }
+    // SY <--
+
     override suspend fun getScanlatorsByMangaId(mangaId: Long): List<String> {
         return database.chaptersQueries
             .getScanlatorsByMangaId(mangaId) { it.orEmpty() }
@@ -184,6 +192,10 @@ class ChapterRepositoryImpl(
         return database.chaptersQueries
             .getScanlatorsByMergeId(mangaId) { it.orEmpty() }
             .subscribeToList()
+    }
+
+    override suspend fun resetIsSyncing() {
+        database.chaptersQueries.resetIsSyncing()
     }
     // SY <--
 }
