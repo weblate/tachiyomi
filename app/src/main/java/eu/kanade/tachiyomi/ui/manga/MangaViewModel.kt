@@ -739,11 +739,10 @@ class MangaViewModel(
                 )
                 .copyFrom(originalManga.toSManga())
                 .copy(
-                    favorite = true,
+                    favoriteAt = System.currentTimeMillis(),
                     lastUpdate = originalManga.lastUpdate,
                     viewerFlags = originalManga.viewerFlags,
                     chapterFlags = originalManga.chapterFlags,
-                    dateAdded = System.currentTimeMillis(),
                 )
 
             var existingManga = getManga.await(mergedManga.url, mergedManga.source)

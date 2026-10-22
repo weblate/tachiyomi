@@ -128,14 +128,15 @@ private fun Manga.toBackupManga(/* SY --> */customMangaInfo: CustomMangaInfo?/* 
         // SY <--
         favorite = this.favorite,
         source = this.source,
-        dateAdded = this.dateAdded,
+        dateAdded = this.favoriteAt ?: 0L,
         viewer = (this.viewerFlags.toInt() and ReadingMode.MASK),
         viewer_flags = this.viewerFlags.toInt(),
         chapterFlags = this.chapterFlags.toInt(),
         updateStrategy = this.updateStrategy,
+        // SY -->
         lastModifiedAt = this.lastModifiedAt,
-        favoriteModifiedAt = this.favoriteModifiedAt,
         version = this.version,
+        // SY <--
         notes = this.notes,
         initialized = this.initialized,
         memo = this.memo.toByteArray(),

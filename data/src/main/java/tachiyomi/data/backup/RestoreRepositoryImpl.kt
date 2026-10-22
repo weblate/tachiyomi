@@ -95,11 +95,11 @@ class RestoreRepositoryImpl(
     private fun mergeManga(manga: Manga, dbManga: Manga): Manga {
         val details = if (dbManga.initialized || !manga.initialized) dbManga else manga
         return dbManga.copy(
-            favorite = dbManga.favorite || manga.favorite,
-            dateAdded = listOfNotNull(
-                dbManga.dateAdded.takeIf { it > 0 },
-                manga.dateAdded.takeIf { it > 0 },
-            ).minOrNull() ?: 0L,
+            favoriteAt = if (dbManga.favorite || manga.favorite) {
+                listOfNotNull(dbManga.favoriteAt, manga.favoriteAt).filter { it > 0 }.minOrNull() ?: 0L
+            } else {
+                null
+            },
             // SY -->
             ogTitle = details.ogTitle,
             ogArtist = details.ogArtist,
@@ -119,6 +119,7 @@ class RestoreRepositoryImpl(
 
     private suspend fun updateManga(manga: Manga, /* SY --> */ syncingFlag: Long /* SY <-- */): Manga {
         database.mangasQueries.updateFromBackup(
+            favoriteAt = manga.favoriteAt,
             // SY -->
             artist = manga.ogArtist,
             author = manga.ogAuthor,
@@ -128,13 +129,11 @@ class RestoreRepositoryImpl(
             status = manga.ogStatus,
             thumbnailUrl = manga.ogThumbnailUrl,
             // SY <--
-            favorite = manga.favorite,
             lastUpdate = manga.lastUpdate,
             initialized = manga.initialized,
             viewer = manga.viewerFlags,
             chapterFlags = manga.chapterFlags,
             coverLastModified = manga.coverLastModified,
-            dateAdded = manga.dateAdded,
             mangaId = manga.id,
             updateStrategy = manga.updateStrategy,
             // SY -->
@@ -150,6 +149,7 @@ class RestoreRepositoryImpl(
 
     private suspend fun insertManga(manga: Manga, /* SY --> */ syncingFlag: Long /* SY <-- */): Long {
         return database.mangasQueries.insertReturningId(
+            favoriteAt = manga.favoriteAt,
             source = manga.source,
             url = manga.url,
             // SY -->
@@ -161,7 +161,6 @@ class RestoreRepositoryImpl(
             status = manga.ogStatus,
             thumbnailUrl = manga.ogThumbnailUrl,
             // SY <--
-            favorite = manga.favorite,
             lastUpdate = manga.lastUpdate,
             nextUpdate = 0L,
             calculateInterval = 0L,
@@ -169,7 +168,6 @@ class RestoreRepositoryImpl(
             viewerFlags = manga.viewerFlags,
             chapterFlags = manga.chapterFlags,
             coverLastModified = manga.coverLastModified,
-            dateAdded = manga.dateAdded,
             updateStrategy = manga.updateStrategy,
             // SY -->
             version = manga.version,

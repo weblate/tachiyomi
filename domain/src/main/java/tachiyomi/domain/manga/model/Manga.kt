@@ -20,11 +20,10 @@ import java.io.Serializable as JavaSerializable
 data class Manga(
     val id: Long,
     val source: Long,
-    val favorite: Boolean,
     val lastUpdate: Long,
     val nextUpdate: Long,
     val fetchInterval: Int,
-    val dateAdded: Long,
+    val favoriteAt: Long?,
     val viewerFlags: Long,
     val chapterFlags: Long,
     val coverLastModified: Long,
@@ -40,9 +39,10 @@ data class Manga(
     // SY <--
     val updateStrategy: UpdateStrategy,
     val initialized: Boolean,
+    // SY -->
     val lastModifiedAt: Long,
-    val favoriteModifiedAt: Long?,
     val version: Long,
+    // SY <--
     val notes: String,
     val memo: JsonObject,
     // SY -->
@@ -51,6 +51,10 @@ data class Manga(
     // SY <--
 ) : JavaSerializable {
 
+    val favorite: Boolean
+        get() = favoriteAt != null
+
+    // SY -->
     val title: String
         get() = customMangaInfo?.title ?: ogTitle
 
@@ -148,11 +152,10 @@ data class Manga(
             ogTitle = "",
             // SY <--
             source = -1L,
-            favorite = false,
             lastUpdate = 0L,
             nextUpdate = 0L,
             fetchInterval = 0,
-            dateAdded = 0L,
+            favoriteAt = null,
             viewerFlags = 0L,
             chapterFlags = 0L,
             coverLastModified = 0L,
@@ -166,9 +169,10 @@ data class Manga(
             // SY <--
             updateStrategy = UpdateStrategy.ALWAYS_UPDATE,
             initialized = false,
+            // SY -->
             lastModifiedAt = 0L,
-            favoriteModifiedAt = null,
             version = 0L,
+            // SY <--
             notes = "",
             memo = JsonObject.EMPTY,
         )

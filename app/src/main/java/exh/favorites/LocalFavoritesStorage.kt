@@ -40,8 +40,7 @@ class LocalFavoritesStorage(
         .asFlow()
         .map {
             it.fav to it.manga.toDomainManga(EXH_SOURCE_ID).copy(
-                favorite = true,
-                dateAdded = System.currentTimeMillis(),
+                favoriteAt = System.currentTimeMillis(),
             )
         }
         .parseToFavoriteEntries()

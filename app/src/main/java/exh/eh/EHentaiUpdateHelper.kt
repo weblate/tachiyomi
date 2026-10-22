@@ -106,14 +106,12 @@ class EHentaiUpdateHelper(
 
             toDiscard.forEach {
                 mangaUpdates += MangaUpdate(it.manga.id) {
-                    favorite = false
-                    dateAdded = 0
+                    favoriteAt = null
                 }
             }
             if (!accepted.manga.favorite) {
                 mangaUpdates += MangaUpdate(accepted.manga.id) {
-                    favorite = true
-                    dateAdded = System.currentTimeMillis()
+                    favoriteAt = System.currentTimeMillis()
                 }
             }
 

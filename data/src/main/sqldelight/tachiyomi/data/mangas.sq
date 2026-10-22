@@ -15,37 +15,32 @@ CREATE TABLE mangas(
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
     thumbnail_url TEXT,
-    favorite INTEGER AS Boolean NOT NULL,
     last_update INTEGER,
     next_update INTEGER,
     initialized INTEGER AS Boolean NOT NULL,
     viewer INTEGER NOT NULL,
     chapter_flags INTEGER NOT NULL,
     cover_last_modified INTEGER NOT NULL,
-    date_added INTEGER NOT NULL,
+    -- SY -->
     filtered_scanlators TEXT,
+    -- SY <--
     update_strategy INTEGER AS UpdateStrategy NOT NULL DEFAULT 0,
     calculate_interval INTEGER DEFAULT 0 NOT NULL,
+    -- SY -->
     last_modified_at INTEGER NOT NULL DEFAULT 0,
-    favorite_modified_at INTEGER,
     version INTEGER NOT NULL DEFAULT 0,
     is_syncing INTEGER NOT NULL DEFAULT 0,
+    -- SY <--
     notes TEXT NOT NULL DEFAULT "",
-    memo BLOB AS JsonObject NOT NULL DEFAULT '{}'
+    memo BLOB AS JsonObject NOT NULL DEFAULT '{}',
+    favorite_at INTEGER
 );
 
-CREATE INDEX library_favorite_index ON mangas(favorite) WHERE favorite = 1;
+CREATE INDEX library_favorite_at_index ON mangas(favorite_at) WHERE favorite_at IS NOT NULL;
 CREATE INDEX mangas_url_index ON mangas(url);
 CREATE INDEX idx_mangas_source ON mangas(source);
 
-CREATE TRIGGER update_last_favorited_at_mangas
-AFTER UPDATE OF favorite ON mangas
-BEGIN
-  UPDATE mangas
-  SET favorite_modified_at = strftime('%s', 'now')
-  WHERE _id = new._id;
-END;
-
+-- SY -->
 CREATE TRIGGER update_last_modified_at_mangas
 AFTER UPDATE ON mangas
 FOR EACH ROW
@@ -62,10 +57,10 @@ BEGIN
     WHERE _id = new._id AND new.is_syncing = 0 AND (
         new.url != old.url OR
         new.description != old.description OR
-        new.favorite != old.favorite
+        new.favorite_at != old.favorite_at
     );
 END;
-
+-- SY <--
 getMangaById:
 SELECT *
 FROM mangas
@@ -82,12 +77,12 @@ LIMIT 1;
 getFavorites:
 SELECT *
 FROM mangas
-WHERE favorite = 1;
+WHERE favorite_at IS NOT NULL;
 
 getReadMangaNotInLibrary:
 SELECT *
 FROM mangas
-WHERE favorite = 0 AND _id IN (
+WHERE favorite_at IS NULL AND _id IN (
     SELECT DISTINCT chapters.manga_id
     FROM chapters
     WHERE read = 1 OR last_page_read != 0
@@ -101,30 +96,31 @@ getAllMangaSourceAndUrl:
 SELECT source, url
 FROM mangas;
 
+-- SY -->
 getMangasWithFavoriteTimestamp:
 SELECT *
 FROM mangas
-WHERE favorite_modified_at IS NOT NULL;
+WHERE favorite_at IS NOT NULL;
 
 getMangasModifiedSince:
 SELECT M.*
 FROM mangas M
-WHERE M.favorite_modified_at IS NOT NULL
+WHERE M.favorite_at IS NOT NULL
 AND (M.last_modified_at >= :since
 OR EXISTS (SELECT 1 FROM chapters C WHERE C.manga_id = M._id AND C.last_modified_at >= :since));
-
+-- SY <--
 getSourceIdWithFavoriteCount:
 SELECT
 source,
 count(*)
 FROM mangas
-WHERE favorite = 1
+WHERE favorite_at IS NOT NULL
 GROUP BY source;
 
 getFavoriteBySourceId:
 SELECT *
 FROM mangas
-WHERE favorite = 1
+WHERE favorite_at IS NOT NULL
 AND source = :sourceId;
 
 getDuplicateLibraryManga:
@@ -144,7 +140,7 @@ duplicates AS (
     FROM mangas M
     LEFT JOIN track_dupes D
     ON D.manga_id = _id
-    WHERE favorite = 1
+    WHERE favorite_at IS NOT NULL
     AND _id != :id
     -- A blank title would match every title
     AND (
@@ -176,7 +172,7 @@ getUpcomingManga:
 SELECT *
 FROM mangas
 WHERE next_update >= :startOfDay
-AND favorite = 1
+AND favorite_at IS NOT NULL
 AND status IN :statuses
 AND (
     -- includedEmpty being true expresses "don't care" state and bypasses the membership filter
@@ -219,12 +215,12 @@ WHERE is_syncing = 1;
 getSourceIdsWithNonLibraryManga:
 SELECT source, COUNT(*) AS manga_count
 FROM mangas
-WHERE favorite = 0
+WHERE favorite_at IS NULL
 GROUP BY source;
 
 deleteNonLibraryManga:
 DELETE FROM mangas
-WHERE favorite = 0
+WHERE favorite_at IS NULL
 AND source IN :sourceIds
 AND (
     :keepReadManga = 0
@@ -240,19 +236,35 @@ AND _id NOT IN (
 );
 
 insertReturningId:
-INSERT INTO mangas(source, url, artist, author, description, genre, title, status, thumbnail_url, favorite, last_update, next_update, initialized, viewer, chapter_flags, cover_last_modified, date_added, update_strategy, calculate_interval, last_modified_at, version, is_syncing, notes, memo)
-VALUES (:source, :url, :artist, :author, :description, :genre, :title, :status, :thumbnailUrl, :favorite, :lastUpdate, :nextUpdate, :initialized, :viewerFlags, :chapterFlags, :coverLastModified, :dateAdded, :updateStrategy, :calculateInterval, :lastModifiedAt, :version, :isSyncing, :notes, :memo)
+INSERT INTO mangas(
+    source, url, artist, author, description, genre, title, status, thumbnail_url, favorite_at,
+    last_update, next_update, initialized, viewer, chapter_flags, cover_last_modified,
+    update_strategy, calculate_interval,
+    -- SY -->
+    last_modified_at, version, is_syncing,
+    -- SY <--
+    notes, memo
+)
+VALUES (
+    :source, :url, :artist, :author, :description, :genre, :title, :status, :thumbnailUrl, :favoriteAt,
+    :lastUpdate, :nextUpdate, :initialized, :viewerFlags, :chapterFlags, :coverLastModified,
+    :updateStrategy, :calculateInterval,
+    -- SY -->
+    :lastModifiedAt, :version, :isSyncing,
+    -- SY <--
+    :notes, :memo
+)
 RETURNING _id;
 
 update:
 UPDATE mangas SET
-    favorite = coalesce(:favorite, favorite),
+    -- NULL is a real value here (not in the library), which coalesce cannot write
+    favorite_at = CASE WHEN :favoriteAtSet THEN :favoriteAt ELSE favorite_at END,
     last_update = coalesce(:lastUpdate, last_update),
     next_update = coalesce(:nextUpdate, next_update),
     viewer = coalesce(:viewer, viewer),
     chapter_flags = coalesce(:chapterFlags, chapter_flags),
     cover_last_modified = coalesce(:coverLastModified, cover_last_modified),
-    date_added = coalesce(:dateAdded, date_added),
     calculate_interval = coalesce(:calculateInterval, calculate_interval),
     notes = coalesce(:notes, notes),
     -- SY -->
@@ -269,13 +281,12 @@ UPDATE mangas SET
     title = coalesce(:title, title),
     status = coalesce(:status, status),
     thumbnail_url = coalesce(:thumbnailUrl, thumbnail_url),
-    favorite = coalesce(:favorite, favorite),
+    favorite_at = :favoriteAt,
     last_update = coalesce(:lastUpdate, last_update),
     initialized = coalesce(:initialized, initialized),
     viewer = coalesce(:viewer, viewer),
     chapter_flags = coalesce(:chapterFlags, chapter_flags),
     cover_last_modified = coalesce(:coverLastModified, cover_last_modified),
-    date_added = coalesce(:dateAdded, date_added),
     update_strategy = coalesce(:updateStrategy, update_strategy),
     -- SY -->
     version = coalesce(:version, version),
@@ -304,14 +315,22 @@ WHERE _id = :mangaId;
 insertNetworkManga {
     -- Insert the manga if it doesn't exist already
     INSERT INTO mangas(
-        source, url, artist, author, description, genre, title, status, thumbnail_url, favorite,
-        last_update, next_update, initialized, viewer, chapter_flags, cover_last_modified, date_added,
-        update_strategy, calculate_interval, last_modified_at, version, memo
+source, url, artist, author, description, genre, title, status, thumbnail_url, favorite_at,
+        last_update, next_update, initialized, viewer, chapter_flags, cover_last_modified,
+        update_strategy, calculate_interval,
+        -- SY -->
+        last_modified_at, version,
+        -- SY <--
+        memo
     )
     SELECT
-        :source, :url, :artist, :author, :description, :genre, :title, :status, :thumbnailUrl, :favorite,
-        :lastUpdate, :nextUpdate, :initialized, :viewerFlags, :chapterFlags, :coverLastModified, :dateAdded,
-        :updateStrategy, :calculateInterval, 0, :version, :memo
+        :source, :url, :artist, :author, :description, :genre, :title, :status, :thumbnailUrl, :favoriteAt,
+        :lastUpdate, :nextUpdate, :initialized, :viewerFlags, :chapterFlags, :coverLastModified,
+        :updateStrategy, :calculateInterval,
+        -- SY -->
+        0, :version,
+        -- SY <--
+        :memo
     WHERE NOT EXISTS(SELECT 0 FROM mangas WHERE source = :source AND url = :url);
 
     -- Update the relevant details if applicable and not favorite
@@ -329,7 +348,7 @@ insertNetworkManga {
         memo = :memo
     WHERE source = :source
     AND url = :url
-    AND favorite = 0;
+    AND favorite_at IS NULL;
 
     -- Finally return the manga
     SELECT *
@@ -343,13 +362,13 @@ getEhMangaWithMetadata:
 SELECT mangas.* FROM mangas
 INNER JOIN search_metadata
     ON mangas._id = search_metadata.manga_id
-WHERE mangas.favorite = 1 AND (mangas.source = :eh OR mangas.source = :exh);
+WHERE mangas.favorite_at IS NOT NULL AND (mangas.source = :eh OR mangas.source = :exh);
 
 getIdsOfFavoriteMangaWithMetadata:
 SELECT mangas._id FROM mangas
 INNER JOIN search_metadata
     ON mangas._id = search_metadata.manga_id
-WHERE mangas.favorite = 1;
+WHERE mangas.favorite_at IS NOT NULL;
 
 getBySource:
 SELECT * FROM mangas WHERE source = :sourceId;

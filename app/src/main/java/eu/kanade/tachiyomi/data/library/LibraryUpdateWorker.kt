@@ -601,8 +601,7 @@ class LibraryUpdateWorker(private val context: Context, workerParams: WorkerPara
                             url = networkManga.url,
                             ogTitle = networkManga.title,
                             source = mangaDex.id,
-                            favorite = true,
-                            dateAdded = System.currentTimeMillis(),
+                            favoriteAt = System.currentTimeMillis(),
                         ),
                     )
                 } else if (!dbManga.favorite) {

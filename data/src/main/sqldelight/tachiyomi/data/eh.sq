@@ -12,7 +12,7 @@ SELECT * FROM chapters WHERE manga_id IN :mangaIds;
 migrateAllNhentaiToOtherLang:
 UPDATE mangas
 SET source = :nh
-WHERE favorite = 1 AND source IN :sources;
+WHERE favorite_at IS NOT NULL AND source IN :sources;
 
 resetReaderViewerForAllManga:
 UPDATE mangas
@@ -25,4 +25,4 @@ WHERE viewer = -1;
 
 addAllMangaInDatabaseToLibrary:
 UPDATE mangas
-SET favorite = 1;
+SET favorite_at = strftime('%s', 'now');

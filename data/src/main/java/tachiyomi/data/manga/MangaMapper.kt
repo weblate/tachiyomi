@@ -25,34 +25,33 @@ class MangaMapper(
         title: String,
         status: Long,
         thumbnailUrl: String?,
-        favorite: Boolean,
         lastUpdate: Long?,
         nextUpdate: Long?,
         initialized: Boolean,
         viewerFlags: Long,
         chapterFlags: Long,
         coverLastModified: Long,
-        dateAdded: Long,
         // SY -->
         @Suppress("UNUSED_PARAMETER")
         filteredScanlators: String?,
         // SY <--
         updateStrategy: UpdateStrategy,
         calculateInterval: Long,
+        // SY -->
         lastModifiedAt: Long,
-        favoriteModifiedAt: Long?,
         version: Long,
         isSyncing: Long,
+        // SY <--
         notes: String,
         memo: JsonObject,
+        favoriteAt: Long?,
     ): Manga = Manga(
         id = id,
         source = source,
-        favorite = favorite,
         lastUpdate = lastUpdate ?: 0,
         nextUpdate = nextUpdate ?: 0,
         fetchInterval = calculateInterval.toInt(),
-        dateAdded = dateAdded,
+        favoriteAt = favoriteAt,
         viewerFlags = viewerFlags,
         chapterFlags = chapterFlags,
         coverLastModified = coverLastModified,
@@ -68,13 +67,14 @@ class MangaMapper(
         // SY <--
         updateStrategy = updateStrategy,
         initialized = initialized,
+// SY -->
         lastModifiedAt = lastModifiedAt,
-        favoriteModifiedAt = favoriteModifiedAt,
         version = version,
+        // SY <--
         notes = notes,
         memo = memo,
         // SY -->
-        customMangaInfo = if (favorite) getCustomMangaInfo.get(id) else null,
+        customMangaInfo = if (favoriteAt != null) getCustomMangaInfo.get(id) else null,
         // SY <--
     )
 
@@ -89,26 +89,26 @@ class MangaMapper(
         title: String,
         status: Long,
         thumbnailUrl: String?,
-        favorite: Boolean,
         lastUpdate: Long?,
         nextUpdate: Long?,
         initialized: Boolean,
         viewerFlags: Long,
         chapterFlags: Long,
         coverLastModified: Long,
-        dateAdded: Long,
         // SY -->
         @Suppress("UNUSED_PARAMETER")
         filteredScanlators: String?,
         // SY <--
         updateStrategy: UpdateStrategy,
         calculateInterval: Long,
+        // SY -->
         lastModifiedAt: Long,
-        favoriteModifiedAt: Long?,
         version: Long,
         isSyncing: Long,
+        // SY <--
         notes: String,
         memo: JsonObject,
+        favoriteAt: Long?,
         totalCount: Long,
         readCount: Double,
         latestUpload: Long,
@@ -128,25 +128,25 @@ class MangaMapper(
             title,
             status,
             thumbnailUrl,
-            favorite,
             lastUpdate,
             nextUpdate,
             initialized,
             viewerFlags,
             chapterFlags,
             coverLastModified,
-            dateAdded,
             // SY -->
             null,
             // SY <--
             updateStrategy,
             calculateInterval,
+            // SY -->
             lastModifiedAt,
-            favoriteModifiedAt,
             version,
             isSyncing,
+            // SY <--
             notes,
             memo,
+            favoriteAt,
         ),
         categories = categories.split(",").map { it.toLong() },
         totalChapters = totalCount,
@@ -168,26 +168,26 @@ class MangaMapper(
         title: String,
         status: Long,
         thumbnailUrl: String?,
-        favorite: Boolean,
         lastUpdate: Long?,
         nextUpdate: Long?,
         initialized: Boolean,
         viewerFlags: Long,
         chapterFlags: Long,
         coverLastModified: Long,
-        dateAdded: Long,
         // SY -->
         @Suppress("UNUSED_PARAMETER")
         filteredScanlators: String?,
         // SY <--
         updateStrategy: UpdateStrategy,
         calculateInterval: Long,
+        // SY -->
         lastModifiedAt: Long,
-        favoriteModifiedAt: Long?,
         version: Long,
         isSyncing: Long,
+        // SY <--
         notes: String,
         memo: JsonObject,
+        favoriteAt: Long?,
         totalCount: Long,
     ): MangaWithChapterCount = MangaWithChapterCount(
         manga = mapManga(
@@ -201,25 +201,25 @@ class MangaMapper(
             title,
             status,
             thumbnailUrl,
-            favorite,
             lastUpdate,
             nextUpdate,
             initialized,
             viewerFlags,
             chapterFlags,
             coverLastModified,
-            dateAdded,
             // SY -->
             null,
             // SY <--
             updateStrategy,
             calculateInterval,
+            // SY -->
             lastModifiedAt,
-            favoriteModifiedAt,
             version,
             isSyncing,
+            // SY <--
             notes,
             memo,
+            favoriteAt,
         ),
         chapterCount = totalCount,
     )
@@ -229,10 +229,9 @@ class MangaMapper(
             manga = Manga(
                 id = libraryView._id,
                 source = libraryView.source,
-                favorite = libraryView.favorite,
+                favoriteAt = libraryView.favorite_at,
                 lastUpdate = libraryView.last_update ?: 0,
                 nextUpdate = libraryView.next_update ?: 0,
-                dateAdded = libraryView.date_added,
                 viewerFlags = libraryView.viewer,
                 chapterFlags = libraryView.chapter_flags,
                 coverLastModified = libraryView.cover_last_modified,
@@ -247,13 +246,14 @@ class MangaMapper(
                 updateStrategy = libraryView.update_strategy,
                 initialized = libraryView.initialized,
                 fetchInterval = libraryView.calculate_interval.toInt(),
+                // SY -->
                 lastModifiedAt = libraryView.last_modified_at,
-                favoriteModifiedAt = libraryView.favorite_modified_at,
                 version = libraryView.version,
+                // SY <--
                 notes = libraryView.notes,
                 memo = libraryView.memo,
                 // SY -->
-                customMangaInfo = if (libraryView.favorite) getCustomMangaInfo.get(libraryView._id) else null,
+                customMangaInfo = if (libraryView.favorite_at > 0) getCustomMangaInfo.get(libraryView._id) else null,
                 // SY <--
             ),
             categories = libraryView.categories.split(",").map { it.toLong() },

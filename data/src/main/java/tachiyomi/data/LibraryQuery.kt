@@ -19,34 +19,32 @@ private val mapper = { cursor: SqlCursor ->
         title = cursor.getString(7)!!,
         status = cursor.getLong(8)!!,
         thumbnail_url = cursor.getString(9),
-        favorite = cursor.getLong(10)!! == 1L,
-        last_update = cursor.getLong(11),
-        next_update = cursor.getLong(12),
-        initialized = cursor.getLong(13)!! == 1L,
-        viewer = cursor.getLong(14)!!,
-        chapter_flags = cursor.getLong(15)!!,
-        cover_last_modified = cursor.getLong(16)!!,
-        date_added = cursor.getLong(17)!!,
-        filtered_scanlators = null,
-        update_strategy = UpdateStrategyColumnAdapter.decode(cursor.getLong(19)!!),
-        calculate_interval = cursor.getLong(20)!!,
-        last_modified_at = cursor.getLong(21)!!,
-        favorite_modified_at = cursor.getLong(22),
-        version = cursor.getLong(23)!!,
-        is_syncing = cursor.getLong(24)!!,
-        notes = cursor.getString(25)!!,
-        memo = MemoColumnAdapter.decode(cursor.getBytes(26)!!),
-        totalCount = cursor.getLong(27)!!,
-        readCount = cursor.getDouble(28)!!,
-        latestUpload = cursor.getLong(29)!!,
-        chapterFetchedAt = cursor.getLong(30)!!,
-        lastRead = cursor.getLong(31)!!,
-        bookmarkCount = cursor.getDouble(32)!!,
-        categories = cursor.getString(33)!!,
+        last_update = cursor.getLong(10),
+        next_update = cursor.getLong(11),
+        initialized = cursor.getLong(12)!! == 1L,
+        viewer = cursor.getLong(13)!!,
+        chapter_flags = cursor.getLong(14)!!,
+        cover_last_modified = cursor.getLong(15)!!,
+        filtered_scanlators = cursor.getString(16),
+        update_strategy = UpdateStrategyColumnAdapter.decode(cursor.getLong(17)!!),
+        calculate_interval = cursor.getLong(18)!!,
+        last_modified_at = cursor.getLong(19)!!,
+        version = cursor.getLong(20)!!,
+        is_syncing = cursor.getLong(21)!!,
+        notes = cursor.getString(22)!!,
+        memo = MemoColumnAdapter.decode(cursor.getBytes(23)!!),
+        favorite_at = cursor.getLong(24) ?: 0L,
+        totalCount = cursor.getLong(25)!!,
+        readCount = cursor.getDouble(26)!!,
+        latestUpload = cursor.getLong(27)!!,
+        chapterFetchedAt = cursor.getLong(28)!!,
+        lastRead = cursor.getLong(29)!!,
+        bookmarkCount = cursor.getDouble(30)!!,
+        categories = cursor.getString(31)!!,
     )
 }
 
-fun getLibraryQuery(driver: SqlDriver, condition: String = "M.favorite = 1"): LibraryQuery {
+fun getLibraryQuery(driver: SqlDriver, condition: String = "M.favorite_at IS NOT NULL"): LibraryQuery {
     return LibraryQuery(
         driver,
         condition,
@@ -55,7 +53,7 @@ fun getLibraryQuery(driver: SqlDriver, condition: String = "M.favorite = 1"): Li
 
 class LibraryQuery(
     val driver: SqlDriver,
-    val condition: String = "M.favorite = 1",
+    val condition: String = "M.favorite_at IS NOT NULL",
 ) : ExecutableQuery<LibraryView>(mapper) {
 
     override fun <R> execute(mapper: (SqlCursor) -> QueryResult<R>): QueryResult<R> {

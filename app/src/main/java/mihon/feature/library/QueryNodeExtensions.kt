@@ -124,7 +124,7 @@ private fun ComparisonQueryNode.matches(item: LibraryItem): Boolean {
         ComparisonField.ID -> value.toLongOrNull()?.let { queryComparator.apply(manga.id, it) }
 
         // SY -->
-        ComparisonField.DATE_ADDED -> manga.dateAdded.takeIf { it > 0 }
+        ComparisonField.DATE_ADDED -> manga.favoriteAt?.takeIf { it > 0 }
             ?.let { compareDates(Instant.fromEpochMilliseconds(it), value) }
         // SY <--
 

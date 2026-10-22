@@ -18,6 +18,7 @@ import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.i18n.sy.SYMR
+import kotlin.time.Clock
 
 @Inject
 class GalleryAdder(
@@ -159,7 +160,7 @@ class GalleryAdder(
 
             if (fav) {
                 updateManga.awaitUpdateFavorite(manga.id, true)
-                manga = manga.copy(favorite = true)
+                manga = manga.copy(favoriteAt = Clock.System.now().toEpochMilliseconds())
             }
 
             return if (cleanedChapterUrl != null) {
