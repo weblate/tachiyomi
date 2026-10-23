@@ -27,12 +27,12 @@ class ArchiveReader(pfd: ParcelFileDescriptor, /* SY --> */val getDecryptedPassw
         address,
         size,
         // SY -->
-        getDecryptedPassword,
+        if (encrypted) getDecryptedPassword else null,
         // SY <--
     ).use { block(generateSequence { it.getNextEntry() }) }
 
     fun getInputStream(entryName: String): InputStream? {
-        val archive = ArchiveInputStream(address, size, /* SY --> */ getDecryptedPassword /* SY <-- */)
+        val archive = ArchiveInputStream(address, size, /* SY --> */ if (encrypted) getDecryptedPassword else null /* SY <-- */)
         try {
             while (true) {
                 val entry = archive.getNextEntry() ?: break
