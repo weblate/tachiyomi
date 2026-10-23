@@ -20,6 +20,8 @@ import java.io.File
 import java.io.IOException
 
 /**
+ * SY-specific file
+ *
  * Class used to create page preview cache
  * For each page in a page preview list a file is created
  * For each page preview page a Json list is created and converted to a file.

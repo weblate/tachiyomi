@@ -20,6 +20,9 @@ import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.i18n.sy.SYMR
 import kotlin.time.Clock
 
+/**
+ * SY-specific file
+ */
 @Inject
 class GalleryAdder(
     private val getManga: GetManga,

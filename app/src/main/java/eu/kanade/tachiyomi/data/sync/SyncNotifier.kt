@@ -16,6 +16,9 @@ import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 import mihon.icons.materialsymbols.R as MaterialSymbolsR
 
+/**
+ * SY-specific file
+ */
 @Inject
 class SyncNotifier(
     private val context: Context,

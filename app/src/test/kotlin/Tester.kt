@@ -25,6 +25,9 @@ import tachiyomi.domain.manga.model.Manga
 import java.io.File
 import kotlin.time.Instant
 
+/**
+ * SY-specific file
+ */
 class Tester {
 
     @Disabled

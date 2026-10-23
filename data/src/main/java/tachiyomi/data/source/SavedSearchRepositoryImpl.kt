@@ -9,6 +9,9 @@ import tachiyomi.data.subscribeToList
 import tachiyomi.domain.source.model.SavedSearch
 import tachiyomi.domain.source.repository.SavedSearchRepository
 
+/**
+ * SY-specific file
+ */
 class SavedSearchRepositoryImpl(
     private val database: Database,
 ) : SavedSearchRepository {

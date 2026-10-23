@@ -4,6 +4,9 @@ import kotlinx.coroutines.runBlocking
 import tachiyomi.core.common.preference.PreferenceStore
 import tachiyomi.domain.eh.repository.EhRepository
 
+/**
+ * SY-specific file
+ */
 object MigrateUtils {
     fun updateSourceId(ehRepository: EhRepository, newId: Long, oldId: Long) {
         runBlocking {

@@ -9,6 +9,9 @@ import tachiyomi.domain.source.model.FeedSavedSearch
 import tachiyomi.domain.source.model.SavedSearch
 import tachiyomi.domain.source.repository.FeedSavedSearchRepository
 
+/**
+ * SY-specific file
+ */
 class FeedSavedSearchRepositoryImpl(
     private val database: Database,
 ) : FeedSavedSearchRepository {

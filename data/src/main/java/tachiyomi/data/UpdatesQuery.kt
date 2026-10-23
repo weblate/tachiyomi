@@ -8,6 +8,9 @@ import exh.source.MERGED_SOURCE_ID
 import tachiyomi.view.UpdatesView
 import kotlin.time.Instant
 
+/**
+ * SY-specific file
+ */
 private val mapper = { cursor: SqlCursor ->
     UpdatesView(
         cursor.getLong(0)!!,

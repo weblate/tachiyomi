@@ -31,6 +31,9 @@ import tachiyomi.domain.manga.model.MangaUpdate
 import java.io.File
 import kotlin.time.Clock
 
+/**
+ * SY-specific file
+ */
 data class ChapterChain(val manga: Manga, val chapters: List<Chapter>, val history: List<History>)
 
 @Inject

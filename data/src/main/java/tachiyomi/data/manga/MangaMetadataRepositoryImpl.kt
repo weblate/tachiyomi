@@ -15,6 +15,9 @@ import tachiyomi.data.subscribeToOneOrNull
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.repository.MangaMetadataRepository
 
+/**
+ * SY-specific file
+ */
 class MangaMetadataRepositoryImpl(
     private val database: Database,
     private val mangaMapper: MangaMapper,

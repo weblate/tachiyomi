@@ -22,6 +22,9 @@ import tachiyomi.domain.manga.model.FavoriteEntry
 import tachiyomi.domain.manga.model.Manga
 import kotlin.time.Clock
 
+/**
+ * SY-specific file
+ */
 @Inject
 class LocalFavoritesStorage(
     private val getFavorites: GetFavorites,

@@ -4,6 +4,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.protobuf.ProtoNumber
 import tachiyomi.domain.manga.model.MergedMangaReference
 
+/**
+ * SY-specific file
+ */
 /*
 * SY merged manga backup class
  */

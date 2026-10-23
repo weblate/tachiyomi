@@ -62,6 +62,9 @@ import kotlin.time.Duration.Companion.seconds
 import androidx.compose.runtime.State as ComposeState
 import tachiyomi.domain.manga.model.Manga as DomainManga
 
+/**
+ * SY-specific file
+ */
 @AssistedInject
 open class SourceFeedViewModel(
     @Assisted val sourceId: Long,

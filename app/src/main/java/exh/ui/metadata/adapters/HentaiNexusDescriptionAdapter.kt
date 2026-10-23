@@ -19,6 +19,9 @@ import tachiyomi.i18n.sy.SYMR
 import tachiyomi.presentation.core.i18n.pluralStringResource
 import java.text.NumberFormat
 
+/**
+ * SY-specific file
+ */
 @Composable
 fun HentaiNexusDescription(state: State.Success, openMetadataViewer: () -> Unit) {
     val meta = state.meta as? HentaiNexusSearchMetadata ?: return

@@ -21,6 +21,9 @@ import java.math.RoundingMode
 import java.text.NumberFormat
 import mihon.icons.materialsymbols.R as MaterialSymbolsR
 
+/**
+ * SY-specific file
+ */
 @Inject
 class EHentaiUpdateNotifier(
     private val context: Context,

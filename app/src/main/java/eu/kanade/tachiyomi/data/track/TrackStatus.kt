@@ -12,6 +12,9 @@ import exh.md.utils.FollowStatus
 import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 
+/**
+ * SY-specific file
+ */
 enum class TrackStatus(val int: Int, val res: StringResource) {
     READING(1, MR.strings.reading),
     REPEATING(2, MR.strings.repeating),

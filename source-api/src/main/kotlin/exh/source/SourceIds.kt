@@ -1,5 +1,8 @@
 package exh.source
 
+/**
+ * SY-specific file
+ */
 // Lewd source IDs
 const val LEWD_SOURCE_SERIES = 6900L
 const val EH_SOURCE_ID = LEWD_SOURCE_SERIES + 1

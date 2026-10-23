@@ -7,6 +7,9 @@ import app.cash.sqldelight.db.SqlDriver
 import exh.source.MERGED_SOURCE_ID
 import tachiyomi.view.LibraryView
 
+/**
+ * SY-specific file
+ */
 private val mapper = { cursor: SqlCursor ->
     LibraryView(
         id = cursor.getLong(0)!!,

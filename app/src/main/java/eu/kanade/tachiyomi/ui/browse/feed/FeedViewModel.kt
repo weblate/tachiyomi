@@ -57,6 +57,8 @@ import androidx.compose.runtime.State as ComposeState
 import tachiyomi.domain.manga.model.Manga as DomainManga
 
 /**
+ * SY-specific file
+ *
  * Presenter of [feedTab]
  */
 @Inject

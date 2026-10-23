@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 
+/**
+ * SY-specific file
+ */
 // SY -->
 @Execution(ExecutionMode.CONCURRENT)
 class LibrarySearchParserTest {

@@ -12,6 +12,8 @@ import eu.kanade.tachiyomi.source.online.english.Pururin
 import eu.kanade.tachiyomi.source.online.english.Tsumino
 
 /**
+ * SY-specific file
+ *
  * Source helpers
  */
 

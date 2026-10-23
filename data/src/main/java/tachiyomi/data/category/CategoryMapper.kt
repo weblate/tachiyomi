@@ -2,6 +2,9 @@ package tachiyomi.data.category
 
 import tachiyomi.domain.category.model.Category
 
+/**
+ * SY-specific file
+ */
 object CategoryMapper {
     fun mapCategory(
         id: Long,

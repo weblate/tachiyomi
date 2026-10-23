@@ -4,6 +4,9 @@ import kotlinx.serialization.json.JsonObject
 import tachiyomi.domain.chapter.model.Chapter
 import kotlin.time.Instant
 
+/**
+ * SY-specific file
+ */
 object ChapterMapper {
     fun mapChapter(
         id: Long,

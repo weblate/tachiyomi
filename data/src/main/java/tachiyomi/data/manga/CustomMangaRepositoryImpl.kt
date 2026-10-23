@@ -8,6 +8,9 @@ import tachiyomi.domain.manga.repository.CustomMangaRepository
 import java.io.File
 import kotlin.concurrent.thread
 
+/**
+ * SY-specific file
+ */
 class CustomMangaRepositoryImpl(context: Context) : CustomMangaRepository {
     private val editJson by lazy { File(context.getExternalFilesDir(null), "edits.json") }
 

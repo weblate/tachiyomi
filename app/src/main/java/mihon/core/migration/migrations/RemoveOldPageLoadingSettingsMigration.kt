@@ -7,8 +7,8 @@ import mihon.core.migration.Migration
 import mihon.core.migration.MigrationContext
 import tachiyomi.core.common.preference.PreferenceStore
 
-// SY -->
 /**
+ * SY-specific file
  * The reader loads pages in parallel now, so SY's old page loading settings no longer do anything.
  */
 @Inject
@@ -28,4 +28,3 @@ class RemoveOldPageLoadingSettingsMigration(
         return true
     }
 }
-// SY <--

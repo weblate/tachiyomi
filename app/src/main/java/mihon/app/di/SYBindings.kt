@@ -31,8 +31,10 @@ import tachiyomi.domain.source.repository.SavedSearchRepository
 import tachiyomi.source.local.LocalSourceAllowHiddenFiles
 import xyz.nulldev.ts.api.http.serializer.FilterSerializer
 
-// SY -->
-// Metro bindings for SY specific repositories and singletons.
+/**
+ * SY-specific file
+ * Metro bindings for SY specific repositories and singletons.
+ */
 @BindingContainer
 object SYBindings {
 
@@ -97,4 +99,3 @@ object SYBindings {
     fun providesGetFlatMetadataById(getFlatMetadataById: GetFlatMetadataById): MetadataSource.GetFlatMetadataById =
         getFlatMetadataById
 }
-// SY <--

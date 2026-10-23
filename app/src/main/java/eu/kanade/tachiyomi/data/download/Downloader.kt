@@ -596,7 +596,7 @@ class Downloader(
         filename: String,
         // SY -->
         dataSaver: DataSaver,
-        //SY <--
+        // SY <--
     ): UniFile {
         page.status = Page.State.DownloadImage
         page.progress = 0
