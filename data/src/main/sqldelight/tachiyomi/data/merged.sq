@@ -40,7 +40,9 @@ SELECT
     manga.user_notes, manga.user_reader_flags, manga.user_chapter_flags,
     manga.state_chapter_last_update, manga.state_chapter_next_update,
     manga.state_chapter_fetch_interval, manga.state_cover_last_modified, manga.state_initialized,
-    manga.state_last_modified_at, manga.state_version, manga.state_is_syncing
+    manga.state_last_modified_at, manga.state_version, manga.state_is_syncing,
+    manga.user_title, manga.user_author, manga.user_artist, manga.user_thumbnail_url,
+    manga.user_description, manga.user_genre, manga.user_status
 FROM (
     SELECT manga_id FROM merged WHERE merge_id = :mergeId
 ) AS M
@@ -55,7 +57,9 @@ SELECT
     manga.user_notes, manga.user_reader_flags, manga.user_chapter_flags,
     manga.state_chapter_last_update, manga.state_chapter_next_update,
     manga.state_chapter_fetch_interval, manga.state_cover_last_modified, manga.state_initialized,
-    manga.state_last_modified_at, manga.state_version, manga.state_is_syncing
+    manga.state_last_modified_at, manga.state_version, manga.state_is_syncing,
+    manga.user_title, manga.user_author, manga.user_artist, manga.user_thumbnail_url,
+    manga.user_description, manga.user_genre, manga.user_status
 FROM (
     SELECT manga_id FROM merged WHERE merge_id = :mergeId AND download_chapters = 1
 ) AS M
@@ -70,7 +74,9 @@ SELECT
     manga.user_notes, manga.user_reader_flags, manga.user_chapter_flags,
     manga.state_chapter_last_update, manga.state_chapter_next_update,
     manga.state_chapter_fetch_interval, manga.state_cover_last_modified, manga.state_initialized,
-    manga.state_last_modified_at, manga.state_version, manga.state_is_syncing
+    manga.state_last_modified_at, manga.state_version, manga.state_is_syncing,
+    manga.user_title, manga.user_author, manga.user_artist, manga.user_thumbnail_url,
+    manga.user_description, manga.user_genre, manga.user_status
 FROM (
     SELECT manga_id FROM merged
 ) AS M

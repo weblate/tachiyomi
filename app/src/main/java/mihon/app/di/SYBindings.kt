@@ -12,7 +12,6 @@ import eu.kanade.tachiyomi.core.security.SecurityPreferences
 import eu.kanade.tachiyomi.source.online.MetadataSource
 import eu.kanade.tachiyomi.util.storage.CbzCrypto
 import tachiyomi.data.Database
-import tachiyomi.data.manga.CustomMangaRepositoryImpl
 import tachiyomi.data.manga.FavoritesEntryRepositoryImpl
 import tachiyomi.data.manga.MangaMapper
 import tachiyomi.data.manga.MangaMergeRepositoryImpl
@@ -22,7 +21,6 @@ import tachiyomi.data.source.SavedSearchRepositoryImpl
 import tachiyomi.domain.manga.interactor.GetFlatMetadataById
 import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.InsertFlatMetadata
-import tachiyomi.domain.manga.repository.CustomMangaRepository
 import tachiyomi.domain.manga.repository.FavoritesEntryRepository
 import tachiyomi.domain.manga.repository.MangaMergeRepository
 import tachiyomi.domain.manga.repository.MangaMetadataRepository
@@ -54,13 +52,13 @@ object SYBindings {
 
     @Provides
     @SingleIn(AppScope::class)
-    fun providesMangaMetadataRepository(database: Database, mangaMapper: MangaMapper): MangaMetadataRepository =
-        MangaMetadataRepositoryImpl(database, mangaMapper)
+    fun providesMangaMetadataRepository(database: Database): MangaMetadataRepository =
+        MangaMetadataRepositoryImpl(database)
 
     @Provides
     @SingleIn(AppScope::class)
-    fun providesMangaMergeRepository(database: Database, mangaMapper: MangaMapper): MangaMergeRepository =
-        MangaMergeRepositoryImpl(database, mangaMapper)
+    fun providesMangaMergeRepository(database: Database): MangaMergeRepository =
+        MangaMergeRepositoryImpl(database)
 
     @Provides
     @SingleIn(AppScope::class)
@@ -76,11 +74,6 @@ object SYBindings {
     @SingleIn(AppScope::class)
     fun providesFeedSavedSearchRepository(database: Database): FeedSavedSearchRepository =
         FeedSavedSearchRepositoryImpl(database)
-
-    @Provides
-    @SingleIn(AppScope::class)
-    fun providesCustomMangaRepository(context: Context): CustomMangaRepository =
-        CustomMangaRepositoryImpl(context)
 
     @Provides
     @SingleIn(AppScope::class)

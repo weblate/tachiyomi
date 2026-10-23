@@ -14,7 +14,7 @@ import tachiyomi.domain.backup.repository.RestoreRepository
 import tachiyomi.domain.category.interactor.GetCategories
 import tachiyomi.domain.chapter.repository.ChapterRepository
 import tachiyomi.domain.manga.interactor.FetchInterval
-import tachiyomi.domain.manga.model.CustomMangaInfo
+import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.repository.MangaRepository
 import kotlin.time.Clock
 
@@ -85,7 +85,6 @@ class MangaRestorer(
                     // mangaId is assigned during restore; use 0 as placeholder
                     it.getFlatMetadata(0L)
                 },
-                customMangaInfo = getCustomMangaInfo(backupManga),
                 // SY <--
             )
         }
@@ -106,29 +105,4 @@ class MangaRestorer(
         }
         // SY <--
     }
-
-    // SY -->
-    private fun getCustomMangaInfo(backupManga: BackupManga): CustomMangaInfo? {
-        if (backupManga.customTitle != null ||
-            backupManga.customArtist != null ||
-            backupManga.customAuthor != null ||
-            backupManga.customThumbnailUrl != null ||
-            backupManga.customDescription != null ||
-            backupManga.customGenre != null ||
-            backupManga.customStatus != 0
-        ) {
-            return CustomMangaInfo(
-                id = 0L,
-                title = backupManga.customTitle,
-                author = backupManga.customAuthor,
-                artist = backupManga.customArtist,
-                thumbnailUrl = backupManga.customThumbnailUrl,
-                description = backupManga.customDescription,
-                genre = backupManga.customGenre,
-                status = backupManga.customStatus.takeUnless { it == 0 }?.toLong(),
-            )
-        }
-        return null
-    }
-    // SY <--
 }

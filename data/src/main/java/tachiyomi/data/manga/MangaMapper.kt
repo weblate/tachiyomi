@@ -1,21 +1,14 @@
 package tachiyomi.data.manga
 
-import dev.zacsweers.metro.Inject
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
 import kotlinx.serialization.json.JsonObject
 import tachiyomi.domain.library.model.LibraryManga
-import tachiyomi.domain.manga.interactor.GetCustomMangaInfo
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.view.LibraryView
 import kotlin.time.Instant
 
-// SY -->
-@Inject
-class MangaMapper(
-    private val getCustomMangaInfo: GetCustomMangaInfo,
-) {
-// SY <--
+object MangaMapper {
     fun mapManga(
         id: Long,
         sourceId: Long,
@@ -42,6 +35,13 @@ class MangaMapper(
         stateLastModifiedAt: Long,
         stateVersion: Long,
         stateIsSyncing: Long,
+        userTitle: String?,
+        userAuthor: String?,
+        userArtist: String?,
+        userThumbnailUrl: String?,
+        userDescription: String?,
+        userGenre: List<String>?,
+        userStatus: Long?,
         // SY <--
     ): Manga = Manga(
         id = id,
@@ -72,7 +72,13 @@ class MangaMapper(
         notes = userNotes,
         memo = remoteMemo,
         // SY -->
-        customMangaInfo = if (userFavoriteAt != null) getCustomMangaInfo.get(id) else null,
+        userTitle = userTitle,
+        userAuthor = userAuthor,
+        userArtist = userArtist,
+        userThumbnailUrl = userThumbnailUrl,
+        userDescription = userDescription,
+        userGenre = userGenre,
+        userStatus = userStatus,
         // SY <--
     )
 
@@ -102,6 +108,13 @@ class MangaMapper(
         stateLastModifiedAt: Long,
         stateVersion: Long,
         stateIsSyncing: Long,
+        userTitle: String?,
+        userAuthor: String?,
+        userArtist: String?,
+        userThumbnailUrl: String?,
+        userDescription: String?,
+        userGenre: List<String>?,
+        userStatus: Long?,
         // SY <--
         totalCount: Long,
         readCount: Double,
@@ -137,6 +150,13 @@ class MangaMapper(
             stateLastModifiedAt = stateLastModifiedAt,
             stateVersion = stateVersion,
             stateIsSyncing = stateIsSyncing,
+            userTitle = userTitle,
+            userAuthor = userAuthor,
+            userArtist = userArtist,
+            userThumbnailUrl = userThumbnailUrl,
+            userDescription = userDescription,
+            userGenre = userGenre,
+            userStatus = userStatus,
             // SY <--
         ),
         categories = categories.split(",").map { it.toLong() },
@@ -174,6 +194,13 @@ class MangaMapper(
         stateLastModifiedAt: Long,
         stateVersion: Long,
         stateIsSyncing: Long,
+        userTitle: String?,
+        userAuthor: String?,
+        userArtist: String?,
+        userThumbnailUrl: String?,
+        userDescription: String?,
+        userGenre: List<String>?,
+        userStatus: Long?,
         // SY <--
         chapterCount: Long,
     ): MangaWithChapterCount = MangaWithChapterCount(
@@ -203,6 +230,13 @@ class MangaMapper(
             stateLastModifiedAt = stateLastModifiedAt,
             stateVersion = stateVersion,
             stateIsSyncing = stateIsSyncing,
+            userTitle = userTitle,
+            userAuthor = userAuthor,
+            userArtist = userArtist,
+            userThumbnailUrl = userThumbnailUrl,
+            userDescription = userDescription,
+            userGenre = userGenre,
+            userStatus = userStatus,
             // SY <--
         ),
         chapterCount = chapterCount,
@@ -235,7 +269,13 @@ class MangaMapper(
                 version = libraryView.state_version,
                 notes = libraryView.user_notes,
                 memo = libraryView.remote_memo,
-                customMangaInfo = getCustomMangaInfo.get(libraryView.id),
+                userTitle = libraryView.user_title,
+                userAuthor = libraryView.user_author,
+                userArtist = libraryView.user_artist,
+                userThumbnailUrl = libraryView.user_thumbnail_url,
+                userDescription = libraryView.user_description,
+                userGenre = libraryView.user_genre,
+                userStatus = libraryView.user_status,
             ),
             categories = libraryView.categories.split(",").map { it.toLong() },
             totalChapters = libraryView.totalCount,

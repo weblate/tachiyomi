@@ -12,7 +12,11 @@ SELECT
     history.read_at AS readAt,
     history.read_duration AS readDuration,
     max_read.read_at AS maxReadAt,
-    max_read.chapter_id AS maxReadAtChapterId
+    max_read.chapter_id AS maxReadAtChapterId,
+    -- SY -->
+    manga.user_title AS userTitle,
+    manga.user_thumbnail_url AS userThumbnailUrl
+    -- SY <--
 FROM manga
 JOIN chapter
 ON manga.id = chapter.manga_id
@@ -37,7 +41,11 @@ favorite,
 coverLastModified,
 chapterNumber,
 readAt,
-readDuration
+readDuration,
+-- SY -->
+userTitle,
+userThumbnailUrl
+-- SY <--
 FROM historyView
 WHERE historyView.readAt IS NOT NULL
 AND maxReadAtChapterId = historyView.chapterId
@@ -56,7 +64,11 @@ manga.user_favorite_at IS NOT NULL AS favorite,
 manga.state_cover_last_modified AS coverLastModified,
 chapter.remote_chapter_number AS chapterNumber,
 history.read_at AS readAt,
-history.read_duration AS readDuration
+history.read_duration AS readDuration,
+-- SY -->
+manga.user_title AS userTitle,
+manga.user_thumbnail_url AS userThumbnailUrl
+-- SY <--
 FROM history
 JOIN manga
 ON manga.id = history.manga_id

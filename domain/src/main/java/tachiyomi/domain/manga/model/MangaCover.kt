@@ -11,12 +11,12 @@ data class MangaCover(
     val isMangaFavorite: Boolean,
     // SY -->
     val ogUrl: String?,
-    val customThumbnailUrl: String? = null,
+    val userThumbnailUrl: String? = null,
     // SY <--
     val lastModified: Instant?,
 ) {
     // SY -->
-    val url: String? = customThumbnailUrl ?: ogUrl
+    val url: String? = userThumbnailUrl ?: ogUrl
     // SY <--
 }
 

@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import androidx.compose.runtime.Immutable
 import eu.kanade.tachiyomi.source.model.SManga
 import eu.kanade.tachiyomi.source.model.UpdateStrategy
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -46,8 +45,13 @@ data class Manga(
     val notes: String,
     val memo: JsonObject,
     // SY -->
-    @Contextual
-    val customMangaInfo: CustomMangaInfo? = null,
+    val userTitle: String? = null,
+    val userAuthor: String? = null,
+    val userArtist: String? = null,
+    val userThumbnailUrl: String? = null,
+    val userDescription: String? = null,
+    val userGenre: List<String>? = null,
+    val userStatus: Long? = null,
     // SY <--
 ) : JavaSerializable {
 
@@ -56,25 +60,25 @@ data class Manga(
 
     // SY -->
     val title: String
-        get() = customMangaInfo?.title ?: ogTitle
+        get() = userTitle ?: ogTitle
 
     val author: String?
-        get() = customMangaInfo?.author ?: ogAuthor
+        get() = userAuthor ?: ogAuthor
 
     val artist: String?
-        get() = customMangaInfo?.artist ?: ogArtist
+        get() = userArtist ?: ogArtist
 
     val thumbnailUrl: String?
-        get() = customMangaInfo?.thumbnailUrl ?: ogThumbnailUrl
+        get() = userThumbnailUrl ?: ogThumbnailUrl
 
     val description: String?
-        get() = customMangaInfo?.description ?: ogDescription
+        get() = userDescription ?: ogDescription
 
     val genre: List<String>?
-        get() = customMangaInfo?.genre ?: ogGenre
+        get() = userGenre ?: ogGenre
 
     val status: Long
-        get() = customMangaInfo?.status ?: ogStatus
+        get() = userStatus ?: ogStatus
     // SY <--
 
     val expectedNextUpdate: Instant?

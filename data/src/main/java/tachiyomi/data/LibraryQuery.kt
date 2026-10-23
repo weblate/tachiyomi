@@ -34,18 +34,23 @@ private val mapper = { cursor: SqlCursor ->
         state_chapter_fetch_interval = cursor.getLong(18)!!,
         state_cover_last_modified = cursor.getLong(19)?.let(InstantColumnAdapter::decode),
         state_initialized = cursor.getLong(20)!! == 1L,
-        // SY -->
         state_last_modified_at = cursor.getLong(21)!!,
         state_version = cursor.getLong(22)!!,
         state_is_syncing = cursor.getLong(23)!!,
-        // SY <--
-        totalCount = cursor.getLong(24)!!,
-        readCount = cursor.getDouble(25)!!,
-        latestUpload = cursor.getLong(26)?.let(InstantColumnAdapter::decode),
-        chapterFetchedAt = cursor.getLong(27)?.let(InstantColumnAdapter::decode),
-        lastRead = cursor.getLong(28)?.let(InstantColumnAdapter::decode),
-        bookmarkCount = cursor.getDouble(29)!!,
-        categories = cursor.getString(30)!!,
+        user_title = cursor.getString(24),
+        user_author = cursor.getString(25),
+        user_artist = cursor.getString(26),
+        user_thumbnail_url = cursor.getString(27),
+        user_description = cursor.getString(28),
+        user_genre = cursor.getString(29)?.let(StringListColumnAdapter::decode),
+        user_status = cursor.getLong(30),
+        totalCount = cursor.getLong(31)!!,
+        readCount = cursor.getDouble(32)!!,
+        latestUpload = cursor.getLong(33)?.let(InstantColumnAdapter::decode),
+        chapterFetchedAt = cursor.getLong(34)?.let(InstantColumnAdapter::decode),
+        lastRead = cursor.getLong(35)?.let(InstantColumnAdapter::decode),
+        bookmarkCount = cursor.getDouble(36)!!,
+        categories = cursor.getString(37)!!,
     )
 }
 

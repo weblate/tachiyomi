@@ -96,14 +96,21 @@ class BackupManga(
             viewerFlags = (this@BackupManga.viewer_flags ?: this@BackupManga.viewer).toLong(),
             chapterFlags = this@BackupManga.chapterFlags.toLong(),
             updateStrategy = this@BackupManga.updateStrategy,
-            // SY -->
-            lastModifiedAt = this@BackupManga.lastModifiedAt,
-            version = this@BackupManga.version,
-            // SY <--
             notes = this@BackupManga.notes,
             initialized = this@BackupManga.initialized,
             memo = this@BackupManga.memo.toJsonObject(),
             nextUpdate = this@BackupManga.nextUpdate.toInstantOrNull(),
+            // SY -->
+            lastModifiedAt = this@BackupManga.lastModifiedAt,
+            version = this@BackupManga.version,
+            userTitle = this@BackupManga.customTitle,
+            userAuthor = this@BackupManga.customAuthor,
+            userArtist = this@BackupManga.customArtist,
+            userThumbnailUrl = this@BackupManga.customThumbnailUrl,
+            userDescription = this@BackupManga.customDescription,
+            userGenre = this@BackupManga.customGenre,
+            userStatus = this@BackupManga.customStatus.takeUnless { it == 0 }?.toLong(),
+            // SY <--
         )
     }
 }

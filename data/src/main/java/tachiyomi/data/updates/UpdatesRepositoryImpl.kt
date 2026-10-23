@@ -13,7 +13,6 @@ import tachiyomi.core.common.util.lang.toLong
 import tachiyomi.data.Database
 import tachiyomi.data.getUpdatesQuery
 import tachiyomi.data.subscribeToList
-import tachiyomi.domain.manga.interactor.GetCustomMangaInfo
 import tachiyomi.domain.manga.model.MangaCover
 import tachiyomi.domain.updates.model.UpdatesWithRelations
 import tachiyomi.domain.updates.repository.UpdatesRepository
@@ -27,7 +26,6 @@ class UpdatesRepositoryImpl(
     private val database: Database,
     // SY -->
     private val driver: SqlDriver,
-    private val getCustomMangaInfo: GetCustomMangaInfo,
     // SY <--
 ) : UpdatesRepository {
 
@@ -127,15 +125,16 @@ class UpdatesRepositoryImpl(
         dateUpload: Instant?,
         dateFetch: Instant,
         excludedScanlator: String?,
-    ): UpdatesWithRelations {
         // SY -->
-        val customMangaInfo = getCustomMangaInfo.get(mangaId)
+        userTitle: String?,
+        userThumbnailUrl: String?,
         // SY <--
+    ): UpdatesWithRelations {
         return UpdatesWithRelations(
             mangaId = mangaId,
             // SY -->
             ogMangaTitle = mangaTitle,
-            customMangaInfo = customMangaInfo,
+            userTitle = userTitle,
             // SY <--
             chapterId = chapterId,
             chapterName = chapterName,
@@ -152,7 +151,7 @@ class UpdatesRepositoryImpl(
                 isMangaFavorite = favorite,
                 // SY -->
                 ogUrl = thumbnailUrl,
-                customThumbnailUrl = if (favorite) customMangaInfo?.thumbnailUrl else null,
+                userThumbnailUrl = userThumbnailUrl,
                 // SY <--
                 lastModified = coverLastModified,
             ),
@@ -161,11 +160,10 @@ class UpdatesRepositoryImpl(
 
     // SY -->
     fun mapUpdatesView(updatesView: UpdatesView): UpdatesWithRelations {
-        val customMangaInfo = getCustomMangaInfo.get(updatesView.mangaId)
         return UpdatesWithRelations(
             mangaId = updatesView.mangaId,
             ogMangaTitle = updatesView.mangaTitle,
-            customMangaInfo = customMangaInfo,
+            userTitle = updatesView.userTitle,
             chapterId = updatesView.chapterId,
             chapterName = updatesView.chapterName,
             scanlator = updatesView.scanlator,
@@ -180,7 +178,7 @@ class UpdatesRepositoryImpl(
                 sourceId = updatesView.sourceId,
                 isMangaFavorite = updatesView.favorite,
                 ogUrl = updatesView.thumbnailUrl,
-                customThumbnailUrl = if (updatesView.favorite) customMangaInfo?.thumbnailUrl else null,
+                userThumbnailUrl = updatesView.userThumbnailUrl,
                 lastModified = updatesView.coverLastModified,
             ),
         )

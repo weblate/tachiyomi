@@ -19,9 +19,7 @@ import mihon.core.common.extensions.toEpochMillisOrZero
 import tachiyomi.domain.category.repository.CategoryRepository
 import tachiyomi.domain.chapter.repository.ChapterRepository
 import tachiyomi.domain.history.repository.HistoryRepository
-import tachiyomi.domain.manga.interactor.GetCustomMangaInfo
 import tachiyomi.domain.manga.interactor.GetFlatMetadataById
-import tachiyomi.domain.manga.model.CustomMangaInfo
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.repository.MangaMergeRepository
 import tachiyomi.domain.manga.repository.MangaRepository
@@ -38,7 +36,6 @@ class MangaBackupCreator(
     // SY -->
     private val mangaMergeRepository: MangaMergeRepository,
     private val sourceManager: SourceManager,
-    private val getCustomMangaInfo: GetCustomMangaInfo,
     private val getFlatMetadataById: GetFlatMetadataById,
     // SY <--
 ) {
@@ -77,14 +74,7 @@ class MangaBackupCreator(
         val historyByMangaId = if (options.history) historyRepository.getHistoryByMangaIds(mangaIds) else emptyMap()
 
         return mangas.map { manga ->
-            val mangaObject = manga.toBackupManga(
-                // SY -->
-                if (options.customInfo) {
-                    getCustomMangaInfo.get(manga.id)
-                } else {
-                    null
-                }, /* SY <-- */
-            )
+            val mangaObject = manga.toBackupManga(/* SY --> */options.customInfo/* SY <-- */)
             val chapters = chaptersByMangaId[manga.id].orEmpty()
 
             // SY -->
@@ -133,7 +123,7 @@ class MangaBackupCreator(
     }
 }
 
-private fun Manga.toBackupManga(/* SY --> */customMangaInfo: CustomMangaInfo?/* SY <-- */) =
+private fun Manga.toBackupManga(/* SY --> */includeCustomInfo: Boolean/* SY <-- */) =
     BackupManga(
         url = this.url,
         // SY -->
@@ -162,14 +152,14 @@ private fun Manga.toBackupManga(/* SY --> */customMangaInfo: CustomMangaInfo?/* 
         nextUpdate = this.nextUpdate.toEpochMillisOrZero(),
         // SY -->
     ).also { backupManga ->
-        customMangaInfo?.let {
-            backupManga.customTitle = it.title
-            backupManga.customArtist = it.artist
-            backupManga.customAuthor = it.author
-            backupManga.customThumbnailUrl = it.thumbnailUrl
-            backupManga.customDescription = it.description
-            backupManga.customGenre = it.genre
-            backupManga.customStatus = it.status?.toInt() ?: 0
+        if (includeCustomInfo) {
+            backupManga.customTitle = userTitle
+            backupManga.customArtist = userArtist
+            backupManga.customAuthor = userAuthor
+            backupManga.customThumbnailUrl = userThumbnailUrl
+            backupManga.customDescription = userDescription
+            backupManga.customGenre = userGenre
+            backupManga.customStatus = userStatus?.toInt() ?: 0
         }
     }
 // SY <--

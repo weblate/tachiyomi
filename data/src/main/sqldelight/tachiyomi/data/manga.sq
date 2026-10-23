@@ -31,6 +31,13 @@ CREATE TABLE manga(
     state_last_modified_at INTEGER NOT NULL DEFAULT 0,
     state_version INTEGER NOT NULL DEFAULT 0,
     state_is_syncing INTEGER NOT NULL DEFAULT 0,
+    user_title TEXT,
+    user_author TEXT,
+    user_artist TEXT,
+    user_thumbnail_url TEXT,
+    user_description TEXT,
+    user_genre TEXT AS List<String>,
+    user_status INTEGER,
     -- SY <--
     UNIQUE(source_id, remote_url)
 );
@@ -45,7 +52,8 @@ SELECT
     state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
     state_cover_last_modified, state_initialized,
     -- SY -->
-    state_last_modified_at, state_version, state_is_syncing
+    state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
     -- SY <--
 FROM manga
 WHERE id = :id;
@@ -58,7 +66,8 @@ SELECT
     state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
     state_cover_last_modified, state_initialized,
     -- SY -->
-    state_last_modified_at, state_version, state_is_syncing
+    state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
     -- SY <--
 FROM manga
 WHERE source_id = :sourceId
@@ -72,7 +81,8 @@ SELECT
     state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
     state_cover_last_modified, state_initialized,
     -- SY -->
-    state_last_modified_at, state_version, state_is_syncing
+    state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
     -- SY <--
 FROM manga
 WHERE user_favorite_at IS NOT NULL;
@@ -85,7 +95,8 @@ SELECT
     state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
     state_cover_last_modified, state_initialized,
     -- SY -->
-    state_last_modified_at, state_version, state_is_syncing
+    state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
     -- SY <--
 FROM manga
 WHERE user_favorite_at IS NULL
@@ -114,7 +125,8 @@ SELECT
     state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
     state_cover_last_modified, state_initialized,
     -- SY -->
-    state_last_modified_at, state_version, state_is_syncing
+    state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
     -- SY <--
 FROM manga
 WHERE user_favorite_at IS NOT NULL
@@ -141,6 +153,7 @@ SELECT
     M.state_cover_last_modified, M.state_initialized,
     -- SY -->
     M.state_last_modified_at, M.state_version, M.state_is_syncing,
+    M.user_title, M.user_author, M.user_artist, M.user_thumbnail_url, M.user_description, M.user_genre, M.user_status,
     -- SY <--
     (
         SELECT count(*)
@@ -168,7 +181,8 @@ SELECT
     state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
     state_cover_last_modified, state_initialized,
     -- SY -->
-    state_last_modified_at, state_version, state_is_syncing
+    state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
     -- SY <--
 FROM manga
 WHERE state_chapter_next_update >= :startOfDay
@@ -242,7 +256,8 @@ INSERT INTO manga(
     state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
     state_cover_last_modified, state_initialized,
     -- SY -->
-    state_last_modified_at, state_version, state_is_syncing
+    state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
     -- SY <--
 )
 VALUES (
@@ -252,7 +267,8 @@ VALUES (
     :stateChapterLastUpdate, :stateChapterNextUpdate, :stateChapterFetchInterval,
     :stateCoverLastModified, :stateInitialized,
     -- SY -->
-    :stateLastModifiedAt, :stateVersion, :stateIsSyncing
+    :stateLastModifiedAt, :stateVersion, :stateIsSyncing,
+    :userTitle, :userAuthor, :userArtist, :userThumbnailUrl, :userDescription, :userGenre, :userStatus
     -- SY <--
 )
 RETURNING id;
@@ -294,7 +310,14 @@ UPDATE manga SET
     -- SY -->
     state_last_modified_at = coalesce(:stateLastModifiedAt, state_last_modified_at),
     state_version = coalesce(:stateVersion, state_version),
-    state_is_syncing = coalesce(:stateIsSyncing, state_is_syncing)
+    state_is_syncing = coalesce(:stateIsSyncing, state_is_syncing),
+    user_title = coalesce(:userTitle, user_title),
+    user_author = coalesce(:userAuthor, user_author),
+    user_artist = coalesce(:userArtist, user_artist),
+    user_thumbnail_url = coalesce(:userThumbnailUrl, user_thumbnail_url),
+    user_description = coalesce(:userDescription, user_description),
+    user_genre = coalesce(:userGenre, user_genre),
+    user_status = coalesce(:userStatus, user_status)
     -- SY <--
 WHERE id = :id;
 
@@ -312,6 +335,19 @@ UPDATE manga SET
     state_cover_last_modified = coalesce(:stateCoverLastModified, state_cover_last_modified),
     state_initialized = :stateInitialized
 WHERE id = :id;
+
+-- SY -->
+updateUserInfo:
+UPDATE manga SET
+    user_title = :userTitle,
+    user_author = :userAuthor,
+    user_artist = :userArtist,
+    user_thumbnail_url = :userThumbnailUrl,
+    user_description = :userDescription,
+    user_genre = :userGenre,
+    user_status = :userStatus
+WHERE id = :id;
+-- SY <--
 
 insertNetworkManga {
     -- A new entry is inserted as the source reported it. An existing one takes the fresh details
@@ -359,14 +395,14 @@ insertNetworkManga {
         state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
         state_cover_last_modified, state_initialized,
         -- SY -->
-        state_last_modified_at, state_version, state_is_syncing
+        state_last_modified_at, state_version, state_is_syncing,
+        user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
         -- SY <--
     FROM manga
     WHERE source_id = :sourceId
     AND remote_url = :remoteUrl;
 }
 
--- SY -->
 CREATE TRIGGER update_last_modified_at_manga
 AFTER UPDATE ON manga
 FOR EACH ROW
@@ -394,7 +430,8 @@ SELECT
     user_favorite_at, user_notes, user_reader_flags, user_chapter_flags,
     state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
     state_cover_last_modified, state_initialized,
-    state_last_modified_at, state_version, state_is_syncing
+    state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
 FROM manga
 WHERE user_favorite_at IS NOT NULL;
 
@@ -406,7 +443,8 @@ SELECT
     M.user_reader_flags, M.user_chapter_flags, M.state_chapter_last_update,
     M.state_chapter_next_update, M.state_chapter_fetch_interval,
     M.state_cover_last_modified, M.state_initialized,
-    M.state_last_modified_at, M.state_version, M.state_is_syncing
+    M.state_last_modified_at, M.state_version, M.state_is_syncing,
+    M.user_title, M.user_author, M.user_artist, M.user_thumbnail_url, M.user_description, M.user_genre, M.user_status
 FROM manga M
 WHERE M.user_favorite_at IS NOT NULL
 AND (
@@ -421,7 +459,8 @@ SELECT
     user_favorite_at, user_notes, user_reader_flags, user_chapter_flags,
     state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
     state_cover_last_modified, state_initialized,
-    state_last_modified_at, state_version, state_is_syncing
+    state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
 FROM manga
 WHERE source_id = :sourceId;
 
@@ -436,7 +475,8 @@ SELECT
     user_favorite_at, user_notes, user_reader_flags, user_chapter_flags,
     state_chapter_last_update, state_chapter_next_update, state_chapter_fetch_interval,
     state_cover_last_modified, state_initialized,
-    state_last_modified_at, state_version, state_is_syncing
+    state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status
 FROM manga;
 
 resetIsSyncing:
@@ -452,7 +492,8 @@ SELECT
     M.user_reader_flags, M.user_chapter_flags, M.state_chapter_last_update,
     M.state_chapter_next_update, M.state_chapter_fetch_interval,
     M.state_cover_last_modified, M.state_initialized,
-    M.state_last_modified_at, M.state_version, M.state_is_syncing
+    M.state_last_modified_at, M.state_version, M.state_is_syncing,
+    M.user_title, M.user_author, M.user_artist, M.user_thumbnail_url, M.user_description, M.user_genre, M.user_status
 FROM manga M
 JOIN search_metadata SM ON M.id = SM.manga_id
 WHERE M.user_favorite_at IS NOT NULL

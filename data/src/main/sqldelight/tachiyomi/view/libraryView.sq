@@ -60,6 +60,7 @@ SELECT
     state_cover_last_modified, state_initialized,
     -- SY -->
     state_last_modified_at, state_version, state_is_syncing,
+    user_title, user_author, user_artist, user_thumbnail_url, user_description, user_genre, user_status,
     -- SY <--
     totalCount, readCount, latestUpload, chapterFetchedAt, lastRead, bookmarkCount, categories
 FROM libraryView;

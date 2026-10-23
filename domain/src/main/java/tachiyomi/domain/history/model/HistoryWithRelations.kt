@@ -1,6 +1,5 @@
 package tachiyomi.domain.history.model
 
-import tachiyomi.domain.manga.model.CustomMangaInfo
 import tachiyomi.domain.manga.model.MangaCover
 import kotlin.time.Instant
 
@@ -10,7 +9,7 @@ data class HistoryWithRelations(
     val mangaId: Long,
     // SY -->
     val ogTitle: String,
-    val customMangaInfo: CustomMangaInfo? = null,
+    val userTitle: String? = null,
     // SY <--
     val chapterNumber: Double,
     val readAt: Instant?,
@@ -18,6 +17,6 @@ data class HistoryWithRelations(
     val coverData: MangaCover,
 ) {
     // SY -->
-    val title: String = customMangaInfo?.title ?: ogTitle
+    val title: String = userTitle ?: ogTitle
     // SY <--
 }

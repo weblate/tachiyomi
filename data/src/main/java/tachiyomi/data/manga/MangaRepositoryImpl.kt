@@ -25,6 +25,7 @@ import tachiyomi.domain.library.model.LibraryManga
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaRemoteUpdate
 import tachiyomi.domain.manga.model.MangaUpdate
+import tachiyomi.domain.manga.model.MangaUserInfoUpdate
 import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.domain.manga.repository.MangaRepository
 import kotlin.time.Clock
@@ -36,60 +37,59 @@ class MangaRepositoryImpl(
     private val database: Database,
     // SY -->
     private val driver: SqlDriver,
-    private val mangaMapper: MangaMapper,
     // SY <--
 ) : MangaRepository {
 
     override suspend fun getMangaById(id: Long): Manga {
         return database.mangaQueries
-            .getMangaById(id, /* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getMangaById(id, MangaMapper::mapManga)
             .awaitAsOne()
     }
 
     override fun getMangaByIdAsFlow(id: Long): Flow<Manga> {
         return database.mangaQueries
-            .getMangaById(id, /* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getMangaById(id, MangaMapper::mapManga)
             .subscribeToOne()
     }
 
     override suspend fun getMangaByUrlAndSourceId(url: String, sourceId: Long): Manga? {
         return database.mangaQueries
-            .getMangaByUrlAndSource(sourceId = sourceId, remoteUrl = url, mapper = /* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getMangaByUrlAndSource(sourceId = sourceId, remoteUrl = url, mapper = MangaMapper::mapManga)
             .awaitAsOneOrNull()
     }
 
     override fun getMangaByUrlAndSourceIdAsFlow(url: String, sourceId: Long): Flow<Manga?> {
         return database.mangaQueries
-            .getMangaByUrlAndSource(sourceId = sourceId, remoteUrl = url, mapper = /* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getMangaByUrlAndSource(sourceId = sourceId, remoteUrl = url, mapper = MangaMapper::mapManga)
             .subscribeToOneOrNull()
     }
 
     override suspend fun getFavorites(): List<Manga> {
         return database.mangaQueries
-            .getFavorites(/* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getFavorites(MangaMapper::mapManga)
             .awaitAsList()
     }
 
     override suspend fun getReadMangaNotInLibrary(): List<Manga> {
         return database.mangaQueries
-            .getReadMangaNotInLibrary(/* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getReadMangaNotInLibrary(MangaMapper::mapManga)
             .awaitAsList()
     }
 
     override suspend fun getLibraryManga(): List<LibraryManga> {
         /* SY --> */return getLibraryQuery(driver)/* SY <-- */
             .awaitAsList()
-            .map(/* SY --> */mangaMapper/* SY <-- */::mapLibraryView)
+            .map(MangaMapper::mapLibraryView)
         // SY -->
 //        return database.libraryViewQueries
-//            .library(/* SY --> */mangaMapper/* SY <-- */::mapLibraryManga)
+//            .library(MangaMapper::mapLibraryManga)
 //            .awaitAsList()
         // SY <--
     }
 
     override fun getLibraryMangaAsFlow(): Flow<List<LibraryManga>> {
         return database.libraryViewQueries
-            .library(/* SY --> */mangaMapper/* SY <-- */::mapLibraryManga)
+            .library(MangaMapper::mapLibraryManga)
             .subscribeToList()
             // SY -->
             .map { getLibraryManga() }
@@ -98,13 +98,13 @@ class MangaRepositoryImpl(
 
     override fun getFavoritesBySourceId(sourceId: Long): Flow<List<Manga>> {
         return database.mangaQueries
-            .getFavoriteBySourceId(sourceId, /* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getFavoriteBySourceId(sourceId, MangaMapper::mapManga)
             .subscribeToList()
     }
 
     override suspend fun getDuplicateLibraryManga(id: Long, title: String): List<MangaWithChapterCount> {
         return database.mangaQueries
-            .getDuplicateLibraryManga(id, title, /* SY --> */mangaMapper/* SY <-- */::mapMangaWithChapterCount)
+            .getDuplicateLibraryManga(id, title, MangaMapper::mapMangaWithChapterCount)
             .awaitAsList()
     }
 
@@ -123,7 +123,7 @@ class MangaRepositoryImpl(
                 includedCategories = includedCategories,
                 excludedEmpty = excludedCategories.isEmpty(),
                 excludedCategories = excludedCategories,
-                mapper = /* SY --> */mangaMapper/* SY <-- */::mapManga,
+                mapper = MangaMapper::mapManga,
             )
             .subscribeToList()
     }
@@ -240,7 +240,7 @@ class MangaRepositoryImpl(
                     updateCover = !it.ogThumbnailUrl.isNullOrBlank(),
                     // SY <--
                     updateDetails = it.initialized,
-                    mapper = /* SY --> */mangaMapper/* SY <-- */::mapManga,
+                    mapper = MangaMapper::mapManga,
                 )
                     .awaitAsOne()
             }
@@ -297,13 +297,13 @@ class MangaRepositoryImpl(
     // SY -->
     override suspend fun getMangaBySourceId(sourceId: Long): List<Manga> {
         return database.mangaQueries
-            .getBySource(sourceId, /* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getBySource(sourceId, MangaMapper::mapManga)
             .awaitAsList()
     }
 
     override suspend fun getAll(): List<Manga> {
         return database.mangaQueries
-            .getAll(/* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getAll(MangaMapper::mapManga)
             .awaitAsList()
     }
 
@@ -314,23 +314,57 @@ class MangaRepositoryImpl(
     override suspend fun getReadMangaNotInLibraryView(): List<LibraryManga> {
         return getLibraryQuery(driver, "M.user_favorite_at IS NULL AND C.readCount != 0")
             .awaitAsList()
-            .map(/* SY --> */mangaMapper/* SY <-- */::mapLibraryView)
+            .map(MangaMapper::mapLibraryView)
     }
 
     override suspend fun getMangasWithFavoriteTimestamp(): List<Manga> {
         return database.mangaQueries
-            .getMangasWithFavoriteTimestamp(/* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getMangasWithFavoriteTimestamp(MangaMapper::mapManga)
             .awaitAsList()
     }
 
     override suspend fun getMangasModifiedSince(since: Long): List<Manga> {
         return database.mangaQueries
-            .getMangasModifiedSince(since, /* SY --> */mangaMapper/* SY <-- */::mapManga)
+            .getMangasModifiedSince(since, MangaMapper::mapManga)
             .awaitAsList()
     }
 
     override suspend fun resetIsSyncing() {
         database.mangaQueries.resetIsSyncing()
+    }
+
+    override suspend fun updateUserInfo(
+        mangaId: Long,
+        title: String?,
+        author: String?,
+        artist: String?,
+        thumbnailUrl: String?,
+        description: String?,
+        genre: List<String>?,
+        status: Long?,
+    ) {
+        updateUserInfoAll(
+            listOf(
+                MangaUserInfoUpdate(mangaId, title, author, artist, thumbnailUrl, description, genre, status),
+            ),
+        )
+    }
+
+    override suspend fun updateUserInfoAll(updates: List<MangaUserInfoUpdate>) {
+        database.transaction {
+            updates.forEach { update ->
+                database.mangaQueries.updateUserInfo(
+                    userTitle = update.title,
+                    userAuthor = update.author,
+                    userArtist = update.artist,
+                    userThumbnailUrl = update.thumbnailUrl,
+                    userDescription = update.description,
+                    userGenre = update.genre,
+                    userStatus = update.status,
+                    id = update.id,
+                )
+            }
+        }
     }
     // SY <--
 }

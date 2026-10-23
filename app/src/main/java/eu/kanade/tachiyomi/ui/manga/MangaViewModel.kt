@@ -131,10 +131,9 @@ import tachiyomi.domain.manga.interactor.GetMergedMangaById
 import tachiyomi.domain.manga.interactor.GetMergedReferencesById
 import tachiyomi.domain.manga.interactor.InsertMergedReference
 import tachiyomi.domain.manga.interactor.NetworkToLocalManga
-import tachiyomi.domain.manga.interactor.SetCustomMangaInfo
 import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
+import tachiyomi.domain.manga.interactor.SetMangaUserInfo
 import tachiyomi.domain.manga.interactor.UpdateMergedSettings
-import tachiyomi.domain.manga.model.CustomMangaInfo
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaRemoteUpdate
 import tachiyomi.domain.manga.model.MangaWithChapterCount
@@ -188,7 +187,7 @@ class MangaViewModel(
     private val getFlatMetadata: GetFlatMetadataById,
     private val getPagePreviews: GetPagePreviews,
     private val upsertTrack: UpsertTrack,
-    private val setCustomMangaInfo: SetCustomMangaInfo,
+    private val setMangaUserInfo: SetMangaUserInfo,
     private val updateHelper: EHentaiUpdateHelper,
     private val preferenceStore: PreferenceStore,
     // SY <--
@@ -676,17 +675,15 @@ class MangaViewModel(
                 } else {
                     null
                 }
-                setCustomMangaInfo.set(
-                    CustomMangaInfo(
-                        state.manga.id,
-                        title?.trimOrNull(),
-                        author?.trimOrNull(),
-                        artist?.trimOrNull(),
-                        thumbnailUrl?.trimOrNull(),
-                        description?.trimOrNull(),
-                        genre,
-                        status.takeUnless { it == state.manga.ogStatus },
-                    ),
+                setMangaUserInfo.set(
+                    mangaId = state.manga.id,
+                    title = title?.trimOrNull(),
+                    author = author?.trimOrNull(),
+                    artist = artist?.trimOrNull(),
+                    thumbnailUrl = thumbnailUrl?.trimOrNull(),
+                    description = description?.trimOrNull(),
+                    genre = genre,
+                    status = status.takeUnless { it == state.manga.ogStatus },
                 )
             }
 

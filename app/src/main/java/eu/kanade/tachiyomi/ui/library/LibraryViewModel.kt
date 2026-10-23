@@ -100,10 +100,10 @@ import tachiyomi.domain.manga.interactor.GetMergedManga
 import tachiyomi.domain.manga.interactor.GetMergedMangaById
 import tachiyomi.domain.manga.interactor.GetSearchTags
 import tachiyomi.domain.manga.interactor.GetSearchTitles
-import tachiyomi.domain.manga.interactor.SetCustomMangaInfo
-import tachiyomi.domain.manga.model.CustomMangaInfo
+import tachiyomi.domain.manga.interactor.SetMangaUserInfo
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
+import tachiyomi.domain.manga.model.MangaUserInfoUpdate
 import tachiyomi.domain.manga.model.applyFilter
 import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
@@ -147,7 +147,7 @@ class LibraryViewModel(
     private val getIdsOfFavoriteMangaWithMetadata: GetIdsOfFavoriteMangaWithMetadata,
     private val getSearchTags: GetSearchTags,
     private val getSearchTitles: GetSearchTitles,
-    private val setCustomMangaInfo: SetCustomMangaInfo,
+    private val setMangaUserInfo: SetMangaUserInfo,
     private val getMergedChaptersByMangaId: GetMergedChaptersByMangaId,
 
     syncPreferences: SyncPreferences,
@@ -813,34 +813,35 @@ class LibraryViewModel(
 
     // SY -->
     fun cleanTitles() {
-        state.value.selectedManga.fastFilter {
-            it.isEhBasedManga() ||
-                it.source in nHentaiSourceIds
-        }.fastForEach { manga ->
-            val editedTitle =
-                manga.title.replace("\\[.*?]".toRegex(), "").trim().replace("\\(.*?\\)".toRegex(), "").trim()
-                    .replace("\\{.*?\\}".toRegex(), "").trim().let {
-                        if (it.contains("|")) {
-                            it.replace(".*\\|".toRegex(), "").trim()
-                        } else {
-                            it
+        viewModelScope.launch(Dispatchers.IO) {
+            val updates = state.value.selectedManga.fastFilter {
+                it.isEhBasedManga() ||
+                    it.source in nHentaiSourceIds
+            }.mapNotNull { manga ->
+                val editedTitle =
+                    manga.title.replace("\\[.*?]".toRegex(), "").trim().replace("\\(.*?\\)".toRegex(), "").trim()
+                        .replace("\\{.*?\\}".toRegex(), "").trim().let {
+                            if (it.contains("|")) {
+                                it.replace(".*\\|".toRegex(), "").trim()
+                            } else {
+                                it
+                            }
                         }
-                    }
-            if (manga.title == editedTitle) return@fastForEach
-            val mangaInfo = CustomMangaInfo(
-                id = manga.id,
-                title = editedTitle.nullIfBlank(),
-                author = manga.author.takeUnless { it == manga.ogAuthor },
-                artist = manga.artist.takeUnless { it == manga.ogArtist },
-                thumbnailUrl = manga.thumbnailUrl.takeUnless { it == manga.ogThumbnailUrl },
-                description = manga.description.takeUnless { it == manga.ogDescription },
-                genre = manga.genre.takeUnless { it == manga.ogGenre },
-                status = manga.status.takeUnless { it == manga.ogStatus },
-            )
-
-            setCustomMangaInfo.set(mangaInfo)
+                if (manga.title == editedTitle) return@mapNotNull null
+                MangaUserInfoUpdate(
+                    id = manga.id,
+                    title = editedTitle.nullIfBlank(),
+                    author = manga.author.takeUnless { it == manga.ogAuthor },
+                    artist = manga.artist.takeUnless { it == manga.ogArtist },
+                    thumbnailUrl = manga.thumbnailUrl.takeUnless { it == manga.ogThumbnailUrl },
+                    description = manga.description.takeUnless { it == manga.ogDescription },
+                    genre = manga.genre.takeUnless { it == manga.ogGenre },
+                    status = manga.status.takeUnless { it == manga.ogStatus },
+                )
+            }
+            setMangaUserInfo.setAll(updates)
+            clearSelection()
         }
-        clearSelection()
     }
 
     fun syncMangaToDex() {
@@ -855,21 +856,22 @@ class LibraryViewModel(
     }
 
     fun resetInfo() {
-        state.value.selectedManga.fastForEach { manga ->
-            val mangaInfo = CustomMangaInfo(
-                id = manga.id,
-                title = null,
-                author = null,
-                artist = null,
-                thumbnailUrl = null,
-                description = null,
-                genre = null,
-                status = null,
-            )
-
-            setCustomMangaInfo.set(mangaInfo)
+        viewModelScope.launch(Dispatchers.IO) {
+            val updates = state.value.selectedManga.map { manga ->
+                MangaUserInfoUpdate(
+                    id = manga.id,
+                    title = null,
+                    author = null,
+                    artist = null,
+                    thumbnailUrl = null,
+                    description = null,
+                    genre = null,
+                    status = null,
+                )
+            }
+            setMangaUserInfo.setAll(updates)
+            clearSelection()
         }
-        clearSelection()
     }
 // SY <--
 

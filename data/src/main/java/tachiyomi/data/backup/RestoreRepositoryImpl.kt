@@ -18,7 +18,6 @@ import tachiyomi.domain.chapter.model.Chapter
 import tachiyomi.domain.chapter.repository.ChapterRepository
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaUpdate
-import tachiyomi.domain.manga.repository.CustomMangaRepository
 import tachiyomi.domain.manga.repository.MangaMergeRepository
 import tachiyomi.domain.manga.repository.MangaMetadataRepository
 import tachiyomi.domain.manga.repository.MangaRepository
@@ -38,7 +37,6 @@ class RestoreRepositoryImpl(
     // SY -->
     private val mangaMergeRepository: MangaMergeRepository,
     private val mangaMetadataRepository: MangaMetadataRepository,
-    private val customMangaRepository: CustomMangaRepository,
     // SY <--
 ) : RestoreRepository {
 
@@ -69,7 +67,6 @@ class RestoreRepositoryImpl(
                 // SY -->
                 restoreMergedMangaReferences(manga.id, entry.mergedMangaReferences)
                 entry.flatMetadata?.let { restoreFlatMetadata(manga.id, it) }
-                entry.customMangaInfo?.let { restoreCustomMangaInfo(manga.id, it) }
                 // SY <--
             }
         }
@@ -118,6 +115,15 @@ class RestoreRepositoryImpl(
             // Merge both backup and local data with local winning
             memo = JsonObject(manga.memo + dbManga.memo),
             nextUpdate = dbManga.nextUpdate ?: manga.nextUpdate,
+            // SY -->
+            userTitle = manga.userTitle,
+            userAuthor = manga.userAuthor,
+            userArtist = manga.userArtist,
+            userThumbnailUrl = manga.userThumbnailUrl,
+            userDescription = manga.userDescription,
+            userGenre = manga.userGenre,
+            userStatus = manga.userStatus,
+            //SY <--
         )
     }
 
@@ -146,6 +152,13 @@ class RestoreRepositoryImpl(
             stateVersion = manga.version,
             stateLastModifiedAt = manga.lastModifiedAt,
             stateIsSyncing = syncingFlag,
+            userTitle = manga.userTitle,
+            userAuthor = manga.userAuthor,
+            userArtist = manga.userArtist,
+            userThumbnailUrl = manga.userThumbnailUrl,
+            userDescription = manga.userDescription,
+            userGenre = manga.userGenre,
+            userStatus = manga.userStatus,
             // SY <--
         )
         return manga
@@ -179,6 +192,13 @@ class RestoreRepositoryImpl(
             stateVersion = manga.version,
             stateLastModifiedAt = manga.lastModifiedAt,
             stateIsSyncing = syncingFlag,
+            userTitle = manga.userTitle,
+            userAuthor = manga.userAuthor,
+            userArtist = manga.userArtist,
+            userThumbnailUrl = manga.userThumbnailUrl,
+            userDescription = manga.userDescription,
+            userGenre = manga.userGenre,
+            userStatus = manga.userStatus,
             // SY <--
         )
             .awaitAsOne()
@@ -384,10 +404,6 @@ class RestoreRepositoryImpl(
                 ),
             )
         }
-    }
-
-    private fun restoreCustomMangaInfo(mangaId: Long, customMangaInfo: tachiyomi.domain.manga.model.CustomMangaInfo) {
-        customMangaRepository.set(customMangaInfo.copy(id = mangaId))
     }
     // SY <--
 }

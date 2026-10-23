@@ -2,7 +2,6 @@ package tachiyomi.domain.backup.model
 
 import exh.metadata.metadata.base.FlatMetadata
 import tachiyomi.domain.chapter.model.Chapter
-import tachiyomi.domain.manga.model.CustomMangaInfo
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MergedMangaReference
 import tachiyomi.domain.track.model.Track
@@ -18,7 +17,6 @@ data class RestoredManga(
     // SY -->
     val mergedMangaReferences: List<MergedMangaReference> = emptyList(),
     val flatMetadata: FlatMetadata? = null,
-    val customMangaInfo: CustomMangaInfo? = null,
     // SY <--
 )
 

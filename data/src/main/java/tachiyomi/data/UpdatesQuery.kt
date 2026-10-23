@@ -29,6 +29,8 @@ private val mapper = { cursor: SqlCursor ->
         cursor.getLong(13)?.let(InstantColumnAdapter::decode),
         InstantColumnAdapter.decode(cursor.getLong(14)!!),
         cursor.getString(15),
+        cursor.getString(16),
+        cursor.getString(17),
     )
 }
 
@@ -111,7 +113,9 @@ class UpdatesQuery(
                         manga.state_cover_last_modified AS coverLastModified,
                         chapter.remote_date_upload AS dateUpload,
                         chapter.state_date_fetch AS datefetch,
-                        excluded_scanlator.scanlator AS excludedScanlator
+                        excluded_scanlator.scanlator AS excludedScanlator,
+                        manga.user_title AS userTitle,
+                        manga.user_thumbnail_url AS userThumbnailUrl
                     FROM manga
                     JOIN chapter
                         ON manga.id = chapter.manga_id
@@ -140,7 +144,9 @@ class UpdatesQuery(
                         manga.state_cover_last_modified AS coverLastModified,
                         chapter.remote_date_upload AS dateUpload,
                         chapter.state_date_fetch AS datefetch,
-                        excluded_scanlator.scanlator AS excludedScanlator
+                        excluded_scanlator.scanlator AS excludedScanlator,
+                        manga.user_title AS userTitle,
+                        manga.user_thumbnail_url AS userThumbnailUrl
                     FROM manga
                     -- Every entry the merge holds, not just one of them
                     JOIN merged AS ME

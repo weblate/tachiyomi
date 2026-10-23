@@ -22,20 +22,17 @@ import tachiyomi.domain.history.repository.HistoryRepository
 @ContributesBinding(AppScope::class)
 class HistoryRepositoryImpl(
     private val database: Database,
-    // SY -->
-    private val historyMapper: HistoryMapper,
-    // SY <--
 ) : HistoryRepository {
 
     override fun getHistory(query: String): Flow<List<HistoryWithRelations>> {
         return database.historyViewQueries
-            .history(query, /* SY --> */historyMapper::mapHistoryWithRelations/* SY <-- */)
+            .history(query, HistoryMapper::mapHistoryWithRelations)
             .subscribeToList()
     }
 
     override suspend fun getLastHistory(): HistoryWithRelations? {
         return database.historyViewQueries
-            .getLatestHistory(/* SY --> */historyMapper::mapHistoryWithRelations/* SY <-- */)
+            .getLatestHistory(HistoryMapper::mapHistoryWithRelations)
             .awaitAsOneOrNull()
     }
 
@@ -47,14 +44,14 @@ class HistoryRepositoryImpl(
 
     override suspend fun getHistoryByMangaId(mangaId: Long): List<History> {
         return database.historyQueries
-            .getHistoryByMangaId(mangaId, /* SY --> */historyMapper::mapHistory/* SY <-- */)
+            .getHistoryByMangaId(mangaId, HistoryMapper::mapHistory)
             .awaitAsList()
     }
 
     override suspend fun getHistoryByMangaIds(mangaIds: List<Long>): Map<Long, List<History>> {
         return database.historyQueries
             .getHistoryByMangaIds(mangaIds) { mangaId, id, chapterId, readAt, readDuration ->
-                mangaId to /* SY --> */historyMapper.mapHistory(id, chapterId, readAt, readDuration)/* SY <-- */
+                mangaId to HistoryMapper.mapHistory(id, chapterId, readAt, readDuration)
             }
             .awaitAsList()
             .groupBy({ it.first }, { it.second })
