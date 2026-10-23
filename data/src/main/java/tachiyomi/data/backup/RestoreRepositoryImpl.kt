@@ -123,7 +123,7 @@ class RestoreRepositoryImpl(
             userDescription = manga.userDescription,
             userGenre = manga.userGenre,
             userStatus = manga.userStatus,
-            //SY <--
+            // SY <--
         )
     }
 
