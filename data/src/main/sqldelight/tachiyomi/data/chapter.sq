@@ -199,7 +199,8 @@ WHERE C.manga_id IN (
 AND (
     :applyScanlatorFilter = 0
     OR ES.scanlator IS NULL
-);
+)
+ORDER BY C.manga_id, C.remote_order;
 
 getScanlatorsByMergeId:
 SELECT DISTINCT remote_scanlator
