@@ -51,6 +51,7 @@ import mihon.icons.simpleicons.Github
 import mihon.icons.simpleicons.Reddit
 import mihon.icons.simpleicons.SimpleIcons
 import mihon.icons.simpleicons.X
+import tachiyomi.core.common.Constants
 import tachiyomi.core.common.util.system.logcat
 import tachiyomi.domain.release.interactor.GetApplicationRelease
 import tachiyomi.i18n.MR
@@ -111,7 +112,7 @@ object AboutScreen : Screen() {
                     )
                 }
 
-                if (BuildConfig.INCLUDE_UPDATER) {
+                if (/* SY --> */ BuildConfig.INCLUDE_UPDATER /* SY <-- */) {
                     item {
                         TextPreferenceWidget(
                             title = stringResource(MR.strings.check_for_updates),
@@ -135,7 +136,7 @@ object AboutScreen : Screen() {
                                                     versionName = result.release.version,
                                                     changelogInfo = result.release.info,
                                                     releaseLink = result.release.releaseLink,
-                                                    downloadLink = result.release.getDownloadLink(),
+                                                    downloadLink = /* SY --> */ result.release.getDownloadLink() /* SY <-- */,
                                                 )
                                                 navigator.push(updateScreen)
                                             },
@@ -161,12 +162,14 @@ object AboutScreen : Screen() {
                     }
                 }
 
+                // SY -->
                 // item {
                 //     TextPreferenceWidget(
                 //         title = stringResource(MR.strings.help_translate),
                 //         onPreferenceClick = { uriHandler.openUri("https://mihon.app/docs/contribute#translation") },
                 //     )
                 // }
+                // SY <--
 
                 item {
                     TextPreferenceWidget(
@@ -197,7 +200,7 @@ object AboutScreen : Screen() {
                         LinkIcon(
                             label = "Discord",
                             icon = SimpleIcons.Discord,
-                            url = "https://discord.gg/mihon",
+                            url = Constants.URL_DISCORD,
                         )
                         LinkIcon(
                             label = "X",
@@ -287,7 +290,7 @@ object AboutScreen : Screen() {
             }
             // SY <--
             else -> {
-                "Stable ${BuildConfig.VERSION_NAME}".let {
+                /* SY --> */ "Stable ${BuildConfig.VERSION_NAME}" /* SY <-- */.let {
                     if (withBuildDate) {
                         "$it (${getFormattedBuildTime()})"
                     } else {

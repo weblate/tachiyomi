@@ -343,14 +343,14 @@ object SettingsAdvancedScreen : SearchableSettings {
                     title = stringResource(MR.strings.pref_reset_viewer_flags),
                     subtitle = stringResource(MR.strings.pref_reset_viewer_flags_summary),
                     onClick = {
-                        context.appGraph.appScope.launch {
+                        /* SY --> */ context.appGraph.appScope.launch /* SY <-- */ {
                             val success = context.appGraph.resetViewerFlags.await()
                             val message = if (success) {
                                 MR.strings.pref_reset_viewer_flags_success
                             } else {
                                 MR.strings.pref_reset_viewer_flags_error
                             }
-                            withContext(Dispatchers.Main) { context.toast(message) }
+                            /* SY --> */ withContext(Dispatchers.Main) { context.toast(message) } /* SY <-- */
                         }
                     },
                 ),
@@ -430,7 +430,7 @@ object SettingsAdvancedScreen : SearchableSettings {
                     entries = extensionInstallerPref.entries
                         .filter {
                             // TODO: allow private option in stable versions once URL handling is more fleshed out
-                            if (isPreviewBuildType || isDebugBuildType) {
+                            if (/* SY --> */ isPreviewBuildType || isDebugBuildType /* SY <-- */) {
                                 true
                             } else {
                                 it != BasePreferences.ExtensionInstaller.PRIVATE

@@ -83,7 +83,9 @@ class NotificationReceiver : BroadcastReceiver() {
                 )
             ACTION_CANCEL_RESTORE -> cancelRestore(context)
 
+            // SY -->
             ACTION_CANCEL_SYNC -> cancelSync(context)
+            // SY <--
             // Cancel library update and dismiss notification
             ACTION_CANCEL_LIBRARY_UPDATE -> cancelLibraryUpdate(context)
             // Mark updated manga chapters as read
@@ -162,6 +164,8 @@ class NotificationReceiver : BroadcastReceiver() {
         }
     }
 
+    // SY -->
+
     /**
      * Method called when user wants to stop a backup restore job.
      *
@@ -172,6 +176,7 @@ class NotificationReceiver : BroadcastReceiver() {
             SyncDataJob.stop(context)
         }
     }
+    // SY <--
 
     /**
      * Method called when user wants to mark manga chapters as read
@@ -236,7 +241,9 @@ class NotificationReceiver : BroadcastReceiver() {
 
         private const val ACTION_CANCEL_RESTORE = "$ID.$NAME.CANCEL_RESTORE"
 
+        // SY -->
         private const val ACTION_CANCEL_SYNC = "$ID.$NAME.CANCEL_SYNC"
+        // SY <--
 
         private const val ACTION_CANCEL_LIBRARY_UPDATE = "$ID.$NAME.CANCEL_LIBRARY_UPDATE"
 
@@ -592,6 +599,8 @@ class NotificationReceiver : BroadcastReceiver() {
             )
         }
 
+        // SY -->
+
         /**
          * Returns [PendingIntent] that cancels a sync restore job.
          *
@@ -611,5 +620,6 @@ class NotificationReceiver : BroadcastReceiver() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
         }
+        // SY <--
     }
 }

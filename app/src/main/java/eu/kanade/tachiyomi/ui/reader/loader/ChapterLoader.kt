@@ -74,11 +74,11 @@ class ChapterLoader(
 
                 // If the chapter is partially read, set the starting page to the last the user read
                 // otherwise use the requested page.
-                if (!chapter.chapter.read /* --> EH */ ||
+                if (!chapter.chapter.read /* SY --> */ ||
                     readerPrefs
                         .preserveReadingPosition
                         .get() ||
-                    page != null // <-- EH
+                    page != null /* SY <-- */
                 ) {
                     chapter.requestedPage = /* SY --> */ page ?: /* SY <-- */ chapter.chapter.lastPageRead
                 }
@@ -162,17 +162,17 @@ class ChapterLoader(
                 source,
                 downloadManager,
                 downloadProvider,
+                // SY -->
                 context,
                 readerPrefs,
-                // SY -->
                 cbzCrypto,
                 // SY <--
             )
             source is LocalSource -> source.getFormat(chapter.chapter.toSChapter()).let { format ->
                 when (format) {
                     is Format.Directory -> DirectoryPageLoader(format.file)
-                    is Format.Archive -> ArchivePageLoader(format.file.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz), context, readerPrefs)
-                    is Format.Epub -> EpubPageLoader(format.file.epubReader(context, cbzCrypto::getDecryptedPasswordCbz))
+                    is Format.Archive -> ArchivePageLoader(format.file.archiveReader(context, /* SY --> */cbzCrypto::getDecryptedPasswordCbz/* SY <-- */), /* SY --> */context, readerPrefs/* SY <-- */)
+                    is Format.Epub -> EpubPageLoader(format.file.epubReader(context, /* SY --> */cbzCrypto::getDecryptedPasswordCbz/* SY <-- */))
                 }
             }
             source is HttpSource -> HttpPageLoader(

@@ -56,6 +56,7 @@ class UpdateMangaFromRemote(
             manualFetch = manualFetch,
             // SY -->
             throttleFunc = throttleFunc,
+            // SY <--
         )
     }
 
@@ -66,7 +67,9 @@ class UpdateMangaFromRemote(
         fetchChapters: Boolean = false,
         manualFetch: Boolean = false,
         fetchWindow: ClosedRange<Instant>? = null,
+        // SY -->
         throttleFunc: suspend () -> Unit = {},
+        // SY <--
     ): Result<RemoteMangaUpdate> = withContext(Dispatchers.IO) {
         try {
             val chapters = chapterRepository.getChapterByMangaId(manga.id)

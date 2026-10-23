@@ -50,8 +50,10 @@ fun ReaderAppBars(
     chapterTitle: String?,
     navigateUp: () -> Unit,
     onClickTopAppBar: () -> Unit,
+    // SY -->
     // bookmarked: Boolean,
     // onToggleBookmarked: () -> Unit,
+    // SY <--
     onOpenInWebView: (() -> Unit)?,
     onOpenInBrowser: (() -> Unit)?,
     onShare: (() -> Unit)?,

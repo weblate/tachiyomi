@@ -332,6 +332,7 @@ class DownloadProvider(
             // Archived chapters
             add("$chapterDirName.cbz")
 
+            // SY -->
             if (chapterScanlator.isNullOrBlank()) {
                 // Previously null scanlator fields were converted to "" due to a bug
                 add("_$chapterDirName")
@@ -340,6 +341,7 @@ class DownloadProvider(
                 // Legacy chapter directory name used in v0.9.2 and before
                 add(DiskUtil.buildValidFilename(chapterName))
             }
+            // SY <--
 
             // any legacy names
             legacyChapterDirNames.forEach {

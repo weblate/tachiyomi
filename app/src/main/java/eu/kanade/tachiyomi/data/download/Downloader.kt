@@ -470,11 +470,13 @@ class Downloader(
                 reIndexedPages
             }
 
+            // SY -->
             val dataSaver = if (sourcePreferences.dataSaverDownloader.get()) {
                 DataSaver(download.source, sourcePreferences)
             } else {
                 DataSaver.NoOp
             }
+            // SY <--
 
             download.status = Download.State.DOWNLOADING
 
@@ -494,7 +496,7 @@ class Downloader(
                             }
                         }
 
-                        getOrDownloadImage(page, download, tmpDir, dataSaver)
+                        getOrDownloadImage(page, download, tmpDir, /* SY --> */ dataSaver /* SY <-- */)
                         notifier.onProgressChange(download)
                     }.invokeOnCompletion { slots.release() }
                 }
@@ -542,7 +544,7 @@ class Downloader(
      * @param download the download of the page.
      * @param tmpDir the temporary directory of the download.
      */
-    private suspend fun getOrDownloadImage(page: Page, download: Download, tmpDir: UniFile, dataSaver: DataSaver) {
+    private suspend fun getOrDownloadImage(page: Page, download: Download, tmpDir: UniFile, /* SY --> */ dataSaver: DataSaver /* SY <-- */) {
         // If the image URL is empty, do nothing
         if (page.imageUrl == null) {
             return
@@ -563,7 +565,7 @@ class Downloader(
                 chapterCache.isImageInCache(page.imageUrl!!) ->
                     copyImageFromCache(chapterCache.getImageFile(page.imageUrl!!), tmpDir, filename)
 
-                else -> downloadImage(page, download.source, tmpDir, filename, dataSaver)
+                else -> downloadImage(page, download.source, tmpDir, filename, /* SY --> */ dataSaver /* SY <-- */)
             }
 
             // When the page is ready, set page path, progress (just in case) and status
@@ -592,7 +594,9 @@ class Downloader(
         source: HttpSource,
         tmpDir: UniFile,
         filename: String,
+        // SY -->
         dataSaver: DataSaver,
+        //SY <--
     ): UniFile {
         page.status = Page.State.DownloadImage
         page.progress = 0
@@ -601,7 +605,7 @@ class Downloader(
                 ?: tmpDir.createFile("$filename.tmp")!!
 
             try {
-                source.getImage(page, file.length(), dataSaver).use {
+                source.getImage(page, file.length(), /* SY --> */ dataSaver /* SY <-- */).use {
                     it.body.source().saveTo(
                         // If the server supports partial downloads (HTTP 206),
                         // append to the existing file.
@@ -623,9 +627,11 @@ class Downloader(
             .retryWhen { _, attempt ->
                 if (attempt < 3) {
                     delay((2L shl attempt.toInt()).seconds)
+                    // SY -->
                     if (source.isEhBasedSource()) {
                         page.imageUrl = source.getImageUrl(page)
                     }
+                    // SY <--
                     true
                 } else {
                     false

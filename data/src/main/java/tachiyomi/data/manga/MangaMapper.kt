@@ -10,10 +10,12 @@ import tachiyomi.domain.manga.model.MangaWithChapterCount
 import tachiyomi.view.LibraryView
 import kotlin.time.Instant
 
+// SY -->
 @Inject
 class MangaMapper(
     private val getCustomMangaInfo: GetCustomMangaInfo,
 ) {
+// SY <--
     fun mapManga(
         id: Long,
         sourceId: Long,
@@ -87,7 +89,7 @@ class MangaMapper(
         remoteCover: String?,
         remoteUpdateStrategy: UpdateStrategy,
         remoteMemo: JsonObject,
-        userFavoriteAt: Instant?,
+        userFavoriteAt: Instant,
         userNotes: String,
         userReaderFlags: Long,
         userChapterFlags: Long,
@@ -206,6 +208,7 @@ class MangaMapper(
         chapterCount = chapterCount,
     )
 
+    // SY -->
     fun mapLibraryView(libraryView: LibraryView): LibraryManga {
         return LibraryManga(
             manga = Manga(
@@ -228,15 +231,11 @@ class MangaMapper(
                 updateStrategy = libraryView.remote_update_strategy,
                 initialized = libraryView.state_initialized,
                 fetchInterval = libraryView.state_chapter_fetch_interval.toInt(),
-                // SY -->
                 lastModifiedAt = libraryView.state_last_modified_at,
                 version = libraryView.state_version,
-                // SY <--
                 notes = libraryView.user_notes,
                 memo = libraryView.remote_memo,
-                // SY -->
-                customMangaInfo = if (libraryView.user_favorite_at != null) getCustomMangaInfo.get(libraryView.id) else null,
-                // SY <--
+                customMangaInfo = getCustomMangaInfo.get(libraryView.id),
             ),
             categories = libraryView.categories.split(",").map { it.toLong() },
             totalChapters = libraryView.totalCount,
@@ -247,4 +246,5 @@ class MangaMapper(
             lastRead = libraryView.lastRead,
         )
     }
+    // SY <--
 }

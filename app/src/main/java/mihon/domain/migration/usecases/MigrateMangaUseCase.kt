@@ -39,9 +39,13 @@ class MigrateMangaUseCase(
     private val downloadManager: DownloadManager,
     private val updateManga: UpdateManga,
     private val getChaptersByMangaId: GetChaptersByMangaId,
+    // SY -->
     private val getHistoryByMangaId: GetHistory,
+    // SY <--
     private val updateChapter: UpdateChapter,
+    // SY -->
     private val updateHistory: UpsertHistory,
+    // SY <--
     private val getCategories: GetCategories,
     private val setMangaCategories: SetMangaCategories,
     private val getTracks: GetTracks,
@@ -74,22 +78,24 @@ class MigrateMangaUseCase(
 
             // Update chapters read state, history, bookmark and dateFetch
             if (MigrationFlag.CHAPTER in flags) {
+                // SY -->
                 val targetChapters = getChaptersByMangaId.await(target.id)
                 val currentChapters = getChaptersByMangaId.await(current.id)
+                // SY <--
                 // SY -->
                 val historyUpdates = mutableListOf<HistoryUpdate>()
                 val targetHistory = getHistoryByMangaId.await(target.id)
                 val currentHistory = getHistoryByMangaId.await(current.id)
                 // SY <--
 
-                val maxChapterRead = currentChapters
+                val maxChapterRead = /* SY --> */currentChapters/* SY <-- */
                     .filter { it.read }
                     .maxOfOrNull { it.chapterNumber }
 
-                val chapterUpdates = targetChapters
+                val chapterUpdates = /* SY --> */targetChapters/* SY <-- */
                     .filter { it.isRecognizedNumber }
                     .map { mangaChapter ->
-                        val prevChapter = currentChapters
+                        val prevChapter = /* SY --> */currentChapters/* SY <-- */
                             .find { it.isRecognizedNumber && it.chapterNumber == mangaChapter.chapterNumber }
 
                         // SY -->

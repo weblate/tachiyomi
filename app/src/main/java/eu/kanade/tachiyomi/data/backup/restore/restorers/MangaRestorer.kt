@@ -20,7 +20,9 @@ import kotlin.time.Clock
 
 @AssistedInject
 class MangaRestorer(
+    // SY -->
     @Assisted private val isSync: Boolean,
+    // SY <--
 
     private val restoreRepository: RestoreRepository,
     private val getCategories: GetCategories,

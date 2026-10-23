@@ -16,7 +16,7 @@ import mihon.icons.materialsymbols.rounded.Preview
 fun SwitchPreferenceWidget(
     modifier: Modifier = Modifier,
     title: String,
-    subtitle: CharSequence? = null,
+    subtitle: /* SY --> */ CharSequence /* SY <-- */? = null,
     icon: ImageVector? = null,
     checked: Boolean = false,
     onCheckedChanged: (Boolean) -> Unit,

@@ -25,7 +25,9 @@ fun Manga.asMangaCover(): MangaCover {
         mangaId = id,
         sourceId = source,
         isMangaFavorite = favorite,
+        // SY -->
         ogUrl = thumbnailUrl,
+        // SY <--
         lastModified = coverLastModified,
     )
 }

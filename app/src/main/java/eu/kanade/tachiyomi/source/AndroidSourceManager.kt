@@ -114,7 +114,7 @@ class AndroidSourceManager(
                     }
 
                     extensions.forEach { extension ->
-                        extension.sources.mapNotNull { it.toInternalSource() }.forEach {
+                        extension.sources/* SY --> */.mapNotNull { it.toInternalSource() } /* SY <-- */.forEach {
                             mutableMap[it.id] = it
                             registerStubSource(StubSource.from(it))
                         }
@@ -134,7 +134,7 @@ class AndroidSourceManager(
     }
 
     private fun Source.toInternalSource(): Source? {
-        // EXH -->
+        // SY -->
         val sourceQName = this::class.qualifiedName
         val factories = DELEGATED_SOURCES.entries
             .filter { it.value.factory }
@@ -180,9 +180,10 @@ class AndroidSourceManager(
         } else {
             newSource
         }
-        // EXH <--
+        // SY <--
     }
 
+    // SY -->
     private fun createDelegatedSource(kClass: KClass<*>, delegate: HttpSource): DelegatedHttpSource = when (kClass) {
         Pururin::class -> pururinFactory.create(delegate)
         Tsumino::class -> tsuminoFactory.create(delegate)
@@ -195,6 +196,7 @@ class AndroidSourceManager(
         NineHentai::class -> nineHentaiFactory.create(delegate)
         else -> error("No delegated source factory for $kClass")
     }
+    // SY <--
 
     /**
      * Awaits the extensions to have loaded before returning the sources.

@@ -33,7 +33,9 @@ import kotlin.time.Duration
 class WebtoonViewer(
     val activity: ReaderActivity,
     val isContinuous: Boolean = true,
+    // SY -->
     private val tapByPage: Boolean = false,
+    // SY <--
 ) : Viewer {
 
     val graph by lazy { activity.appGraph }
@@ -75,7 +77,6 @@ class WebtoonViewer(
     /**
      * Currently active item. It can be a chapter page or a chapter transition.
      */
-    /* [EXH] private */
     var currentPage: Any? = null
 
     private val threshold: Int by lazy { readerPreferences.readerHideThreshold.get().threshold }
@@ -294,6 +295,8 @@ class WebtoonViewer(
         }
     }
 
+    // SY -->
+
     /**
      * Scrolls one screen over a period of time
      */
@@ -305,11 +308,11 @@ class WebtoonViewer(
             duration.inWholeMilliseconds.toInt(),
         )
     }
+    // SY <--
 
     /**
      * Scrolls down by [scrollDistance].
      */
-    /* [EXH] private */
     fun scrollDown() {
         // SY -->
         if (!isContinuous && tapByPage) {

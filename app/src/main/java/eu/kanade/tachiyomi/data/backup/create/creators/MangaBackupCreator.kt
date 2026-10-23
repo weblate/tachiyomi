@@ -58,7 +58,7 @@ class MangaBackupCreator(
         val excludedScanlatorsByMangaId = mangaRepository.getExcludedScanlatorsByMangaIds(mangaIds)
         // History is backed up by chapter URL, so it needs the chapters too
         val chaptersByMangaId = if (options.chapters || options.history) {
-            chapterRepository.getChaptersByMangaIds(mangaIds).groupBy { it.mangaId }
+            chapterRepository.getChaptersByMangaIds(mangaIds)/* SY --> */.groupBy { it.mangaId } /* SY <-- */
         } else {
             emptyMap()
         }
@@ -67,11 +67,13 @@ class MangaBackupCreator(
         } else {
             emptyMap()
         }
+        // SY -->
         val tracksByMangaId = if (options.tracking) {
             trackRepository.getTracksByMangaIds(mangaIds).groupBy { it.mangaId }
         } else {
             emptyMap()
         }
+        // SY <--
         val historyByMangaId = if (options.history) historyRepository.getHistoryByMangaIds(mangaIds) else emptyMap()
 
         return mangas.map { manga ->

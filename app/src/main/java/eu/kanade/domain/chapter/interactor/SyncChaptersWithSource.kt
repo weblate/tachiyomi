@@ -242,14 +242,14 @@ class SyncChaptersWithSource(
 
         val added = chapterRepository.updateFromRemote(
             removedIds = removedChapters.map { it.id },
-            added = chaptersToAdd,
+            added = /* SY --> */ chaptersToAdd /* SY <-- */,
             updated = updatedChapters,
         )
         val excludedScanlators = getExcludedScanlators.await(manga.id).toHashSet()
 
         // A first fetch lists the back catalogue, and chapters coming back under a deleted number were out already
         val foundRelease = dbChapters.isNotEmpty() &&
-            newChapters.any { chapter ->
+            /* SY --> */ newChapters /* SY <-- */.any { chapter ->
                 chapter.scanlator !in excludedScanlators &&
                     !(chapter.isRecognizedNumber && chapter.chapterNumber in deletedChapterNumbers)
             }

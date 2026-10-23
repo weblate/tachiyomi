@@ -92,6 +92,7 @@ fun SourceFilterDialog(
                 HorizontalDivider()
             }
 
+            // SY -->
             if (openMangaDexRandom != null && openMangaDexFollows != null) {
                 item {
                     MangaDexFilterHeader(
@@ -108,6 +109,7 @@ fun SourceFilterDialog(
                     onSavedSearchPress = onSavedSearchPress,
                 )
             }
+            // SY <--
 
             items(filters) {
                 FilterItem(it, updateFilters /* SY --> */, startExpanded /* SY <-- */)

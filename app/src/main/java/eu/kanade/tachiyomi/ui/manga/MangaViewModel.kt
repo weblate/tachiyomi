@@ -258,13 +258,13 @@ class MangaViewModel(
     private val selectedPositions: Array<Int> = arrayOf(-1, -1) // first and last selected index in list
     private val selectedChapterIds = MutableStateFlow(emptySet<Long>())
 
-    // EXH -->
+    // SY -->
     val redirectFlow: MutableSharedFlow<EXHRedirect> = MutableSharedFlow()
 
     data class EXHRedirect(val mangaId: Long)
 
     var dedupe: Boolean = true
-    // EXH <--
+    // SY <--
 
     private val dialog = MutableStateFlow<Dialog?>(null)
 
@@ -982,7 +982,8 @@ class MangaViewModel(
                     downloadManager.deleteManga(manga, source)
                 }
             } else {
-                /* SY <-- */ downloadManager.deleteManga(state.manga, state.source)
+                // SY <--
+                downloadManager.deleteManga(state.manga, state.source)
             }
         }
     }
@@ -1365,13 +1366,14 @@ class MangaViewModel(
      */
     private suspend fun downloadChapters(chapters: List<Chapter>) {
         val state = successState ?: return
+        // SY -->
         if (state.source is MergedSource) {
             chapters.groupBy { it.mangaId }.forEach { map ->
                 val manga = state.mergedData?.manga?.get(map.key) ?: return@forEach
                 downloadManager.downloadChapters(manga, map.value)
             }
         } else {
-            /* SY <-- */
+            // SY <--
             val manga = state.manga
             downloadManager.downloadChapters(manga, chapters)
         }

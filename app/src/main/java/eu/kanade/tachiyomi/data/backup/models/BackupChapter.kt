@@ -28,8 +28,10 @@ class BackupChapter(
     // chapterNumber is called number is 1.x
     @ProtoNumber(9) var chapterNumber: Float = 0F,
     @ProtoNumber(10) var sourceOrder: Long = 0,
+    // SY -->
     @ProtoNumber(11) var lastModifiedAt: Long = 0,
     @ProtoNumber(12) var version: Long = 0,
+    // SY <--
     @ProtoNumber(13) var memo: ByteArray = JsonObjectEmptyBytes,
 ) {
     fun toChapterImpl(): Chapter {

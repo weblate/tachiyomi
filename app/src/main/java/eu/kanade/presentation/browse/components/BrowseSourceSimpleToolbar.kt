@@ -41,6 +41,7 @@ fun BrowseSourceSimpleToolbar(
                         onClick = { selectingDisplayMode = true },
                     ),
                 ),
+                // SY <--
             )
             DropdownMenu(
                 expanded = selectingDisplayMode,

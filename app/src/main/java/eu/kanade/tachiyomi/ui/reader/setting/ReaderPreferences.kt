@@ -306,11 +306,13 @@ class ReaderPreferences(
         LOWEST(47),
     }
 
+    // SY -->
     object ArchiveReaderMode {
         const val LOAD_FROM_FILE = 0
         const val LOAD_INTO_MEMORY = 1
         const val CACHE_TO_DISK = 2
     }
+    // SY <--
 
     enum class TransitionAnimation(val titleRes: StringResource) {
         BASIC(MR.strings.transition_animation_basic),

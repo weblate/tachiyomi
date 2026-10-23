@@ -366,7 +366,7 @@ class ReaderViewModel(
             .filterNotNull()
             // SY -->
             .drop(1) // allow the loader to set the first page and chapter id
-            // SY <-
+            // SY <--
             .onEach { currentChapter ->
                 if (chapterPageIndex >= 0) {
                     // Restore from SavedState
@@ -582,12 +582,14 @@ class ReaderViewModel(
         }
     }
 
+    // SY -->
     fun loadNewChapterFromDialog(chapter: Chapter) {
         viewModelScope.launch(Dispatchers.IO) {
             val newChapter = chapterList.firstOrNull { it.chapter.id == chapter.id } ?: return@launch
             loadAdjacent(newChapter)
         }
     }
+    // SY <--
 
     /**
      * Called when the user is going to load the prev/next chapter through the toolbar buttons.
@@ -838,7 +840,7 @@ class ReaderViewModel(
         readerChapter.update { it.copy(lastPageRead = pageIndex, read = read) }
         pendingProgressSave?.cancel()
 
-        if (isLastPage) {
+        if (/* SY --> */isLastPage/* SY <-- */) {
             pendingProgressChapter = null
             writeChapterProgress(readerChapter, onComplete = true)
         } else {
@@ -1045,9 +1047,9 @@ class ReaderViewModel(
      */
     fun getMangaReadingMode(resolveDefault: Boolean = true): Int {
         val default = readerPreferences.defaultReadingMode.get()
+        // SY -->
         val manga = manga ?: return default
         val readingMode = ReadingMode.fromPreference(manga.readingMode.toInt())
-        // SY -->
         return when {
             resolveDefault && readingMode == ReadingMode.DEFAULT && readerPreferences.useAutoWebtoon.get() -> {
                 manga.defaultReaderType(manga.mangaType(sourceName = source?.name))

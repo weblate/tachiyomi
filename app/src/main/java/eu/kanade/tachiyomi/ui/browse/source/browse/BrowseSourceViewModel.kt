@@ -87,7 +87,7 @@ import kotlin.time.Duration.Companion.seconds
 import eu.kanade.tachiyomi.source.model.Filter as SourceModelFilter
 
 @AssistedInject
-open class BrowseSourceViewModel(
+/* SY --> */open/* SY <-- */ class BrowseSourceViewModel(
     @Assisted private val sourceId: Long,
     @Assisted listingQuery: String?,
     // SY -->
@@ -215,7 +215,7 @@ open class BrowseSourceViewModel(
                 createSourcePagingSource(listing.query ?: "", listing.filters)
                 // SY <--
             }.flow.map { pagingData ->
-                pagingData.map { (manga, metadata) ->
+                pagingData.map { /* SY --> */(manga, metadata)/* SY <-- */ ->
                     getManga.subscribe(manga.url, manga.source)
                         .map { it ?: manga }
                         // SY -->
@@ -223,7 +223,7 @@ open class BrowseSourceViewModel(
                         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5.seconds), manga to metadata)
                     // SY <--
                 }
-                    .filter { !hideInLibraryItems || !it.value.first.favorite }
+                    .filter { !hideInLibraryItems || !it.value/* SY --> */.first/* SY <-- */.favorite }
             }
                 .cachedIn(viewModelScope)
         }
@@ -486,7 +486,7 @@ open class BrowseSourceViewModel(
         val isUserQuery get() = listing is Listing.Search && !listing.query.isNullOrEmpty()
     }
 
-    // EXH -->
+    // SY -->
     fun onSaveSearch() {
         viewModelScope.launch(Dispatchers.IO) {
             val names = savedSearches.value.map { it.name }
@@ -569,5 +569,5 @@ open class BrowseSourceViewModel(
     protected fun update(block: (State) -> State) {
         state.update(block)
     }
-    // EXH <--
+    // SY <--
 }

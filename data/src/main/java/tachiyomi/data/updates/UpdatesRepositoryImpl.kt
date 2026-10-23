@@ -25,8 +25,10 @@ import kotlin.time.Instant
 @ContributesBinding(AppScope::class)
 class UpdatesRepositoryImpl(
     private val database: Database,
+    // SY -->
     private val driver: SqlDriver,
     private val getCustomMangaInfo: GetCustomMangaInfo,
+    // SY <--
 ) : UpdatesRepository {
 
     override suspend fun awaitWithRead(
@@ -61,6 +63,7 @@ class UpdatesRepositoryImpl(
                 excludedCategories = excludedCategories,
                 mapper = ::mapUpdatesWithRelations,
             )
+            // SY -->
             .subscribeToList().map {
                 getUpdatesQuery(
                     driver = driver,
@@ -79,6 +82,7 @@ class UpdatesRepositoryImpl(
                     .awaitAsList()
                     .map(::mapUpdatesView)
             }
+        // SY <--
     }
 
     override fun subscribeWithRead(
@@ -124,7 +128,9 @@ class UpdatesRepositoryImpl(
         dateFetch: Instant,
         excludedScanlator: String?,
     ): UpdatesWithRelations {
+        // SY -->
         val customMangaInfo = getCustomMangaInfo.get(mangaId)
+        // SY <--
         return UpdatesWithRelations(
             mangaId = mangaId,
             // SY -->
@@ -144,13 +150,16 @@ class UpdatesRepositoryImpl(
                 mangaId = mangaId,
                 sourceId = sourceId,
                 isMangaFavorite = favorite,
+                // SY -->
                 ogUrl = thumbnailUrl,
                 customThumbnailUrl = if (favorite) customMangaInfo?.thumbnailUrl else null,
+                // SY <--
                 lastModified = coverLastModified,
             ),
         )
     }
 
+    // SY -->
     fun mapUpdatesView(updatesView: UpdatesView): UpdatesWithRelations {
         val customMangaInfo = getCustomMangaInfo.get(updatesView.mangaId)
         return UpdatesWithRelations(
@@ -176,4 +185,5 @@ class UpdatesRepositoryImpl(
             ),
         )
     }
+    // SY <--
 }

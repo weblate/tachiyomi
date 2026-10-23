@@ -134,6 +134,7 @@ data class DummyTracker(
         private: Boolean,
     ) = Unit
 
+    // SY -->
     override suspend fun getMangaMetadata(
         track: tachiyomi.domain.track.model.Track,
     ): eu.kanade.tachiyomi.data.track.model.TrackMangaMetadata = eu.kanade.tachiyomi.data.track.model.TrackMangaMetadata(
@@ -141,4 +142,5 @@ data class DummyTracker(
     )
 
     override suspend fun searchById(id: String) = null
+    // SY <--
 }

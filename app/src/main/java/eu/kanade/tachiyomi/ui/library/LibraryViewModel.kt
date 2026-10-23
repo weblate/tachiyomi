@@ -429,7 +429,7 @@ class LibraryViewModel(
         showSystemCategory: Boolean,
         // SY -->
         groupType: Int,
-        // <-- SY
+        // SY <--
     ): Map<Category, List</* LibraryItem */ Long>> {
         // SY -->
         when (groupType) {

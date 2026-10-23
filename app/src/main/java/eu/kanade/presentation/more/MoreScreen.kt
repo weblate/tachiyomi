@@ -47,9 +47,11 @@ fun MoreScreen(
     onClickDataAndStorage: () -> Unit,
     onClickSettings: () -> Unit,
     onClickAbout: () -> Unit,
+    // SY -->
     onClickBatchAdd: () -> Unit,
     onClickUpdates: () -> Unit,
     onClickHistory: () -> Unit,
+    // SY <--
 ) {
     val uriHandler = LocalUriHandler.current
 

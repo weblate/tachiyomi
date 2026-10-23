@@ -47,7 +47,7 @@ class HistoryviewModelStateProvider : PreviewParameterProvider<HistoryViewModel.
 
     private val empty = HistoryViewModel.State(
         searchQuery = null,
-        list = emptyList(),
+        list = /* SY --> */ emptyList() /* SY <-- */,
         dialog = null,
     )
 
@@ -105,7 +105,7 @@ class HistoryviewModelStateProvider : PreviewParameterProvider<HistoryViewModel.
                             mangaId = Random.nextLong(),
                             sourceId = Random.nextLong(),
                             isMangaFavorite = Random.nextBoolean(),
-                            ogUrl = "https://example.com/cover.png",
+                            /* SY --> */ ogUrl /* SY <-- */ = "https://example.com/cover.png",
                             lastModified = Instant.fromEpochMilliseconds(Random.nextLong()),
                         ),
                     ),

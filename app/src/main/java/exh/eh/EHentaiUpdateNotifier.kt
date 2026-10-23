@@ -98,7 +98,7 @@ class EHentaiUpdateNotifier(
         ) {
             setContentTitle(context.pluralStringResource(MR.plurals.notification_update_error, failed, failed))
             setContentText(context.stringResource(MR.strings.action_show_errors))
-            setSmallIcon(R.drawable.ic_tachi)
+            setSmallIcon(R.drawable.ic_mihon)
 
             setContentIntent(NotificationReceiver.openErrorLogPendingActivity(context, uri))
         }

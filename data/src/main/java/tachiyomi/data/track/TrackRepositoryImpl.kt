@@ -37,13 +37,13 @@ class TrackRepositoryImpl(
             .getTracksByMangaIds(mangaIds, TrackMapper::mapTrack)
             .awaitAsList()
     }
-    // SY <--
 
     override suspend fun getTracksByMangaId(mangaId: Long): List<Track> {
         return database.manga_trackQueries
             .getTracksByMangaId(mangaId, TrackMapper::mapTrack)
             .awaitAsList()
     }
+    // SY <--
 
     override fun getTracksAsFlow(): Flow<List<Track>> {
         return database.manga_trackQueries

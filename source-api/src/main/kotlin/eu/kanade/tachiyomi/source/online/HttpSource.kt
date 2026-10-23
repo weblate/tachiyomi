@@ -252,7 +252,6 @@ abstract class HttpSource : CatalogueSource {
         message = "The helper functions are inherently limiting and hides the underlying implementation. " +
             "Source developers should make their own implementation according to their needs.",
     )
-    /* SY --> protected <-- SY */
     open fun latestUpdatesRequest(page: Int): Request = throw UnsupportedOperationException()
 
     /**
@@ -264,7 +263,6 @@ abstract class HttpSource : CatalogueSource {
         message = "The helper functions are inherently limiting and hides the underlying implementation. " +
             "Source developers should make their own implementation according to their needs.",
     )
-    /* SY --> protected <-- SY */
     open fun latestUpdatesParse(response: Response): MangasPage = throw UnsupportedOperationException()
 
     /**
@@ -437,7 +435,6 @@ abstract class HttpSource : CatalogueSource {
     )
     protected open fun imageUrlParse(response: Response): String = throw UnsupportedOperationException()
 
-    /* SY --> protected <-- SY */
     open suspend fun getImage(page: Page, existingSize: Long = 0L): Response {
         return client.newCachelessCallWithProgress(imageRequest(page), page, existingSize)
             .awaitSuccess()
@@ -530,7 +527,7 @@ abstract class HttpSource : CatalogueSource {
     @Deprecated("All modifications should be done when constructing the chapter")
     open fun prepareNewChapter(chapter: SChapter, manga: SManga) {}
 
-    // EXH -->
+    // SY -->
     private var delegate: DelegatedHttpSource? = null
         get() = if (Injekt.get<NetworkHelper>().delegateSourcePreferences.delegateSources.get()) {
             field
@@ -541,5 +538,5 @@ abstract class HttpSource : CatalogueSource {
     fun bindDelegate(delegate: DelegatedHttpSource) {
         this.delegate = delegate
     }
-    // EXH <--
+    // SY <--
 }

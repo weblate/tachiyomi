@@ -133,7 +133,9 @@ abstract class BaseUpdatesGridGlanceWidget : GlanceAppWidget() {
                                 mangaId = updatesView.mangaId,
                                 sourceId = updatesView.sourceId,
                                 isMangaFavorite = true,
+                                // SY -->
                                 ogUrl = updatesView.coverData.url,
+                                // SY <--
                                 lastModified = updatesView.coverData.lastModified,
                             ),
                         )

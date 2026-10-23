@@ -41,16 +41,21 @@ class BackupManga(
     @ProtoNumber(103) var viewer_flags: Int? = null,
     @ProtoNumber(104) var history: List<BackupHistory> = emptyList(),
     @ProtoNumber(105) var updateStrategy: UpdateStrategy = UpdateStrategy.ALWAYS_UPDATE,
+    // SY -->
     @ProtoNumber(106) var lastModifiedAt: Long = 0,
+    // SY <--
     @ProtoNumber(107) var favoriteModifiedAt: Long? = null,
     // Mihon values start here
     @ProtoNumber(108) var excludedScanlators: List<String> = emptyList(),
+    // SY -->
     @ProtoNumber(109) var version: Long = 0,
+    // SY <--
     @ProtoNumber(110) var notes: String = "",
     @ProtoNumber(111) var initialized: Boolean = false,
     @ProtoNumber(112) var memo: ByteArray = JsonObjectEmptyBytes,
     @ProtoNumber(113) var nextUpdate: Long = 0,
 
+    // SY -->
     // SY specific values
     @ProtoNumber(600) var mergedMangaReferences: List<BackupMergedMangaReference> = emptyList(),
     @ProtoNumber(601) var flatMetadata: BackupFlatMetadata? = null,
@@ -64,6 +69,7 @@ class BackupManga(
     // skipping 803 due to using duplicate value in previous builds
     @ProtoNumber(804) var customDescription: String? = null,
     @ProtoNumber(805) var customGenre: List<String>? = null,
+    // SY <--
 
 ) {
     fun getMangaImpl(): Manga {

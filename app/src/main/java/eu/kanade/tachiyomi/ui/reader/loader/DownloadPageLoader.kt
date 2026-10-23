@@ -23,9 +23,9 @@ internal class DownloadPageLoader(
     private val source: Source,
     private val downloadManager: DownloadManager,
     private val downloadProvider: DownloadProvider,
+    // SY -->
     private val context: Context,
     private val readerPreferences: ReaderPreferences,
-    // SY -->
     private val cbzCrypto: CbzCrypto,
     // SY <--
 ) : PageLoader() {
@@ -40,7 +40,7 @@ internal class DownloadPageLoader(
             dbChapter.name,
             dbChapter.scanlator,
             dbChapter.url,
-            /* SY --> */ manga.ogTitle, /* <-- SY */
+            /* SY --> */ manga.ogTitle, /* SY <-- */
             source,
         )
         return if (chapterPath?.isFile == true) {
@@ -56,7 +56,7 @@ internal class DownloadPageLoader(
     }
 
     private suspend fun getPagesFromArchive(file: UniFile): List<ReaderPage> {
-        val loader = ArchivePageLoader(file.archiveReader(context, cbzCrypto::getDecryptedPasswordCbz), context, readerPreferences).also { archivePageLoader = it }
+        val loader = ArchivePageLoader(file.archiveReader(context, /* SY --> */cbzCrypto::getDecryptedPasswordCbz/* SY <-- */), /* SY --> */context, readerPreferences/* SY <-- */).also { archivePageLoader = it }
         return loader.getPages()
     }
 

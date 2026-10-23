@@ -7,7 +7,7 @@ import me.zhanghai.android.libarchive.ArchiveException
 import java.io.Closeable
 import java.io.InputStream
 
-class ArchiveReader(pfd: ParcelFileDescriptor, val getDecryptedPassword: (() -> ByteArray)?) : Closeable {
+class ArchiveReader(pfd: ParcelFileDescriptor, /* SY --> */val getDecryptedPassword: (() -> ByteArray)?/* SY <-- */) : Closeable {
     val size = pfd.statSize
     val address = Os.mmap(0, size, OsConstants.PROT_READ, OsConstants.MAP_PRIVATE, pfd.fileDescriptor, 0)
 
@@ -23,7 +23,7 @@ class ArchiveReader(pfd: ParcelFileDescriptor, val getDecryptedPassword: (() -> 
     }
     // SY <--
 
-    inline fun <T> useEntries(block: (Sequence<ArchiveEntry>) -> T): T = ArchiveInputStream(
+    /* SY --> */inline/* SY <-- */ fun <T> useEntries(block: (Sequence<ArchiveEntry>) -> T): T = ArchiveInputStream(
         address,
         size,
         // SY -->

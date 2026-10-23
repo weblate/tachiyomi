@@ -17,8 +17,10 @@ data class Chapter(
     val dateUpload: Instant?,
     val chapterNumber: Double,
     val scanlator: String?,
+    // SY -->
     val lastModifiedAt: Long,
     val version: Long,
+    // SY <--
     val memo: JsonObject,
 ) {
     val isRecognizedNumber: Boolean
@@ -48,8 +50,10 @@ data class Chapter(
             dateUpload = null,
             chapterNumber = -1.0,
             scanlator = null,
+            // SY -->
             lastModifiedAt = 0,
             version = 1,
+            // SY <--
             memo = JsonObject.EMPTY,
         )
     }

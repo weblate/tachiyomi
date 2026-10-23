@@ -7,10 +7,8 @@ import tachiyomi.domain.history.model.History
 
 @Serializable
 data class BackupHistory(
-    // SY -->
-    @ProtoNumber(1) var url: String = "",
-    @ProtoNumber(2) var lastRead: Long = 0,
-    // SY <--
+    @ProtoNumber(1) var url: String /* SY --> */ = "" /* SY <-- */,
+    @ProtoNumber(2) var lastRead: Long /* SY --> */ = 0 /* SY <-- */,
     @ProtoNumber(3) var readDuration: Long = 0,
 ) {
     fun getHistoryImpl(): History {

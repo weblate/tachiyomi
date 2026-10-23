@@ -114,12 +114,12 @@ internal class HttpPageLoader(
         if (page.status is Page.State.Error) {
             page.status = Page.State.Queue
         }
-        // EXH -->
+        // SY -->
         // Grab a new image URL on EXH sources
         if (isEhSource) {
             page.imageUrl = null
         }
-        // EXH <--
+        // SY <--
 
         val pageIndex = page.index
         downloadJobs.remove(pageIndex)?.cancel()
@@ -261,7 +261,7 @@ internal class HttpPageLoader(
                 val live = page.downloadStream
                 page.status = Page.State.DownloadImage
                 try {
-                    val imageResponse = source.getImage(page, dataSaver = dataSaver)
+                    val imageResponse = source.getImage(page, /* SY --> */dataSaver = dataSaver/* SY <-- */)
                     chapterCache.putImageToCache(imageUrl, imageResponse, live)
                     live?.finish()
                 } catch (e: Throwable) {
@@ -285,7 +285,7 @@ internal class HttpPageLoader(
         }
     }
 
-    // EXH -->
+    // SY -->
 
     /**
      * Starts loading [page] now instead of when the chunks being loaded reach it.
@@ -295,7 +295,7 @@ internal class HttpPageLoader(
             launchLoadOnce(page)
         }
     }
-    // EXH <--
+    // SY <--
 }
 
 private const val LIMITED_PAGES_AHEAD = 4

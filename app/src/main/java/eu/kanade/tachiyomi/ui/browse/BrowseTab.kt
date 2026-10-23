@@ -62,8 +62,8 @@ data object BrowseTab : Tab {
     @Composable
     override fun Content() {
         val context = LocalContext.current
-        val scope = rememberCoroutineScope()
         // SY -->
+        val scope = rememberCoroutineScope()
         val hideFeedTab by remember { context.appGraph.uiPreferences.hideFeedTab.asState(scope) }
         val feedTabInFront by remember { context.appGraph.uiPreferences.feedTabInFront.asState(scope) }
         // SY <--

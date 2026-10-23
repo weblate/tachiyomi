@@ -18,10 +18,12 @@ class ZipWriter(
     encryptInfo: (() -> EncryptInfo)? = null,
     // SY <--
 ) : Closeable {
+    // SY -->
     class EncryptInfo(
         val encryptAlgo: ByteArray,
         val decryptedPassword: ByteArray,
     )
+    // SY <--
 
     private val pfd = file.openFileDescriptor(context, "wt")
     private val archive = Archive.writeNew()

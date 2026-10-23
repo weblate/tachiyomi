@@ -151,7 +151,7 @@ data class Manga(
         fun create() = Manga(
             id = -1L,
             url = "",
-            // Sy -->
+            // SY -->
             ogTitle = "",
             // SY <--
             source = -1L,

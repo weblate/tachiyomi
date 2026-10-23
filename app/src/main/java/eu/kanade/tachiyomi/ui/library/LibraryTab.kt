@@ -161,6 +161,7 @@ data object LibraryTab : Tab {
                             }
                         }
                     },
+                    // SY -->
                     onClickSyncNow = {
                         scope.launch {
                             if (!SyncDataJob.isRunning(context)) {
@@ -170,7 +171,6 @@ data object LibraryTab : Tab {
                             }
                         }
                     },
-                    // SY -->
                     onClickSyncExh = viewModel::openFavoritesSyncDialog.takeIf { state.showSyncExh },
                     isSyncEnabled = state.isSyncEnabled,
                     // SY <--
@@ -194,16 +194,15 @@ data object LibraryTab : Tab {
                             // SY -->
                             .filterNot { it.source == MERGED_SOURCE_ID }
                             .map { it.id }
-                        // <-- SY
+                        // SY <--
                         viewModel.clearSelection()
-                        /* SY --> */if (selection.isNotEmpty()) {
-                            /* <-- SY */
+                        // SY -->
+                        if (selection.isNotEmpty()) {
                             navigator.push(MigrationConfigScreen(selection))
-                            // SY ->>
                         } else {
                             context.toast(SYMR.strings.no_valid_entry)
                         }
-                        // <-- SY
+                        // SY <--
                     },
                     // SY -->
                     onClickCleanTitles = viewModel::cleanTitles.takeIf { state.showCleanTitles },

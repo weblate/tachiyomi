@@ -24,7 +24,7 @@ import tachiyomi.presentation.core.util.secondaryItemAlpha
 fun TextPreferenceWidget(
     modifier: Modifier = Modifier,
     title: String? = null,
-    subtitle: CharSequence? = null,
+    subtitle: /* SY --> */ CharSequence /* SY <-- */? = null,
     icon: ImageVector? = null,
     iconTint: Color = MaterialTheme.colorScheme.primary,
     widget: @Composable (() -> Unit)? = null,

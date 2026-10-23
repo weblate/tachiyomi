@@ -575,7 +575,9 @@ private fun MangaScreenSmallImpl(
 
                     sharedChapterItems(
                         manga = state.manga,
+                        // SY -->
                         mergedData = state.mergedData,
+                        // SY <--
                         chapters = listItem,
                         isAnyChapterSelected = state.selectedChapters.isNotEmpty(),
                         chapterSwipeStartAction = chapterSwipeStartAction,
@@ -864,7 +866,9 @@ fun MangaScreenLargeImpl(
 
                             sharedChapterItems(
                                 manga = state.manga,
+                                // SY -->
                                 mergedData = state.mergedData,
+                                // SY <--
                                 chapters = listItem,
                                 isAnyChapterSelected = state.selectedChapters.isNotEmpty(),
                                 chapterSwipeStartAction = chapterSwipeStartAction,
@@ -930,7 +934,9 @@ private fun SharedMangaBottomActionMenu(
 
 private fun LazyListScope.sharedChapterItems(
     manga: Manga,
+    // SY -->
     mergedData: MergedMangaData?,
+    // SY <--
     chapters: List<ChapterList>,
     isAnyChapterSelected: Boolean,
     chapterSwipeStartAction: LibraryPreferences.ChapterSwipeAction,
@@ -971,16 +977,16 @@ private fun LazyListScope.sharedChapterItems(
                         item.chapter.name
                     },
                     date = item.chapter.dateUpload
+                        // SY -->
                         ?.let {
-                            // SY -->
                             if (manga.isEhBasedManga()) {
                                 MetadataUtil.EX_DATE_FORMAT
                                     .format(ZonedDateTime.ofInstant(it.toJavaInstant(), ZoneId.systemDefault()))
                             } else {
                                 relativeDateText(it)
                             }
-                            // SY <--
                         },
+                    // SY <--
                     readProgress = item.chapter.lastPageRead
                         .takeIf {
                             /* SY --> */(!item.chapter.read || alwaysShowReadingProgress)/* SY <-- */ && it > 0L
@@ -1001,7 +1007,7 @@ private fun LazyListScope.sharedChapterItems(
                     bookmark = item.chapter.bookmark,
                     selected = item.selected,
                     downloadIndicatorEnabled =
-                    !isAnyChapterSelected && !(mergedData?.manga?.get(item.chapter.mangaId) ?: manga).isLocal(),
+                    !isAnyChapterSelected && /* SY --> */!(mergedData?.manga?.get(item.chapter.mangaId) ?: manga).isLocal()/* SY <-- */,
                     downloadStateProvider = { item.downloadState },
                     downloadProgressProvider = { downloadProgressProvider(item.id) },
                     chapterSwipeStartAction = chapterSwipeStartAction,

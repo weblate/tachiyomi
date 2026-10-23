@@ -34,7 +34,9 @@ object AppBindings {
                 thread.uncaughtExceptionHandler?.uncaughtException(thread, throwable)
             } else {
                 logcat(LogPriority.ERROR, throwable) { "Uncaught exception in the app scope" }
+                // SY -->
                 FirebaseConfig.recordException(throwable)
+                // SY <--
             }
         }
         return CoroutineScope(SupervisorJob() + Dispatchers.IO + handler)
