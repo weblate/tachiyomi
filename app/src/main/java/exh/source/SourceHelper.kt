@@ -8,7 +8,7 @@ import eu.kanade.tachiyomi.source.online.english.EightMuses
 import eu.kanade.tachiyomi.source.online.english.HBrowse
 import eu.kanade.tachiyomi.source.online.english.HentaiNexus
 import eu.kanade.tachiyomi.source.online.english.NineHentai
-import eu.kanade.tachiyomi.source.online.english.Pururin
+import eu.kanade.tachiyomi.source.online.all.Pururin
 import eu.kanade.tachiyomi.source.online.english.Tsumino
 
 /**
@@ -45,6 +45,11 @@ fun handleSourceLibrary() {
         .map { it.value.sourceId }
         .sorted()
 
+    pururinSourceIds = AndroidSourceManager.currentDelegatedSources
+        .filter { it.value.newSourceClass == Pururin::class }
+        .map { it.value.sourceId }
+        .sorted()
+
     mangaDexSourceIds = AndroidSourceManager.currentDelegatedSources
         .filter {
             it.value.newSourceClass == MangaDex::class
@@ -62,6 +67,5 @@ fun handleSourceLibrary() {
     LIBRARY_UPDATE_EXCLUDED_SOURCES = listOf(
         EH_SOURCE_ID,
         EXH_SOURCE_ID,
-        PURURIN_SOURCE_ID,
-    ) + nHentaiSourceIds
+    ) + nHentaiSourceIds + pururinSourceIds
 }

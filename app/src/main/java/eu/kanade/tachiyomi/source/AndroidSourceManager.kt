@@ -13,11 +13,11 @@ import eu.kanade.tachiyomi.source.online.all.Lanraragi
 import eu.kanade.tachiyomi.source.online.all.MangaDex
 import eu.kanade.tachiyomi.source.online.all.MergedSource
 import eu.kanade.tachiyomi.source.online.all.NHentai
+import eu.kanade.tachiyomi.source.online.all.Pururin
 import eu.kanade.tachiyomi.source.online.english.EightMuses
 import eu.kanade.tachiyomi.source.online.english.HBrowse
 import eu.kanade.tachiyomi.source.online.english.HentaiNexus
 import eu.kanade.tachiyomi.source.online.english.NineHentai
-import eu.kanade.tachiyomi.source.online.english.Pururin
 import eu.kanade.tachiyomi.source.online.english.Tsumino
 import exh.log.xLogD
 import exh.pref.DelegateSourcePreferences
@@ -32,7 +32,6 @@ import exh.source.HBROWSE_SOURCE_ID
 import exh.source.HENTAINEXUS_SOURCE_ID
 import exh.source.MERGED_SOURCE_ID
 import exh.source.NINEHENTAI_SOURCE_ID
-import exh.source.PURURIN_SOURCE_ID
 import exh.source.TSUMINO_SOURCE_ID
 import exh.source.handleSourceLibrary
 import kotlinx.coroutines.CoroutineScope
@@ -136,15 +135,11 @@ class AndroidSourceManager(
     private fun Source.toInternalSource(): Source? {
         // SY -->
         val sourceQName = this::class.qualifiedName
-        val factories = DELEGATED_SOURCES.entries
-            .filter { it.value.factory }
-            .map { it.value.originalSourceQualifiedClassName }
         val delegate = if (sourceQName != null) {
-            val matched = factories.find { sourceQName.startsWith(it) }
-            if (matched != null) {
-                DELEGATED_SOURCES[matched]
-            } else {
-                DELEGATED_SOURCES[sourceQName] ?: DELEGATED_SOURCES_BY_ID[id]
+            DELEGATED_SOURCES.firstOrNull { delegated ->
+                sourceQName == delegated.originalSourceQualifiedClassName ||
+                    (delegated.factory && sourceQName.startsWith(delegated.originalSourceQualifiedClassName)) ||
+                    id == delegated.sourceId
             }
         } else {
             null
@@ -268,8 +263,8 @@ class AndroidSourceManager(
         val DELEGATED_SOURCES = listOf(
             DelegatedSource(
                 "Pururin",
-                PURURIN_SOURCE_ID,
-                "eu.kanade.tachiyomi.extension.en.pururin.Pururin",
+                fillInSourceId,
+                "eu.kanade.tachiyomi.extension.all.pururin.Pururin",
                 Pururin::class,
             ),
             DelegatedSource(
@@ -281,7 +276,7 @@ class AndroidSourceManager(
             DelegatedSource(
                 "MangaDex",
                 fillInSourceId,
-                "eu.kanade.tachiyomi.extension.all.mangadex",
+                "eu.kanade.tachiyomi.extension.all.mangadex.MangaDex",
                 MangaDex::class,
                 true,
             ),
@@ -302,14 +297,12 @@ class AndroidSourceManager(
                 fillInSourceId,
                 "eu.kanade.tachiyomi.extension.all.nhentai.NHentai",
                 NHentai::class,
-                true,
             ),
             DelegatedSource(
                 "LANraragi",
                 fillInSourceId,
                 "eu.kanade.tachiyomi.extension.all.lanraragi.LANraragi",
                 Lanraragi::class,
-                true,
             ),
             DelegatedSource(
                 "HentaiNexus",
@@ -323,13 +316,7 @@ class AndroidSourceManager(
                 "eu.kanade.tachiyomi.extension.en.ninehentai.NineHentai",
                 NineHentai::class,
             ),
-        ).associateBy { it.originalSourceQualifiedClassName }
-
-        // Keiyoushi extensions are obfuscated and all share the generated entry point class name,
-        // so sources with a fixed id are also matched by it
-        private val DELEGATED_SOURCES_BY_ID = DELEGATED_SOURCES.values
-            .filterNot { it.factory }
-            .associateBy { it.sourceId }
+        )
 
         val currentDelegatedSources: MutableMap<Long, DelegatedSource> =
             ListenMutableMap(mutableMapOf(), ::handleSourceLibrary)
