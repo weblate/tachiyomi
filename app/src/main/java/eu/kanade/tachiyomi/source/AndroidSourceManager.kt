@@ -129,14 +129,12 @@ class AndroidSourceManager(
     private fun Source.toInternalSource(): Source? {
         // SY -->
         val sourceQName = this::class.qualifiedName
-        val delegate = if (sourceQName != null) {
-            DELEGATED_SOURCES.firstOrNull { delegated ->
-                sourceQName == delegated.originalSourceQualifiedClassName ||
-                    (delegated.factory && sourceQName.startsWith(delegated.originalSourceQualifiedClassName)) ||
-                    id == delegated.sourceId
-            }
-        } else {
-            null
+        val delegate = DELEGATED_SOURCES.firstOrNull { delegated ->
+                id in delegated.sourceIds ||
+                (sourceQName != null && (
+                    sourceQName == delegated.originalSourceQualifiedClassName ||
+                        (delegated.factory && sourceQName.startsWith(delegated.originalSourceQualifiedClassName))
+                    ))
         }
         val newSource = if (this is HttpSource && delegate != null) {
             xLogD("Delegating source: %s -> %s!", sourceQName, delegate.newSourceClass.qualifiedName)
@@ -303,11 +301,25 @@ class AndroidSourceManager(
 
         data class DelegatedSource(
             val sourceName: String,
-            val sourceId: Long,
+            val sourceIds: List<Long>,
             val originalSourceQualifiedClassName: String,
             val newSourceClass: KClass<out DelegatedHttpSource>,
             val factory: Boolean = false,
-        )
+        ) {
+            constructor(
+                sourceName: String,
+                sourceId: Long,
+                originalSourceQualifiedClassName: String,
+                newSourceClass: KClass<out DelegatedHttpSource>,
+                factory: Boolean = false,
+            ) : this(
+                sourceName,
+                listOf(sourceId),
+                originalSourceQualifiedClassName,
+                newSourceClass,
+                factory
+            )
+        }
     }
 
     private class ListenMutableMap<K, V>(
