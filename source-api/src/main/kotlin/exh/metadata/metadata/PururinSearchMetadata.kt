@@ -52,6 +52,7 @@ class PururinSearchMetadata : RaisedSearchMetadata() {
             thumbnail_url = cover ?: manga.thumbnail_url,
             artist = artist,
             genre = genres,
+            description = null,
         )
     }
 
