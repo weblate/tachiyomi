@@ -132,11 +132,13 @@ class AndroidSourceManager(
         // SY -->
         val sourceQName = this::class.qualifiedName
         val delegate = DELEGATED_SOURCES.firstOrNull { delegated ->
-                id in delegated.sourceIds ||
-                (sourceQName != null && (
-                    sourceQName == delegated.originalSourceQualifiedClassName ||
-                        (delegated.factory && sourceQName.startsWith(delegated.originalSourceQualifiedClassName))
-                    ))
+            id in delegated.sourceIds ||
+                (
+                    sourceQName != null && (
+                        sourceQName == delegated.originalSourceQualifiedClassName ||
+                            (delegated.factory && sourceQName.startsWith(delegated.originalSourceQualifiedClassName))
+                        )
+                    )
         }
         val newSource = if (this is HttpSource && delegate != null) {
             xLogD("Delegating source: %s -> %s!", sourceQName, delegate.newSourceClass.qualifiedName)
@@ -327,7 +329,7 @@ class AndroidSourceManager(
                 listOf(sourceId),
                 originalSourceQualifiedClassName,
                 newSourceClass,
-                factory
+                factory,
             )
         }
     }
