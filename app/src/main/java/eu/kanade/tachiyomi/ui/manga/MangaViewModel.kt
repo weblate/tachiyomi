@@ -27,10 +27,10 @@ import eu.kanade.domain.chapter.interactor.SetReadStatus
 import eu.kanade.domain.manga.interactor.GetExcludedScanlators
 import eu.kanade.domain.manga.interactor.GetPagePreviews
 import eu.kanade.domain.manga.interactor.SetExcludedScanlators
+import eu.kanade.domain.manga.interactor.SmartSearchMerge
 import eu.kanade.domain.manga.interactor.UpdateManga
 import eu.kanade.domain.manga.model.PagePreview
 import eu.kanade.domain.manga.model.chaptersFiltered
-import eu.kanade.domain.manga.model.copyFrom
 import eu.kanade.domain.manga.model.downloadedFilter
 import eu.kanade.domain.manga.model.toSManga
 import eu.kanade.domain.track.interactor.AddTracks
@@ -120,8 +120,6 @@ import tachiyomi.domain.chapter.service.calculateChapterGap
 import tachiyomi.domain.chapter.service.getChapterSort
 import tachiyomi.domain.chapter.service.missingChaptersCount
 import tachiyomi.domain.library.service.LibraryPreferences
-import tachiyomi.domain.manga.interactor.DeleteByMergeId
-import tachiyomi.domain.manga.interactor.DeleteMangaById
 import tachiyomi.domain.manga.interactor.DeleteMergeById
 import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
 import tachiyomi.domain.manga.interactor.GetFlatMetadataById
@@ -129,8 +127,6 @@ import tachiyomi.domain.manga.interactor.GetManga
 import tachiyomi.domain.manga.interactor.GetMangaWithChapters
 import tachiyomi.domain.manga.interactor.GetMergedMangaById
 import tachiyomi.domain.manga.interactor.GetMergedReferencesById
-import tachiyomi.domain.manga.interactor.InsertMergedReference
-import tachiyomi.domain.manga.interactor.NetworkToLocalManga
 import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
 import tachiyomi.domain.manga.interactor.SetMangaUserInfo
 import tachiyomi.domain.manga.interactor.UpdateMergedSettings
@@ -149,7 +145,6 @@ import tachiyomi.i18n.sy.SYMR
 import tachiyomi.source.local.LocalSource
 import tachiyomi.source.local.isLocal
 import kotlin.math.floor
-import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
@@ -178,11 +173,8 @@ class MangaViewModel(
     private val getMergedChaptersByMangaId: GetMergedChaptersByMangaId,
     private val getMergedMangaById: GetMergedMangaById,
     private val getMergedReferencesById: GetMergedReferencesById,
-    private val insertMergedReference: InsertMergedReference,
     private val updateMergedSettings: UpdateMergedSettings,
-    private val networkToLocalManga: NetworkToLocalManga,
-    private val deleteMangaById: DeleteMangaById,
-    private val deleteByMergeId: DeleteByMergeId,
+    private val smartSearchMerge: SmartSearchMerge,
     private val deleteMergeById: DeleteMergeById,
     private val getFlatMetadata: GetFlatMetadataById,
     private val getPagePreviews: GetPagePreviews,
@@ -692,136 +684,7 @@ class MangaViewModel(
     }
 
     suspend fun smartSearchMerge(manga: Manga, originalMangaId: Long): Manga {
-        val originalManga = getManga.await(originalMangaId)
-            ?: throw IllegalArgumentException(context.stringResource(SYMR.strings.merge_unknown_entry, originalMangaId))
-        if (originalManga.source == MERGED_SOURCE_ID) {
-            val children = getMergedReferencesById.await(originalMangaId)
-            if (children.any { it.mangaSourceId == manga.source && it.mangaUrl == manga.url }) {
-                throw IllegalArgumentException(context.stringResource(SYMR.strings.merged_already))
-            }
-
-            val mangaReferences = mutableListOf(
-                MergedMangaReference(
-                    id = -1,
-                    isInfoManga = false,
-                    getChapterUpdates = true,
-                    chapterSortMode = 0,
-                    chapterPriority = 0,
-                    downloadChapters = true,
-                    mergeId = originalManga.id,
-                    mergeUrl = originalManga.url,
-                    mangaId = manga.id,
-                    mangaUrl = manga.url,
-                    mangaSourceId = manga.source,
-                ),
-            )
-
-            if (children.isEmpty() || children.all { it.mangaSourceId != MERGED_SOURCE_ID }) {
-                mangaReferences += MergedMangaReference(
-                    id = -1,
-                    isInfoManga = false,
-                    getChapterUpdates = false,
-                    chapterSortMode = 0,
-                    chapterPriority = -1,
-                    downloadChapters = false,
-                    mergeId = originalManga.id,
-                    mergeUrl = originalManga.url,
-                    mangaId = originalManga.id,
-                    mangaUrl = originalManga.url,
-                    mangaSourceId = MERGED_SOURCE_ID,
-                )
-            }
-
-            // todo
-            insertMergedReference.awaitAll(mangaReferences)
-
-            return originalManga
-        } else {
-            if (manga.id == originalMangaId) {
-                throw IllegalArgumentException(context.stringResource(SYMR.strings.merged_already))
-            }
-            var mergedManga = Manga.create()
-                .copy(
-                    url = originalManga.url,
-                    ogTitle = originalManga.title,
-                    source = MERGED_SOURCE_ID,
-                )
-                .copyFrom(originalManga.toSManga())
-                .copy(
-                    favoriteAt = Clock.System.now(),
-                    lastUpdate = originalManga.lastUpdate,
-                    viewerFlags = originalManga.viewerFlags,
-                    chapterFlags = originalManga.chapterFlags,
-                )
-
-            var existingManga = getManga.await(mergedManga.url, mergedManga.source)
-            while (existingManga != null) {
-                if (existingManga.favorite) {
-                    throw IllegalArgumentException(context.stringResource(SYMR.strings.merge_duplicate))
-                } else {
-                    existingManga?.id?.let {
-                        deleteByMergeId.await(it)
-                        deleteMangaById.await(it)
-                    }
-                }
-                existingManga = getManga.await(mergedManga.url, mergedManga.source)
-            }
-
-            mergedManga = networkToLocalManga(mergedManga)
-
-            getCategories.await(originalMangaId)
-                .let {
-                    setMangaCategories.await(mergedManga.id, it.map { it.id })
-                }
-
-            val originalMangaReference = MergedMangaReference(
-                id = -1,
-                isInfoManga = true,
-                getChapterUpdates = true,
-                chapterSortMode = 0,
-                chapterPriority = 0,
-                downloadChapters = true,
-                mergeId = mergedManga.id,
-                mergeUrl = mergedManga.url,
-                mangaId = originalManga.id,
-                mangaUrl = originalManga.url,
-                mangaSourceId = originalManga.source,
-            )
-
-            val newMangaReference = MergedMangaReference(
-                id = -1,
-                isInfoManga = false,
-                getChapterUpdates = true,
-                chapterSortMode = 0,
-                chapterPriority = 0,
-                downloadChapters = true,
-                mergeId = mergedManga.id,
-                mergeUrl = mergedManga.url,
-                mangaId = manga.id,
-                mangaUrl = manga.url,
-                mangaSourceId = manga.source,
-            )
-
-            val mergedMangaReference = MergedMangaReference(
-                id = -1,
-                isInfoManga = false,
-                getChapterUpdates = false,
-                chapterSortMode = 0,
-                chapterPriority = -1,
-                downloadChapters = false,
-                mergeId = mergedManga.id,
-                mergeUrl = mergedManga.url,
-                mangaId = mergedManga.id,
-                mangaUrl = mergedManga.url,
-                mangaSourceId = MERGED_SOURCE_ID,
-            )
-
-            insertMergedReference.awaitAll(listOf(originalMangaReference, newMangaReference, mergedMangaReference))
-
-            return mergedManga
-        }
-
-        // Note that if the manga are merged in a different order, this won't trigger, but I don't care lol
+        return smartSearchMerge.smartSearchMerge(manga, originalMangaId, strict = true)
     }
 
     fun updateMergeSettings(mergedMangaReferences: List<MergedMangaReference>) {

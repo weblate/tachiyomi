@@ -1,7 +1,9 @@
 package tachiyomi.data.manga
 
 import app.cash.sqldelight.async.coroutines.awaitAsList
+import app.cash.sqldelight.async.coroutines.awaitAsOne
 import app.cash.sqldelight.async.coroutines.awaitAsOneOrNull
+import exh.source.MERGED_SOURCE_ID
 import kotlinx.coroutines.flow.Flow
 import logcat.LogPriority
 import tachiyomi.core.common.util.system.logcat
@@ -125,6 +127,70 @@ class MangaMergeRepositoryImpl(
                     mangaSource = reference.mangaSourceId,
                 )
             }
+        }
+    }
+
+    override suspend fun applyMerge(
+        staleMangaId: Long?,
+        mergedManga: Manga,
+        categoryIds: List<Long>,
+        references: List<MergedMangaReference>,
+    ): Manga {
+        return database.transactionWithResult {
+            if (staleMangaId != null) {
+                database.mergedQueries.deleteByMergeId(mergeId = staleMangaId)
+                database.mangaQueries.deleteById(id = staleMangaId)
+            }
+
+            val inserted = database.mangaQueries.insertNetworkManga(
+                sourceId = mergedManga.source,
+                remoteUrl = mergedManga.url,
+                remoteArtist = mergedManga.ogArtist,
+                remoteAuthor = mergedManga.ogAuthor,
+                remoteDescription = mergedManga.ogDescription,
+                remoteGenre = mergedManga.ogGenre,
+                remoteTitle = mergedManga.ogTitle,
+                remoteStatus = mergedManga.ogStatus,
+                remoteCover = mergedManga.ogThumbnailUrl,
+                userFavoriteAt = mergedManga.favoriteAt,
+                stateChapterLastUpdate = mergedManga.lastUpdate,
+                stateChapterNextUpdate = mergedManga.nextUpdate,
+                stateChapterFetchInterval = mergedManga.fetchInterval.toLong(),
+                stateInitialized = mergedManga.initialized,
+                userReaderFlags = mergedManga.viewerFlags,
+                userChapterFlags = mergedManga.chapterFlags,
+                stateCoverLastModified = mergedManga.coverLastModified,
+                remoteUpdateStrategy = mergedManga.updateStrategy,
+                remoteMemo = mergedManga.memo,
+                stateVersion = mergedManga.version,
+                updateTitle = mergedManga.ogTitle.isNotBlank(),
+                updateCover = !mergedManga.ogThumbnailUrl.isNullOrBlank(),
+                updateDetails = mergedManga.initialized,
+                mapper = MangaMapper::mapManga,
+            ).awaitAsOne()
+
+            database.manga_categoryQueries.deleteMangaCategoryByMangaId(inserted.id)
+            categoryIds.forEach { categoryId ->
+                database.manga_categoryQueries.insert(mangaId = inserted.id, categoryId = categoryId)
+            }
+
+            references.forEach { reference ->
+                val mangaId = if (reference.mangaSourceId == MERGED_SOURCE_ID) inserted.id else reference.mangaId
+                database.mergedQueries.insert(
+                    infoManga = reference.isInfoManga,
+                    getChapterUpdates = reference.getChapterUpdates,
+                    chapterSortMode = reference.chapterSortMode.toLong(),
+                    chapterPriority = reference.chapterPriority.toLong(),
+                    downloadChapters = reference.downloadChapters,
+                    mergeId = inserted.id,
+                    mergeUrl = reference.mergeUrl,
+                    mangaId = mangaId,
+                    mangaUrl = reference.mangaUrl,
+                    mangaSource = reference.mangaSourceId,
+                )
+            }
+
+            inserted
         }
     }
 
