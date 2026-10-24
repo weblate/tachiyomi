@@ -1,5 +1,6 @@
 package exh
 
+import eu.kanade.tachiyomi.source.online.all.Hitomi
 import eu.kanade.tachiyomi.source.online.all.NHentai
 import exh.source.BlacklistedSources
 import exh.source.EH_SOURCE_ID
@@ -20,6 +21,12 @@ object EXHMigrations {
                 source = NHentai.otherId,
                 // Migrate nhentai URLs
                 url = getUrlWithoutDomain(newManga.url),
+            )
+        }
+
+        if (newManga.source == 6910L) {
+            newManga = newManga.copy(
+                source = Hitomi.HITOMI_SOURCE_IDS.first(),
             )
         }
 

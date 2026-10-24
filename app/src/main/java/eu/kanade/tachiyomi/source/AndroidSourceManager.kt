@@ -9,6 +9,7 @@ import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.extension.ExtensionManager
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.source.online.all.EHentai
+import eu.kanade.tachiyomi.source.online.all.Hitomi
 import eu.kanade.tachiyomi.source.online.all.Lanraragi
 import eu.kanade.tachiyomi.source.online.all.MangaDex
 import eu.kanade.tachiyomi.source.online.all.MergedSource
@@ -64,6 +65,7 @@ class AndroidSourceManager(
     private val mangaDexFactory: MangaDex.Factory,
     private val eightMusesFactory: EightMuses.Factory,
     private val nHentaiFactory: NHentai.Factory,
+    private val hitomiFactory: Hitomi.Factory,
     private val lanraragiFactory: Lanraragi.Factory,
     private val hentaiNexusFactory: HentaiNexus.Factory,
     private val nineHentaiFactory: NineHentai.Factory,
@@ -176,6 +178,7 @@ class AndroidSourceManager(
         MangaDex::class -> mangaDexFactory.create(delegate)
         EightMuses::class -> eightMusesFactory.create(delegate)
         NHentai::class -> nHentaiFactory.create(delegate)
+        Hitomi::class -> hitomiFactory.create(delegate)
         Lanraragi::class -> lanraragiFactory.create(delegate)
         HentaiNexus::class -> hentaiNexusFactory.create(delegate)
         NineHentai::class -> nineHentaiFactory.create(delegate)
@@ -275,6 +278,13 @@ class AndroidSourceManager(
                 fillInSourceId,
                 "eu.kanade.tachiyomi.extension.all.nhentai.NHentai",
                 NHentai::class,
+            ),
+            DelegatedSource(
+                "Hitomi",
+                Hitomi.HITOMI_SOURCE_IDS,
+                "eu.kanade.tachiyomi.extension.all.hitomi.Hitomi",
+                Hitomi::class,
+                true,
             ),
             DelegatedSource(
                 "LANraragi",
