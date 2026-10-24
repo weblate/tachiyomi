@@ -15,10 +15,8 @@ import eu.kanade.tachiyomi.source.online.all.MergedSource
 import eu.kanade.tachiyomi.source.online.all.NHentai
 import eu.kanade.tachiyomi.source.online.all.Pururin
 import eu.kanade.tachiyomi.source.online.english.EightMuses
-import eu.kanade.tachiyomi.source.online.english.HBrowse
 import eu.kanade.tachiyomi.source.online.english.HentaiNexus
 import eu.kanade.tachiyomi.source.online.english.NineHentai
-import eu.kanade.tachiyomi.source.online.english.Tsumino
 import exh.log.xLogD
 import exh.pref.DelegateSourcePreferences
 import exh.source.BlacklistedSources
@@ -28,11 +26,9 @@ import exh.source.EIGHTMUSES_SOURCE_ID
 import exh.source.EXH_SOURCE_ID
 import exh.source.EnhancedHttpSource
 import exh.source.ExhPreferences
-import exh.source.HBROWSE_SOURCE_ID
 import exh.source.HENTAINEXUS_SOURCE_ID
 import exh.source.MERGED_SOURCE_ID
 import exh.source.NINEHENTAI_SOURCE_ID
-import exh.source.TSUMINO_SOURCE_ID
 import exh.source.handleSourceLibrary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -65,9 +61,7 @@ class AndroidSourceManager(
     private val ehentaiFactory: EHentai.Factory,
     private val delegateSourcePreferences: DelegateSourcePreferences,
     private val pururinFactory: Pururin.Factory,
-    private val tsuminoFactory: Tsumino.Factory,
     private val mangaDexFactory: MangaDex.Factory,
-    private val hBrowseFactory: HBrowse.Factory,
     private val eightMusesFactory: EightMuses.Factory,
     private val nHentaiFactory: NHentai.Factory,
     private val lanraragiFactory: Lanraragi.Factory,
@@ -181,9 +175,7 @@ class AndroidSourceManager(
     // SY -->
     private fun createDelegatedSource(kClass: KClass<*>, delegate: HttpSource): DelegatedHttpSource = when (kClass) {
         Pururin::class -> pururinFactory.create(delegate)
-        Tsumino::class -> tsuminoFactory.create(delegate)
         MangaDex::class -> mangaDexFactory.create(delegate)
-        HBrowse::class -> hBrowseFactory.create(delegate)
         EightMuses::class -> eightMusesFactory.create(delegate)
         NHentai::class -> nHentaiFactory.create(delegate)
         Lanraragi::class -> lanraragiFactory.create(delegate)
@@ -268,23 +260,11 @@ class AndroidSourceManager(
                 Pururin::class,
             ),
             DelegatedSource(
-                "Tsumino",
-                TSUMINO_SOURCE_ID,
-                "eu.kanade.tachiyomi.extension.en.tsumino.Tsumino",
-                Tsumino::class,
-            ),
-            DelegatedSource(
                 "MangaDex",
                 fillInSourceId,
                 "eu.kanade.tachiyomi.extension.all.mangadex.MangaDex",
                 MangaDex::class,
                 true,
-            ),
-            DelegatedSource(
-                "HBrowse",
-                HBROWSE_SOURCE_ID,
-                "eu.kanade.tachiyomi.extension.en.hbrowse.HBrowse",
-                HBrowse::class,
             ),
             DelegatedSource(
                 "8Muses",
