@@ -221,23 +221,30 @@ class ChapterRepositoryImpl(
             .awaitAsList()
     }
 
-    override suspend fun getMergedChapterByMangaId(mangaId: Long, applyScanlatorFilter: Boolean): List<Chapter> {
+    override suspend fun getDedupedMergedChapters(
+        mangaId: Long,
+        sortMode: Int,
+        applyScanlatorFilter: Boolean,
+    ): List<Chapter> {
         return database.chapterQueries
-            .getMergedChaptersByMangaId(
+            .getDedupedMergedChapters(
                 mergeId = mangaId,
+                sortMode = sortMode.toLong(),
                 applyScanlatorFilter = applyScanlatorFilter.toLong(),
                 mapper = ::mapChapter,
             )
             .awaitAsList()
     }
 
-    override suspend fun getMergedChapterByMangaIdAsFlow(
+    override suspend fun getDedupedMergedChaptersAsFlow(
         mangaId: Long,
+        sortMode: Int,
         applyScanlatorFilter: Boolean,
     ): Flow<List<Chapter>> {
         return database.chapterQueries
-            .getMergedChaptersByMangaId(
+            .getDedupedMergedChapters(
                 mergeId = mangaId,
+                sortMode = sortMode.toLong(),
                 applyScanlatorFilter = applyScanlatorFilter.toLong(),
                 mapper = ::mapChapter,
             )

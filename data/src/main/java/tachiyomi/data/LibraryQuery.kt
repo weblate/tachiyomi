@@ -70,6 +70,29 @@ class LibraryQuery(
         return driver.executeQuery(
             null,
             """
+            WITH merged_base AS MATERIALIZED (
+                SELECT
+                    chapter.id,
+                    chapter.manga_id,
+                    chapter.remote_chapter_number,
+                    chapter.remote_date_upload,
+                    chapter.state_date_fetch,
+                    chapter.user_read,
+                    chapter.user_bookmark,
+                    ME.merge_id,
+                    ME.chapter_priority,
+                    coalesce(SELF.chapter_sort_mode, 0) AS sort_mode
+                FROM chapter
+                LEFT JOIN excluded_scanlator
+                ON chapter.manga_id = excluded_scanlator.manga_id
+                AND chapter.remote_scanlator = excluded_scanlator.scanlator
+                JOIN merged AS ME
+                ON ME.manga_id = chapter.manga_id
+                LEFT JOIN merged AS SELF
+                ON SELF.merge_id = ME.merge_id
+                AND SELF.manga_source = $MERGED_SOURCE_ID
+                WHERE excluded_scanlator.scanlator IS NULL
+            )
             SELECT
                 M.*,
                 coalesce(C.total, 0) AS totalCount,
@@ -143,22 +166,44 @@ class LibraryQuery(
                 coalesce(MC.categories, '0') AS categories
             FROM manga M
             LEFT JOIN (
-                -- Only the chapters of merged entries can belong to a merge
                 SELECT
-                    ME.merge_id,
+                    base.merge_id,
                     count(*) AS total,
-                    sum(user_read) AS readCount,
-                    max(chapter.remote_date_upload) AS latestUpload,
-                    max(chapter.state_date_fetch) AS fetchedAt,
-                    sum(chapter.user_bookmark) AS bookmarkCount
-                FROM chapter
-                LEFT JOIN excluded_scanlator
-                ON chapter.manga_id = excluded_scanlator.manga_id
-                AND chapter.remote_scanlator = excluded_scanlator.scanlator
-                JOIN merged AS ME
-                ON ME.manga_id = chapter.manga_id
-                WHERE excluded_scanlator.scanlator IS NULL
-                GROUP BY ME.merge_id
+                    sum(base.user_read) AS readCount,
+                    max(base.remote_date_upload) AS latestUpload,
+                    max(base.state_date_fetch) AS fetchedAt,
+                    sum(base.user_bookmark) AS bookmarkCount
+                FROM merged_base AS base
+                WHERE base.sort_mode IN (0, 1)
+                OR (base.sort_mode = 2 AND (
+                    base.remote_chapter_number < 0
+                    OR NOT EXISTS (
+                        SELECT 1 FROM merged_base AS base2
+                        WHERE base2.merge_id = base.merge_id
+                        AND base2.remote_chapter_number = base.remote_chapter_number
+                        AND base2.manga_id != base.manga_id
+                        AND (
+                            base2.chapter_priority < base.chapter_priority
+                            OR (base2.chapter_priority = base.chapter_priority AND base2.manga_id < base.manga_id)
+                        )
+                    )
+                ))
+                OR (base.sort_mode = 3 AND base.manga_id = (
+                    SELECT base2.manga_id FROM merged_base AS base2
+                    WHERE base2.merge_id = base.merge_id
+                    GROUP BY base2.manga_id
+                    ORDER BY count(*) DESC, base2.manga_id
+                    LIMIT 1
+                ))
+                OR (base.sort_mode = 4 AND base.manga_id = (
+                    SELECT base2.manga_id FROM merged_base AS base2
+                    WHERE base2.merge_id = base.merge_id
+                    AND base2.remote_chapter_number >= 0
+                    GROUP BY base2.manga_id
+                    ORDER BY max(base2.remote_chapter_number) DESC, base2.manga_id
+                    LIMIT 1
+                ))
+                GROUP BY base.merge_id
             ) AS C
             ON C.merge_id = M.id
             LEFT JOIN (
