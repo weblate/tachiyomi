@@ -10,6 +10,7 @@ import eu.kanade.tachiyomi.data.backup.BackupNotifier
 import eu.kanade.tachiyomi.data.backup.models.BackupCategory
 import eu.kanade.tachiyomi.data.backup.models.BackupExtensionStore
 import eu.kanade.tachiyomi.data.backup.models.BackupFeed
+import eu.kanade.tachiyomi.data.backup.models.BackupManga
 import eu.kanade.tachiyomi.data.backup.models.BackupPreference
 import eu.kanade.tachiyomi.data.backup.models.BackupSavedSearch
 import eu.kanade.tachiyomi.data.backup.models.BackupSource
@@ -29,10 +30,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.chunked
 import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.launch
 import logcat.LogPriority
 import tachiyomi.core.common.i18n.stringResource
@@ -43,7 +41,6 @@ import tachiyomi.i18n.MR
 import tachiyomi.i18n.sy.SYMR
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.BitSet
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.CopyOnWriteArrayList
@@ -234,34 +231,20 @@ class BackupRestorer(
     ) = launch {
         categoriesRestoreJob?.join()
 
-        // New entries go first. Rather than hold the others back in memory, a second pass reads them again.
-        val isExisting = mangaRestorer.getExistingMatcher()
-        val existingIndices = BitSet()
         // SY -->
         // Merged entries go last, so the entries they reference are restored before them
-        val mergedIndices = BitSet()
-        // SY <--
-        val newMangas = backupDecoder.decodeEntries(uri)
-            .withIndex()
-            .filter { (index, manga) ->
-                // SY -->
-                if (manga.source == MERGED_SOURCE_ID) {
-                    mergedIndices.set(index)
-                    return@filter false
-                }
-                // SY <--
-                val exists = isExisting(manga)
-                if (exists) existingIndices.set(index)
-                !exists
-            }
-            .map { it.value }
+        val mergedMangas = mutableListOf<BackupManga>()
         val backupMangas = flow {
-            emitAll(newMangas)
-            emitAll(backupDecoder.decodeEntries(uri, existingIndices::get))
-            // SY -->
-            emitAll(backupDecoder.decodeEntries(uri, mergedIndices::get))
-            // SY <--
+            backupDecoder.decodeEntries(uri).collect { manga ->
+                if (manga.source == MERGED_SOURCE_ID) {
+                    mergedMangas += manga
+                } else {
+                    emit(manga)
+                }
+            }
+            emitAll(mergedMangas)
         }
+        // SY <--
 
         backupMangas
             .chunked(100)

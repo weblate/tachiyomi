@@ -40,14 +40,6 @@ class RestoreRepositoryImpl(
     // SY <--
 ) : RestoreRepository {
 
-    override suspend fun getMangaUrlsBySourceId(): Map<Long, Set<String>> {
-        return database.mangaQueries
-            .getAllMangaSourceAndUrl()
-            .awaitAsList()
-            .groupBy({ it.source_id }, { it.remote_url })
-            .mapValues { it.value.toSet() }
-    }
-
     override suspend fun restoreManga(
         entries: List<RestoredManga>,
         // SY -->
