@@ -9,12 +9,14 @@ import eu.kanade.tachiyomi.data.backup.BackupDecoder
 import eu.kanade.tachiyomi.data.backup.BackupNotifier
 import eu.kanade.tachiyomi.data.backup.models.BackupCategory
 import eu.kanade.tachiyomi.data.backup.models.BackupExtensionStore
+import eu.kanade.tachiyomi.data.backup.models.BackupFeed
 import eu.kanade.tachiyomi.data.backup.models.BackupPreference
 import eu.kanade.tachiyomi.data.backup.models.BackupSavedSearch
 import eu.kanade.tachiyomi.data.backup.models.BackupSource
 import eu.kanade.tachiyomi.data.backup.models.BackupSourcePreferences
 import eu.kanade.tachiyomi.data.backup.restore.restorers.CategoriesRestorer
 import eu.kanade.tachiyomi.data.backup.restore.restorers.ExtensionStoreRestorer
+import eu.kanade.tachiyomi.data.backup.restore.restorers.FeedRestorer
 import eu.kanade.tachiyomi.data.backup.restore.restorers.MangaRestorer
 import eu.kanade.tachiyomi.data.backup.restore.restorers.PreferenceRestorer
 import eu.kanade.tachiyomi.data.backup.restore.restorers.SavedSearchRestorer
@@ -63,6 +65,7 @@ class BackupRestorer(
     private val stubSourceRepository: StubSourceRepository,
     // SY -->
     private val savedSearchRestorer: SavedSearchRestorer,
+    private val feedRestorer: FeedRestorer,
     private val categoriesRestorerFactory: CategoriesRestorer.Factory,
     private val mangaRestorerFactory: MangaRestorer.Factory,
     // SY <--
@@ -151,7 +154,10 @@ class BackupRestorer(
             }
             // SY -->
             if (options.savedSearches) {
-                restoreSavedSearches(backup.backupSavedSearches)
+                restoreSavedSearches(
+                    backup.backupSavedSearches,
+                    backup.backupFeeds,
+                )
             }
             // SY <--
             if (options.appSettings) {
@@ -203,9 +209,13 @@ class BackupRestorer(
     }
 
     // SY -->
-    private fun CoroutineScope.restoreSavedSearches(backupSavedSearches: List<BackupSavedSearch>) = launch {
+    private fun CoroutineScope.restoreSavedSearches(
+        backupSavedSearches: List<BackupSavedSearch>,
+        backupFeeds: List<BackupFeed>,
+    ) = launch {
         ensureActive()
         savedSearchRestorer.restoreSavedSearches(backupSavedSearches)
+        feedRestorer.restoreFeeds(backupFeeds)
 
         val progress = restoreProgress.incrementAndFetch()
         notifier.showRestoreProgress(

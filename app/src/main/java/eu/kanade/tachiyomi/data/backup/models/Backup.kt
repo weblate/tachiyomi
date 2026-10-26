@@ -17,5 +17,6 @@ data class Backup(
     // SY -->
     // SY specific values
     @ProtoNumber(600) var backupSavedSearches: List<BackupSavedSearch> = emptyList(),
+    @ProtoNumber(601) var backupFeeds: List<BackupFeed> = emptyList(),
     // SY <--
 )
