@@ -28,6 +28,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.chunked
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
@@ -242,7 +243,7 @@ class BackupRestorer(
                     emit(manga)
                 }
             }
-            emitAll(mergedMangas)
+            emitAll(mergedMangas.asFlow())
         }
         // SY <--
 
