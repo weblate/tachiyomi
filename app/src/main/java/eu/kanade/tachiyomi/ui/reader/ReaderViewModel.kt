@@ -1202,6 +1202,14 @@ class ReaderViewModel(
         mutableState.update { it.copy(dialog = Dialog.AutoScrollHelp) }
     }
 
+    fun openAutoScrollGesturesHelpDialog() {
+        mutableState.update { it.copy(dialog = Dialog.AutoScrollGesturesHelp) }
+    }
+
+    fun openAutoScrollGestureToastsHelpDialog() {
+        mutableState.update { it.copy(dialog = Dialog.AutoScrollGestureToastsHelp) }
+    }
+
     fun openBoostPageHelp() {
         mutableState.update { it.copy(dialog = Dialog.BoostPageHelp) }
     }
@@ -1600,6 +1608,8 @@ class ReaderViewModel(
 
         // SY -->
         data object AutoScrollHelp : Dialog
+        data object AutoScrollGesturesHelp : Dialog
+        data object AutoScrollGestureToastsHelp : Dialog
         data object RetryAllHelp : Dialog
         data object BoostPageHelp : Dialog
         // SY <--
