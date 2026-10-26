@@ -93,7 +93,6 @@ open class FeedViewModel(
     val events = _events.receiveAsFlow()
 
     private val coroutineDispatcher = Executors.newFixedThreadPool(1).asCoroutineDispatcher()
-    var pushed: Boolean = false
 
     init {
         addCloseable(coroutineDispatcher)
@@ -120,7 +119,6 @@ open class FeedViewModel(
     }
 
     fun init() {
-        pushed = false
         viewModelScope.launch(Dispatchers.IO) {
             val newItems = mutableState.value.items?.map { it.copy(results = null) } ?: return@launch
             mutableState.update { state ->

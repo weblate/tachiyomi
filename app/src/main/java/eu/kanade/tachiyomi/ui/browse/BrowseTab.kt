@@ -21,6 +21,7 @@ import eu.kanade.presentation.util.rememberAnimatedVectorPainter
 import eu.kanade.tachiyomi.R
 import eu.kanade.tachiyomi.ui.browse.extension.ExtensionsViewModel
 import eu.kanade.tachiyomi.ui.browse.extension.extensionsTab
+import eu.kanade.tachiyomi.ui.browse.feed.FeedViewModel
 import eu.kanade.tachiyomi.ui.browse.feed.feedTab
 import eu.kanade.tachiyomi.ui.browse.migration.sources.migrateSourceTab
 import eu.kanade.tachiyomi.ui.browse.source.globalsearch.GlobalSearchScreen
@@ -59,6 +60,25 @@ data object BrowseTab : Tab {
         switchToExtensionTabChannel.trySend(Unit)
     }
 
+    // SY -->
+    private val feedRefreshChannel = Channel<Unit>(Channel.CONFLATED)
+    private var feedRefreshNotified = false
+
+    /**
+     * Notify the feed to refresh on browse-tab selection
+     */
+    fun onBrowseTabSelected(isSelected: Boolean) {
+        if (isSelected) {
+            if (!feedRefreshNotified) {
+                feedRefreshNotified = true
+                feedRefreshChannel.trySend(Unit)
+            }
+        } else {
+            feedRefreshNotified = false
+        }
+    }
+    // SY <--
+
     @Composable
     override fun Content() {
         val context = LocalContext.current
@@ -73,6 +93,12 @@ data object BrowseTab : Tab {
         val extensionsSearchQuery by extensionsViewModel.searchQuery.collectAsStateWithLifecycle()
 
         // SY -->
+        val feedViewModel = metroViewModel<FeedViewModel>()
+        LaunchedEffect(Unit) {
+            feedRefreshChannel.receiveAsFlow().collect {
+                feedViewModel.init()
+            }
+        }
         val tabs = if (hideFeedTab) {
             listOf(
                 sourcesTab(),
@@ -81,7 +107,7 @@ data object BrowseTab : Tab {
             )
         } else if (feedTabInFront) {
             listOf(
-                feedTab(),
+                feedTab(feedViewModel),
                 sourcesTab(),
                 extensionsTab(extensionsViewModel),
                 migrateSourceTab(),
@@ -89,7 +115,7 @@ data object BrowseTab : Tab {
         } else {
             listOf(
                 sourcesTab(),
-                feedTab(),
+                feedTab(feedViewModel),
                 extensionsTab(extensionsViewModel),
                 migrateSourceTab(),
             )

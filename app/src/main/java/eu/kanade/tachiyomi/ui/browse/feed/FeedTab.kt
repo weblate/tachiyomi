@@ -4,15 +4,12 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import cafe.adriel.voyager.core.screen.Screen
-import cafe.adriel.voyager.core.stack.StackEvent
 import cafe.adriel.voyager.navigator.LocalNavigator
 import cafe.adriel.voyager.navigator.currentOrThrow
-import dev.zacsweers.metrox.viewmodel.metroViewModel
 import eu.kanade.presentation.browse.FeedAddDialog
 import eu.kanade.presentation.browse.FeedAddSearchDialog
 import eu.kanade.presentation.browse.FeedDeleteConfirmDialog
@@ -37,24 +34,9 @@ import tachiyomi.presentation.core.i18n.stringResource
  * SY-specific file
  */
 @Composable
-fun Screen.feedTab(): TabContent {
+fun Screen.feedTab(viewModel: FeedViewModel): TabContent {
     val navigator = LocalNavigator.currentOrThrow
-    val viewModel = metroViewModel<FeedViewModel>()
     val state by viewModel.state.collectAsState()
-
-    DisposableEffect(navigator.lastEvent) {
-        if (navigator.lastEvent == StackEvent.Push) {
-            viewModel.pushed = true
-        } else if (!viewModel.pushed) {
-            viewModel.init()
-        }
-
-        onDispose {
-            if (navigator.lastEvent == StackEvent.Idle && viewModel.pushed) {
-                viewModel.pushed = false
-            }
-        }
-    }
 
     return TabContent(
         titleRes = SYMR.strings.feed,
