@@ -274,6 +274,7 @@ class RestoreRepositoryImpl(
                 // SY -->
                 stateLastModifiedAt = chapter.lastModifiedAt,
                 stateVersion = chapter.version,
+                stateIsSyncing = syncingFlag,
                 // SY <--
             )
                 .awaitAsOneOrNull()
