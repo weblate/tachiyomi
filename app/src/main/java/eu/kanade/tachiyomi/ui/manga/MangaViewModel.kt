@@ -120,7 +120,6 @@ import tachiyomi.domain.chapter.service.calculateChapterGap
 import tachiyomi.domain.chapter.service.getChapterSort
 import tachiyomi.domain.chapter.service.missingChaptersCount
 import tachiyomi.domain.library.service.LibraryPreferences
-import tachiyomi.domain.manga.interactor.DeleteMergeById
 import tachiyomi.domain.manga.interactor.GetDuplicateLibraryManga
 import tachiyomi.domain.manga.interactor.GetFlatMetadataById
 import tachiyomi.domain.manga.interactor.GetManga
@@ -129,11 +128,9 @@ import tachiyomi.domain.manga.interactor.GetMergedMangaById
 import tachiyomi.domain.manga.interactor.GetMergedReferencesById
 import tachiyomi.domain.manga.interactor.SetMangaChapterFlags
 import tachiyomi.domain.manga.interactor.SetMangaUserInfo
-import tachiyomi.domain.manga.interactor.UpdateMergedSettings
 import tachiyomi.domain.manga.model.Manga
 import tachiyomi.domain.manga.model.MangaRemoteUpdate
 import tachiyomi.domain.manga.model.MangaWithChapterCount
-import tachiyomi.domain.manga.model.MergeMangaSettingsUpdate
 import tachiyomi.domain.manga.model.MergedMangaReference
 import tachiyomi.domain.manga.model.applyFilter
 import tachiyomi.domain.source.service.SourceManager
@@ -173,9 +170,7 @@ class MangaViewModel(
     private val getMergedChaptersByMangaId: GetMergedChaptersByMangaId,
     private val getMergedMangaById: GetMergedMangaById,
     private val getMergedReferencesById: GetMergedReferencesById,
-    private val updateMergedSettings: UpdateMergedSettings,
     private val smartSearchMerge: SmartSearchMerge,
-    private val deleteMergeById: DeleteMergeById,
     private val getFlatMetadata: GetFlatMetadataById,
     private val getPagePreviews: GetPagePreviews,
     private val upsertTrack: UpsertTrack,
@@ -685,31 +680,6 @@ class MangaViewModel(
 
     suspend fun smartSearchMerge(manga: Manga, originalMangaId: Long): Manga {
         return smartSearchMerge.smartSearchMerge(manga, originalMangaId, strict = true)
-    }
-
-    fun updateMergeSettings(mergedMangaReferences: List<MergedMangaReference>) {
-        appScope.launch {
-            if (mergedMangaReferences.isNotEmpty()) {
-                updateMergedSettings.awaitAll(
-                    mergedMangaReferences.map {
-                        MergeMangaSettingsUpdate(
-                            id = it.id,
-                            isInfoManga = it.isInfoManga,
-                            getChapterUpdates = it.getChapterUpdates,
-                            chapterPriority = it.chapterPriority,
-                            downloadChapters = it.downloadChapters,
-                            chapterSortMode = it.chapterSortMode,
-                        )
-                    },
-                )
-            }
-        }
-    }
-
-    fun deleteMerge(reference: MergedMangaReference) {
-        appScope.launch {
-            deleteMergeById.await(reference.id)
-        }
     }
     // SY <--
 
@@ -1477,7 +1447,7 @@ class MangaViewModel(
 
         // SY -->
         data class EditMangaInfo(val manga: Manga) : Dialog
-        data class EditMergedSettings(val mergedData: MergedMangaData) : Dialog
+        data object EditMergedSettings : Dialog
         // SY <--
 
         data object SettingsSheet : Dialog
@@ -1523,8 +1493,7 @@ class MangaViewModel(
     }
 
     fun showEditMergedSettingsDialog() {
-        val mergedData = successState?.mergedData ?: return
-        dialog.value = Dialog.EditMergedSettings(mergedData)
+        dialog.value = Dialog.EditMergedSettings
     }
     // SY <--
 
