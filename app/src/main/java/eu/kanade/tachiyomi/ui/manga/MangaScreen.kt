@@ -379,6 +379,7 @@ class MangaScreen(
                     manga = dialog.manga,
                     coverManga = coverManga,
                     sourceName = successState.source.getNameForMangaInfo(),
+                    mergedManga = successState.mergedData?.manga?.values?.toList()?.ifEmpty { null },
                     onDismissRequest = viewModel::dismissDialog,
                     onPositiveClick = viewModel::updateMangaInfo,
                     onCoverClick = { getContent.launch("image/*") },

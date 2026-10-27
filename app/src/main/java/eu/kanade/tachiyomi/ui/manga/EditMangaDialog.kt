@@ -89,6 +89,7 @@ fun EditMangaDialog(
     manga: Manga,
     coverManga: Manga?,
     sourceName: String,
+    mergedManga: List<Manga>? = null,
     onDismissRequest: () -> Unit,
     onPositiveClick: (
         title: String?,
@@ -136,6 +137,12 @@ fun EditMangaDialog(
         if (!manga.genre.isNullOrEmpty() && !isLocal) {
             tags.addAll(manga.ogGenre.orEmpty())
         }
+    }
+
+    // Adds every tag of the merge's entries that isn't already present
+    fun collateTags() {
+        val merged = mergedManga ?: return
+        tags.addAll(merged.flatMap { it.genre.orEmpty() }.distinct() - tags.toSet())
     }
 
     suspend fun autofillFromTracker(track: Track, tracker: Tracker) {
@@ -251,6 +258,7 @@ fun EditMangaDialog(
                     tags = tags,
                     onAddTagsClick = { showAddTagsDialog = true },
                     onResetTagsClick = ::resetTags,
+                    onCollateTagsClick = mergedManga?.let { ::collateTags },
                 )
             }
             HorizontalDivider()
@@ -452,6 +460,7 @@ private fun TagsSection(
     tags: SnapshotStateList<String>,
     onAddTagsClick: () -> Unit,
     onResetTagsClick: () -> Unit,
+    onCollateTagsClick: (() -> Unit)? = null,
 ) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -461,6 +470,11 @@ private fun TagsSection(
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
             )
+            onCollateTagsClick?.let { click ->
+                TextButton(onClick = click) {
+                    Text(stringResource(SYMR.strings.collate_tags))
+                }
+            }
             TextButton(onClick = onResetTagsClick) {
                 Text(stringResource(SYMR.strings.reset_tags))
             }
