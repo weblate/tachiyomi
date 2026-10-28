@@ -205,7 +205,7 @@ class MangaMergeRepositoryImpl(
             }
 
             // Create the merge-level settings row only for a fresh merge; preserve it when reusing
-            if (database.mergedQueries.selectMerge(mangaId = inserted.id).executeAsOneOrNull() == null) {
+            if (database.mergedQueries.selectMerge(mangaId = inserted.id).awaitAsOneOrNull() == null) {
                 database.mergedQueries.insertMerge(
                     mangaId = inserted.id,
                     chapterSortMode = chapterSortMode.toLong(),
